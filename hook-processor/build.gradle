@@ -1,0 +1,21 @@
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'kotlin'
+    id 'kotlin-kapt'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
+    implementation project(path: ':hook-annotator')
+    implementation  "com.google.auto.service:auto-service:1.0"
+    kapt "com.google.auto.service:auto-service:1.0"
+    implementation "com.squareup:kotlinpoet:1.8.0"
+
+}
