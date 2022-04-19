@@ -2,10 +2,18 @@ cmake_minimum_required(VERSION 3.18.1)
 
 project("test")
 
+include_directories( ./ )
+
+aux_source_directory(./ SRC_ROOT)
+aux_source_directory(utils SRC_UTIL)
+
 add_library(
         virtual
         SHARED
-        VmCore.cpp)
+        VmCore.cpp
+        ${SRC_ROOT}
+        ${SRC_UTIL}
+)
 
 find_library(
         log-lib

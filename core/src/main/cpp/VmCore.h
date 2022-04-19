@@ -6,27 +6,24 @@
 #define VIRTUALBOX_VMCORE_H
 #include <jni.h>
 #include "util/log.h"
+#include "ArtMethod.h"
+
 #define VM_CORE_CLASS "com/virtual/box/core/hook/core/VmCore"
 
-const static JNINativeMethod jniNativeMethods[] = {
+int initVm(int android_level);
 
-};
+/**
+ * register VmCore class Native Method
+ * @return register success true, fail false
+ */
+int registerVmNativeMethod();
 
-class VmCore{
-public:
-    static int android_level;
-    static JavaVM *vm;
-    static JNIEnv *env;
-    static jclass vmCoreClass;
-public:
-    /**
-     * 虚拟应用核心类，处理NativeHook
-     * @return
-     */
-    static int init();
+int registerOffsetNativeMethod();
 
-private:
-    static int registerNativeMethod();
-};
-
+static struct {
+    int android_level;
+    JavaVM *vm;
+    JNIEnv *env;
+    jclass vmCoreClass;
+}VmEnv;
 #endif //VIRTUALBOX_VMCORE_H

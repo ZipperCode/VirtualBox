@@ -5,4 +5,6 @@ package com.virtual.box.core.hook.core;
  * @date 2022/4/19
  **/
 public class VmCore {
+
+    public static native int init();
 }

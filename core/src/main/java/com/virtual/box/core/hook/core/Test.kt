@@ -1,12 +1,10 @@
 package com.virtual.box.core.hook.core
 
 import com.virtual.box.core.hook.annotation.IHook
-import com.virtual.hook.annotator.HookMethod
 import java.lang.reflect.Method
 
 class Test {
 
-    @HookMethod(name = "scheduleReceiver")
     class ScheduleReceiver : IHook{
 
          fun hook(who: Any, method: Method, args: Array<out Any>?): Any? {
