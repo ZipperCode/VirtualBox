@@ -79,7 +79,8 @@ class HookProcessor: AbstractProcessor() {
             }
             val file = FileSpec.builder(targetPks.toString(),"${targetCls}ProxyMethodHelper")
                 .addType(helperCls.addFunction(helperConstructFunc.build()).build())
-            println("file = $file")
+
+
         }
 
         return true
