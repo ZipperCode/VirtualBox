@@ -5,7 +5,7 @@
 #ifndef VIRTUALBOX_VMCORE_H
 #define VIRTUALBOX_VMCORE_H
 #include <jni.h>
-#include "util/log.h"
+#include "utils/log.h"
 #include "ArtMethod.h"
 
 #define VM_CORE_CLASS "com/virtual/box/core/hook/core/VmCore"

@@ -11,6 +11,7 @@ add_library(
         virtual
         SHARED
         VmCore.cpp
+        JniHook.cpp
         ${SRC_ROOT}
         ${SRC_UTIL}
 )
