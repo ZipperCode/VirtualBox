@@ -1,5 +1,5 @@
 #include "JniHook.h"
-#include "ArtMethod.h"
+#include "ArtMethodHandle.h"
 
 int handle_hook_native_func(
         JNIEnv *env, const char *class_name,
@@ -31,21 +31,21 @@ int handle_hook_native_func(
     };
 
     // 检查是否是native方法
-    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethod::GetArtMethodPtr(env, clazz, method));
-    if (!ArtMethod::CheckNativeMethod(pArtMethod)) {
+    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethodHandle::GetArtMethodPtr(env, clazz, method));
+    if (!ArtMethodHandle::CheckNativeMethod(pArtMethod)) {
         ALOGE("hookNativeFunc >> check flags error. class：%s, method：%s", class_name, method_name);
         return false;
     }
     // 拿到art函数指针 赋值到 orig_fun中，完成native方法的hook
-    *orig_fun = reinterpret_cast<void *>(pArtMethod[ArtMethod::getArtMethodNativeOffset()]);
+    *orig_fun = reinterpret_cast<void *>(pArtMethod[ArtMethodHandle::getArtMethodNativeOffset()]);
     // 将java native方法注册为自定义的方法
     if (env->RegisterNatives(clazz, gMethods, 1) < 0) {
         ALOGE("hookNativeFunc >> jni hook error. class：%s, method：%s", class_name, method_name);
         return JNI_FALSE;
     }
     // 添加fastNative优化
-    if (ArtMethod::getAndroidLevel() >= __ANDROID_API_O__){
-        ArtMethod::AddAccessFlags(pArtMethod, kAccFastNative);
+    if (ArtMethodHandle::getAndroidLevel() >= __ANDROID_API_O__){
+        ArtMethodHandle::AddAccessFlags(pArtMethod, kAccFastNative);
     }
     return JNI_TRUE;
 }
@@ -75,11 +75,13 @@ int handle_hook_java_func(
     }
 
     // 检查是否是native方法
-    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethod::GetArtMethodPtr(env, clazz, method));
-    if (ArtMethod::CheckNativeMethod(pArtMethod)) {
+    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethodHandle::GetArtMethodPtr(env, clazz, method));
+    if (ArtMethodHandle::CheckNativeMethod(pArtMethod)) {
         ALOGE("hookNativeFunc >> check flags error: has native func class：%s, method：%s", class_name, method_name);
         return false;
     }
+    // 将java方法设置成native方法
+    ArtMethodHandle::AddNativeAccessFlag(pArtMethod);
 
     // 将c函数转换为jniNative函数
     JNINativeMethod gMethods[] = {

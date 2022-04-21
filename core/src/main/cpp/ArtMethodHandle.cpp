@@ -1,4 +1,4 @@
-#include "ArtMethod.h"
+#include "ArtMethodHandle.h"
 
 __attribute__((section (".mytext")))  JNICALL void native_offset
         (JNIEnv *env, jclass obj) {
@@ -8,19 +8,19 @@ __attribute__((section (".mytext")))  JNICALL void native_offset2
         (JNIEnv *env, jclass obj) {
 }
 
-JNIEnv *ArtMethod::sJniEnv = nullptr;
-int ArtMethod::sAndroidLevel = 0;
-bool ArtMethod::sInitArtMethodOffsetStatus = false;
-size_t ArtMethod::sArtMethodAccFlagOffset = 0;
-size_t ArtMethod::sArtMethodNativeOffset = 0;
-size_t ArtMethod::sArtMethodSize = 0;
+JNIEnv *ArtMethodHandle::sJniEnv = nullptr;
+int ArtMethodHandle::sAndroidLevel = 0;
+bool ArtMethodHandle::sInitArtMethodOffsetStatus = false;
+size_t ArtMethodHandle::sArtMethodAccFlagOffset = 0;
+size_t ArtMethodHandle::sArtMethodNativeOffset = 0;
+size_t ArtMethodHandle::sArtMethodSize = 0;
 
-int ArtMethod::InitArtMethod(JNIEnv *env, int android_level) {
+int ArtMethodHandle::InitArtMethod(JNIEnv *env, int android_level) {
     if (registerArtMethod(env) == JNI_FALSE) {
         ALOGE("register java art method fail");
         return JNI_FALSE;
     }
-    ArtMethod::sAndroidLevel = android_level;
+    ArtMethodHandle::sAndroidLevel = android_level;
     jclass clazz = env->FindClass(JAVA_ART_METHOD);
     jmethodID offset1MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_1, OFFSET_METHOD_SIGN);
     jmethodID offset2MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_2, OFFSET_METHOD_SIGN);
@@ -77,37 +77,37 @@ int ArtMethod::InitArtMethod(JNIEnv *env, int android_level) {
 }
 
 
-uint32_t ArtMethod::GetAccessFlags(const uint32_t *pArtMethod) {
+uint32_t ArtMethodHandle::GetAccessFlags(const uint32_t *pArtMethod) {
     return *(pArtMethod + getArtMethodAccFlagOffset());
 }
 
-void ArtMethod::SetAccessFlags(uint32_t *pArtMethod, uint32_t flags) {
+void ArtMethodHandle::SetAccessFlags(uint32_t *pArtMethod, uint32_t flags) {
     *(pArtMethod + getArtMethodAccFlagOffset()) = flags;
 }
 
-long ArtMethod::CalculateArtMethodFlag(uint32_t *pArtMethod) {
+long ArtMethodHandle::CalculateArtMethodFlag(uint32_t *pArtMethod) {
 
     return 0;
 }
 
-void ArtMethod::AddNativeAccessFlag(uint32_t *pArtMethod) {
+void ArtMethodHandle::AddNativeAccessFlag(uint32_t *pArtMethod) {
     uint32_t oldFlag = GetAccessFlags(pArtMethod);
     uint32_t newFlag = oldFlag | kAccNative;
     SetAccessFlags(pArtMethod, newFlag);
 }
 
-void ArtMethod::AddAccessFlags(uintptr_t *pArtMethod, uint32_t flag) {
+void ArtMethodHandle::AddAccessFlags(uintptr_t *pArtMethod, uint32_t flag) {
     uint32_t oldFlags = GetAccessFlags(pArtMethod);
     uint32_t newFlags = oldFlags | flag;
     SetAccessFlags(pArtMethod, newFlags);
 }
 
-bool ArtMethod::CheckNativeMethod(uintptr_t *pArtMethod) {
+bool ArtMethodHandle::CheckNativeMethod(uintptr_t *pArtMethod) {
     uint32_t oldFlags = GetAccessFlags(pArtMethod);
     return (oldFlags & kAccNative) == oldFlags;
 }
 
-void *ArtMethod::GetArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) {
+void *ArtMethodHandle::GetArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) {
     if (sAndroidLevel >= __ANDROID_API_Q__) {
         jclass executable = env->FindClass("java/lang/reflect/Executable");
         jfieldID artId = env->GetFieldID(executable, "artMethod", "J");
@@ -118,7 +118,7 @@ void *ArtMethod::GetArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) 
     }
 }
 
-uint32_t ArtMethod::getJavaOffsetMethodAccFlag(JNIEnv *env) {
+uint32_t ArtMethodHandle::getJavaOffsetMethodAccFlag(JNIEnv *env) {
     uint32_t accFlag = 0;
     jclass executable = env->FindClass("java/lang/reflect/Executable");
     jfieldID accFlagFieldId = env->GetFieldID(executable, "accessFlags", "I");
@@ -129,7 +129,7 @@ uint32_t ArtMethod::getJavaOffsetMethodAccFlag(JNIEnv *env) {
     return accFlag;
 }
 
-int ArtMethod::registerArtMethod(JNIEnv *env) {
+int ArtMethodHandle::registerArtMethod(JNIEnv *env) {
     jclass clazz = env->FindClass(JAVA_ART_METHOD);
     JNINativeMethod gNativeArtMethods[] = {
             {OFFSET_METHOD_1, OFFSET_METHOD_SIGN, (void *) native_offset},
@@ -142,7 +142,7 @@ int ArtMethod::registerArtMethod(JNIEnv *env) {
     return JNI_TRUE;
 }
 
-void ArtMethod::toString() {
+void ArtMethodHandle::toString() {
     ALOGD("========================== ArtMethod Start ==========================")
     ALOGD(">> sAndroidLevel                 = %d", sAndroidLevel)
     ALOGD(">> sInitArtMethodOffsetStatus    = %d", sInitArtMethodOffsetStatus)
@@ -150,6 +150,17 @@ void ArtMethod::toString() {
     ALOGD(">> sArtMethodNativeOffset        = %d", sArtMethodNativeOffset)
     ALOGD(">> sArtMethodSize                = %d", sArtMethodSize)
     ALOGD("========================== ArtMethod End ==========================")
+}
+
+void ArtMethodHandle::printArtMethod(uintptr_t *pArtMethod) {
+    toString();
+    ALOGD("========================== ArtMethod Struct ==========================")
+    ALOGD(">> pArtMethod Address                 = %p", pArtMethod)
+    ALOGD(">> sInitArtMethodOffsetStatus    = %d", sInitArtMethodOffsetStatus)
+    ALOGD(">> sArtMethodAccFlagOffset       = %d", sArtMethodAccFlagOffset)
+    ALOGD(">> sArtMethodNativeOffset        = %d", sArtMethodNativeOffset)
+    ALOGD(">> sArtMethodSize                = %d", sArtMethodSize)
+    ALOGD("========================== ArtMethod Struct ==========================")
 }
 
 

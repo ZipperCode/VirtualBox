@@ -39,7 +39,7 @@ static constexpr uint32_t kAccFastNative =            0x00080000;  // method (ru
 static constexpr uint32_t kAccCriticalNative =        0x00200000;  // method (runtime; native only)
 
 
-class ArtMethod{
+class ArtMethodHandle{
 private:
     static JNIEnv* sJniEnv;
     static int sAndroidLevel;
@@ -50,6 +50,12 @@ public:
     static size_t sArtMethodSize;
 
 public:
+    /**
+     * 初始化ArtMethod方
+     * @param env
+     * @param android_level
+     * @return
+     */
     static int InitArtMethod(JNIEnv *env, int android_level);
 
     static long CalculateArtMethodFlag(uint32_t * pArtMethod);
@@ -109,6 +115,8 @@ public:
     }
 
     static void toString();
+
+    static void printArtMethod(uintptr_t* pArtMethod);
 };
-static ArtMethod gArtMethod;
+static ArtMethodHandle gArtMethod;
 #endif
