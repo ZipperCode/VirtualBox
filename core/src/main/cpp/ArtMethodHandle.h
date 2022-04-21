@@ -48,6 +48,10 @@ public:
     static size_t sArtMethodAccFlagOffset;
     static size_t sArtMethodNativeOffset;
     static size_t sArtMethodSize;
+    static uint32_t sArtMethodDexCodeItemOffset;
+    static uint32_t sArtMethodDexCodeItemOffsetValue;
+    static uint32_t sArtMethodDexMethodIndexOffset;
+    static uint32_t sArtMethodDexMethodIndexValue;
 
 public:
     /**
@@ -64,7 +68,7 @@ public:
 
     static uint32_t GetAccessFlags(const uint32_t * pArtMethod);
 
-    static void  SetAccessFlags(uint32_t* pArtMethod, uint32_t flags);
+    static bool SetAccessFlags(uint32_t* pArtMethod, uint32_t flags);
     /**
      * 给普通方法添加native标识
      * @param pArtMethod
@@ -75,6 +79,9 @@ public:
 
     static bool CheckNativeMethod(uintptr_t* pArtMethod);
 
+    static bool ClearFastNativeFlag(uintptr_t *art_method);
+
+    static bool ClearAccessFlag(uintptr_t *art_method, uint32_t flag);
 private:
     static int registerArtMethod(JNIEnv *env);
 

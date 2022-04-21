@@ -11,6 +11,9 @@ static struct {
 
 /**
  * hook jni方法
+ * 通过获取ArtMethod方法的指针使用动态注册的方式
+ * 将新函数注册为原函数
+ *
  * @param env               env环境
  * @param class_name        要hook的class
  * @param method_name       hook的方法名
@@ -26,11 +29,6 @@ int handle_hook_native_func(
         void *new_fun, void **orig_fun, bool is_static
 );
 
-int handle_hook_java_func(
-        JNIEnv *env, const char *class_name,
-        const char *method_name, const char *sign,
-        void *new_fun, void **orig_fun, bool is_static
-        );
 
 
 #endif
