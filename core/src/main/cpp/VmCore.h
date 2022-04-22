@@ -26,4 +26,14 @@ static struct {
     JNIEnv *env;
     jclass vmCoreClass;
 }VmEnv;
+
+
+class VmCore{
+public:
+    static int sAndroidLevel;
+    static JavaVM *sJavaVm;
+    static JNIEnv *sJNIEnv;
+    static jclass sVmCoreClass;
+};
+
 #endif //VIRTUALBOX_VMCORE_H

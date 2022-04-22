@@ -11,9 +11,9 @@ __attribute__((section (".mytext")))  JNICALL void native_offset2
 JNIEnv *ArtMethodHandle::sJniEnv = nullptr;
 int ArtMethodHandle::sAndroidLevel = 0;
 bool ArtMethodHandle::sInitArtMethodOffsetStatus = false;
-size_t ArtMethodHandle::sArtMethodAccFlagOffset = 0;
-size_t ArtMethodHandle::sArtMethodNativeOffset = 0;
-size_t ArtMethodHandle::sArtMethodSize = 0;
+uint32_t ArtMethodHandle::sArtMethodAccFlagOffset = 0;
+uint32_t ArtMethodHandle::sArtMethodNativeOffset = 0;
+uint32_t ArtMethodHandle::sArtMethodSize = 0;
 
 uint32_t ArtMethodHandle::sArtMethodDexCodeItemOffset = 0;
 uint32_t ArtMethodHandle::sArtMethodDexCodeItemOffsetValue = 0;
@@ -21,7 +21,7 @@ uint32_t ArtMethodHandle::sArtMethodDexMethodIndexOffset = 0;
 uint32_t ArtMethodHandle::sArtMethodDexMethodIndexValue = 0;
 
 
-int ArtMethodHandle::InitArtMethod(JNIEnv *env, int android_level) {
+int ArtMethodHandle::initArtMethod(JNIEnv *env, int android_level) {
     if (registerArtMethod(env) == JNI_FALSE) {
         ALOGE("register java art method fail");
         return JNI_FALSE;
@@ -31,16 +31,16 @@ int ArtMethodHandle::InitArtMethod(JNIEnv *env, int android_level) {
     jmethodID offset1MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_1, OFFSET_METHOD_SIGN);
     jmethodID offset2MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_2, OFFSET_METHOD_SIGN);
     // 获取jni方法对应的方法内存指针
-    void *nativeOffset = GetArtMethodPtr(env, clazz, offset1MethodId);
-    void *nativeOffset2 = GetArtMethodPtr(env, clazz, offset2MethodId);
+    void *nativeOffset = getArtMethodPtr(env, clazz, offset1MethodId);
+    void *nativeOffset2 = getArtMethodPtr(env, clazz, offset2MethodId);
 
     ALOGD("ArtMethod >> offset1MethodId = %p, nativeOffset = %p", offset1MethodId, nativeOffset)
     ALOGD("ArtMethod >> offset2MethodId = %p, nativeOffset2 = %p", offset1MethodId, nativeOffset)
     // 得到两个相邻Native方法直接的偏移得出ArtMethod的大小
     sArtMethodSize = (size_t) nativeOffset2 - (size_t) nativeOffset;
     auto jniOffset1Method = native_offset;
-    auto artMethod = reinterpret_cast<uintptr_t *>(nativeOffset);
-    for (int i = 0; i < sArtMethodSize; ++i) {
+    auto artMethod = reinterpret_cast<uint8_t *>(nativeOffset);
+    for (int i = 0; i < sArtMethodSize; i++) {
         if (reinterpret_cast<void *>(artMethod[i]) == jniOffset1Method) {
             sArtMethodNativeOffset = i;
             break;
@@ -60,8 +60,8 @@ int ArtMethodHandle::InitArtMethod(JNIEnv *env, int android_level) {
     //            uint16_t method_index_;
     //            uint16_t hotness_count_;
     //};
-    auto pArtMethodStart = reinterpret_cast<uint32_t *>(artMethod);
-    auto customAccFlag = GetOffsetMethodFlag();
+    auto pArtMethodStart = reinterpret_cast<uint8_t *>(artMethod);
+    auto customAccFlag = getOffsetMethodFlag();
     for (int i = 0; i < sArtMethodSize; ++i) {
         auto offset = i * sizeof(uint32_t);
         // 结构值，得到内存值
@@ -86,41 +86,41 @@ int ArtMethodHandle::InitArtMethod(JNIEnv *env, int android_level) {
 }
 
 
-uint32_t ArtMethodHandle::GetAccessFlags(const uint32_t *pArtMethod) {
-    return *(pArtMethod + getArtMethodAccFlagOffset());
+uint32_t ArtMethodHandle::getAccessFlags(void *pArtMethod) {
+    return *(reinterpret_cast<uint8_t*>(pArtMethod) + sArtMethodAccFlagOffset);
 }
 
-bool ArtMethodHandle::SetAccessFlags(uint32_t *pArtMethod, uint32_t flags) {
-    *(pArtMethod + getArtMethodAccFlagOffset()) = flags;
+bool ArtMethodHandle::setAccessFlags(void *pArtMethod, uint32_t flags) {
+    *(reinterpret_cast<uint8_t*>(pArtMethod) + sArtMethodAccFlagOffset) = flags;
     return true;
 }
 
-long ArtMethodHandle::CalculateArtMethodFlag(uint32_t *pArtMethod) {
+long ArtMethodHandle::calculateArtMethodFlag(void *pArtMethod) {
 
     return 0;
 }
 
-void ArtMethodHandle::AddNativeAccessFlag(uint32_t *pArtMethod) {
-    uint32_t oldFlag = GetAccessFlags(pArtMethod);
+void ArtMethodHandle::addNativeAccessFlag(void *pArtMethod) {
+    uint32_t oldFlag = getAccessFlags(pArtMethod);
     uint32_t newFlag = oldFlag | kAccNative;
-    SetAccessFlags(pArtMethod, newFlag);
+    setAccessFlags(pArtMethod, newFlag);
 }
 
-void ArtMethodHandle::AddAccessFlags(uintptr_t *pArtMethod, uint32_t flag) {
-    uint32_t oldFlags = GetAccessFlags(pArtMethod);
+void ArtMethodHandle::addAccessFlags(void *pArtMethod, uint32_t flag) {
+    uint32_t oldFlags = getAccessFlags(pArtMethod);
     uint32_t newFlags = oldFlags | flag;
-    SetAccessFlags(pArtMethod, newFlags);
+    setAccessFlags(pArtMethod, newFlags);
 }
 
-bool ArtMethodHandle::CheckNativeMethod(uintptr_t *pArtMethod) {
-    uint32_t oldFlags = GetAccessFlags(pArtMethod);
+bool ArtMethodHandle::checkNativeMethod(void *pArtMethod) {
+    uint32_t oldFlags = getAccessFlags(pArtMethod);
     return (oldFlags & kAccNative) == oldFlags;
 }
 
-bool ArtMethodHandle::ClearFastNativeFlag(uintptr_t *art_method) {
+bool ArtMethodHandle::clearFastNativeFlag(void *art_method) {
     // FastNative
     return sAndroidLevel < __ANDROID_API_P__ &&
-           ClearAccessFlag(art_method, kAccFastNative);
+            clearAccessFlag(art_method, kAccFastNative);
 }
 
 /**
@@ -129,13 +129,13 @@ bool ArtMethodHandle::ClearFastNativeFlag(uintptr_t *art_method) {
  * @param flag          标识符
  * @return
  */
-bool ArtMethodHandle::ClearAccessFlag(uintptr_t *art_method, uint32_t flag) {
-    uint32_t old_flag = GetAccessFlags(art_method);
+bool ArtMethodHandle::clearAccessFlag(void *art_method, uint32_t flag) {
+    uint32_t old_flag = getAccessFlags(art_method);
     uint32_t new_flag = old_flag & ~flag;
-    return new_flag != old_flag && SetAccessFlags(art_method, new_flag);
+    return new_flag != old_flag && setAccessFlags(art_method, new_flag);
 }
 
-void *ArtMethodHandle::GetArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) {
+void *ArtMethodHandle::getArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) {
     // Android11 后获取artMethod指针通过反射，11以前methodId就是ArtMethod指针
     if (sAndroidLevel >= __ANDROID_API_Q__) {
         jclass executable = env->FindClass("java/lang/reflect/Executable");
@@ -190,7 +190,7 @@ void ArtMethodHandle::printArtMethod(uintptr_t *pArtMethod) {
     }else{
         ALOGD(">> pArtMethod JavaMethodId            = %p", pArtMethod)
     }
-    ALOGD(">> pArtMethod AccessFlags             = %x", GetAccessFlags(pArtMethod))
+    ALOGD(">> pArtMethod AccessFlags             = %x", getAccessFlags(pArtMethod))
     ALOGD(">> pArtMethod DexCodeItemOffset       = %d", *(pArtMethod + sArtMethodDexCodeItemOffset))
     ALOGD(">> pArtMethod DexMethodIndex          = %d", *(pArtMethod + sArtMethodDexMethodIndexOffset))
     ALOGD("========================== ArtMethod Struct ==========================")

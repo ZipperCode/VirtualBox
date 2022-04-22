@@ -2,6 +2,7 @@
 #define VIRTUAL_BOX_UNIX_FILESYSTEM_HOOK_H
 
 #include "BaseHook.h"
+#include "IoRedirect.h"
 
 class UnixFileSystemHook : public BaseHook {
 public:

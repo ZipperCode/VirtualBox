@@ -45,9 +45,9 @@ private:
     static int sAndroidLevel;
 public:
     static bool sInitArtMethodOffsetStatus;
-    static size_t sArtMethodAccFlagOffset;
-    static size_t sArtMethodNativeOffset;
-    static size_t sArtMethodSize;
+    static uint32_t sArtMethodAccFlagOffset;
+    static uint32_t sArtMethodNativeOffset;
+    static uint32_t sArtMethodSize;
     static uint32_t sArtMethodDexCodeItemOffset;
     static uint32_t sArtMethodDexCodeItemOffsetValue;
     static uint32_t sArtMethodDexMethodIndexOffset;
@@ -60,28 +60,28 @@ public:
      * @param android_level
      * @return
      */
-    static int InitArtMethod(JNIEnv *env, int android_level);
+    static int initArtMethod(JNIEnv *env, int android_level);
 
-    static long CalculateArtMethodFlag(uint32_t * pArtMethod);
+    static long calculateArtMethodFlag(void* pArtMethod);
 
-    static void* GetArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId);
+    static void* getArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId);
 
-    static uint32_t GetAccessFlags(const uint32_t * pArtMethod);
+    static uint32_t getAccessFlags(void * pArtMethod);
 
-    static bool SetAccessFlags(uint32_t* pArtMethod, uint32_t flags);
+    static bool setAccessFlags(void* pArtMethod, uint32_t flags);
     /**
      * 给普通方法添加native标识
      * @param pArtMethod
      */
-    static void AddNativeAccessFlag(uint32_t * pArtMethod);
+    static void addNativeAccessFlag(void * pArtMethod);
 
-    static void AddAccessFlags(uintptr_t* pArtMethod, uint32_t flag);
+    static void addAccessFlags(void* pArtMethod, uint32_t flag);
 
-    static bool CheckNativeMethod(uintptr_t* pArtMethod);
+    static bool checkNativeMethod(void* pArtMethod);
 
-    static bool ClearFastNativeFlag(uintptr_t *art_method);
+    static bool clearFastNativeFlag(void *art_method);
 
-    static bool ClearAccessFlag(uintptr_t *art_method, uint32_t flag);
+    static bool clearAccessFlag(void *art_method, uint32_t flag);
 private:
     static int registerArtMethod(JNIEnv *env);
 
@@ -91,19 +91,19 @@ public:
         return sAndroidLevel;
     }
 
-    static long getArtMethodAccFlagOffset(){
+    static uint32_t getArtMethodAccFlagOffset(){
         return sArtMethodAccFlagOffset;
     }
 
-    static long getArtMethodNativeOffset(){
+    static uint32_t getArtMethodNativeOffset(){
         return sArtMethodNativeOffset;
     }
 
-    static long getAerMethodSize(){
+    static uint32_t getAerMethodSize(){
         return sArtMethodSize;
     }
 
-    static uint32_t GetOffsetMethodFlag(){
+    static uint32_t getOffsetMethodFlag(){
         uint32_t flags = 0x0;
         flags = flags | kAccPublic;
         flags = flags | kAccStatic;
@@ -113,10 +113,10 @@ public:
             flags = flags | kAccPublicApi;
         }
 
-        ALOGD("GetOffsetMethodFlag: flag = %x", flags)
+        ALOGD("getOffsetMethodFlag: flag = %x", flags)
         if (sJniEnv != nullptr){
             auto reflectAccFlag = getJavaOffsetMethodAccFlag(sJniEnv);
-            ALOGD("GetOffsetMethodFlag: modifier = %x", reflectAccFlag)
+            ALOGD("getOffsetMethodFlag: modifier = %x", reflectAccFlag)
         }
         return flags;
     }
@@ -125,5 +125,4 @@ public:
 
     static void printArtMethod(uintptr_t* pArtMethod);
 };
-static ArtMethodHandle gArtMethod;
 #endif

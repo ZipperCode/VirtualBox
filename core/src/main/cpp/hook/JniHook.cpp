@@ -31,14 +31,14 @@ int handle_hook_native_func(
     };
 
     // 检查是否是native方法
-    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethodHandle::GetArtMethodPtr(env, clazz, method));
-    if (!ArtMethodHandle::CheckNativeMethod(pArtMethod)) {
+    auto pArtMethod = reinterpret_cast<uintptr_t *>(ArtMethodHandle::getArtMethodPtr(env, clazz, method));
+    if (!ArtMethodHandle::checkNativeMethod(pArtMethod)) {
         ALOGE("hookNativeFunc >> check flags error. class：%s, method：%s", class_name, method_name);
         return false;
     }
     // Android 8.0 ,8.1 必须清除 FastNative 标志才能注册成功,所以如果原来包含 FastNative 标志还得恢复,
     // 否者调用原方法可能会出现问题
-    ArtMethodHandle::ClearFastNativeFlag(pArtMethod);
+    ArtMethodHandle::clearFastNativeFlag(pArtMethod);
 
     // 拿到art函数指针 赋值到 orig_fun中，完成native方法的hook
     *orig_fun = reinterpret_cast<void *>(pArtMethod[ArtMethodHandle::getArtMethodNativeOffset()]);
@@ -49,7 +49,7 @@ int handle_hook_native_func(
     }
     // 添加fastNative优化
     if (ArtMethodHandle::getAndroidLevel() >= __ANDROID_API_O__){
-        ArtMethodHandle::AddAccessFlags(pArtMethod, kAccFastNative);
+        ArtMethodHandle::addAccessFlags(pArtMethod, kAccFastNative);
     }
     return JNI_TRUE;
 }
