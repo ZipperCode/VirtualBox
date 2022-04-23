@@ -1,34 +1,21 @@
-
-#ifndef VIRTUAL_BOX_JNI_HOOK_
-#define VIRTUAL_BOX_JNI_HOOK_
+#ifndef VIRTUAL_BOX_JNI_HOOK_H
+#define VIRTUAL_BOX_JNI_HOOK_H
 
 #include <jni.h>
-#include "utils/log.h"
+#include "FileSystemHookHandle.h"
+#include "TestHookHandle.h"
 
-static struct {
-    int android_level;
-} JniHookEnv;
+class JniHook {
+private:
+    static FileSystemHookHandle *sFileSystemHookHandle;
+    static TestKotlinNativeHookHandle *sTestKotlinNativeHookHandle;
+    static TestJavaNativeHookHandle *sTestJavaNativeHookHandle;
+public:
 
-/**
- * hook jni方法
- * 通过获取ArtMethod方法的指针使用动态注册的方式
- * 将新函数注册为原函数
- *
- * @param env               env环境
- * @param class_name        要hook的class
- * @param method_name       hook的方法名
- * @param sign              hook的方法签名 (II)V
- * @param new_fun           代理函数的指针
- * @param orig_fun          源函数定义，函数定义的指针地址，传入时不需要有实际值
- * @param is_static         是否是静态函数
- * @return JNI_TRUE JNI_FALSE
- */
-int handle_hook_native_func(
-        JNIEnv *env, const char *class_name,
-        const char *method_name, const char *sign,
-        void *new_fun, void **orig_fun, bool is_static
-);
+    static void initHookEnv(JNIEnv *env);
 
+    static void enableNativeHook(JNIEnv*env);
+};
 
 
 #endif

@@ -11,11 +11,10 @@ aux_source_directory(hook SRC_NATIVE_HOOK)
 add_library(
         virtual
         SHARED
-        VmCore.cpp
-        IoRedirect.cpp
         ${SRC_NATIVE_HOOK}
         ${SRC_UTIL}
         ${SRC_ROOT}
+        VirtualCore.cpp
 )
 
 find_library(

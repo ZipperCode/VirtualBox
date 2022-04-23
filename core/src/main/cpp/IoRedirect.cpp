@@ -7,7 +7,6 @@ jmethodID IoRedirect::sFileGetAbsolutePathMethod = nullptr;
 jmethodID IoRedirect::sFileConstructorMethod = nullptr;
 
 bool IoRedirect::initRedirectRule(JNIEnv *env, jobjectArray originPaths, jobjectArray targetPaths) {
-    sHasInit = initJavaIoEnv(env);
     if (!sHasInit){
         ALOGE("initRedirectRule >> error: 初始化失败")
         return false;
@@ -16,7 +15,7 @@ bool IoRedirect::initRedirectRule(JNIEnv *env, jobjectArray originPaths, jobject
     jint originSize = env->GetArrayLength(originPaths);
     jint targetSize = env->GetArrayLength(targetPaths);
     if (originSize != targetSize){
-        ALOGE("initRedirectRule >> error: originSize != targetSize : originSize = $d, targetSize = %d", originSize, targetSize)
+        ALOGE("initRedirectRule >> error: originSize != targetSize : originSize = %d, targetSize = %d", originSize, targetSize)
         return false;
     }
     jboolean isCopy = false;
@@ -48,6 +47,10 @@ bool IoRedirect::initRedirectRule(JNIEnv *env, jobjectArray originPaths, jobject
 const char *IoRedirect::handleRedirectPath(const char *path) {
     if (path == nullptr || strlen(path) == 0){
         ALOGE("handleRedirectPath >> 参数 path == null")
+        return path;
+    }
+    if (sRedirectMap.empty()){
+        ALOGE("handleRedirectPath >> rule empty")
         return path;
     }
     const char *redirectOriginRule = nullptr;
@@ -109,21 +112,21 @@ bool IoRedirect::initJavaIoEnv(JNIEnv *env) {
     if (sFileClass == nullptr){
         ALOGE("initJavaIoEnv >> 未找到 %s 类", JAVA_FILE_CLASS)
         env->ExceptionClear();
-        return false;
+        return sHasInit = false;
     }
     sFileGetAbsolutePathMethod = env->GetMethodID(sFileClass, JAVA_FILE_GET_ABSOLUTE_PATH_METHOD, JAVA_FILE_GET_ABSOLUTE_PATH_METHOD_SIGN);
     if (sFileGetAbsolutePathMethod == nullptr){
         ALOGE("initJavaIoEnv >> 未找到 %s 方法", JAVA_FILE_GET_ABSOLUTE_PATH_METHOD)
         env->ExceptionClear();
-        return false;
+        return sHasInit = false;
     }
     sFileConstructorMethod = env->GetMethodID(sFileClass, "<init>",JAVA_FILE_CONSTRUCTOR_PATH_METHOD_SIGN);
     if (sFileConstructorMethod == nullptr){
         ALOGE("initJavaIoEnv >> 未找到File的构造方法")
         env->ExceptionClear();
-        return false;
+        return sHasInit = false;
     }
-    return true;
+    return sHasInit = true;
 }
 
 

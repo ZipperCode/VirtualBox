@@ -1,21 +1,23 @@
 package com.virtual.box.core.manager
 
-import android.util.Log
 import com.virtual.box.base.util.log.L
-import com.virtual.box.core.VirtualCore
+import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.annotation.IHook
+import com.virtual.box.core.hook.core.VmCore
+import com.virtual.test.NativeLib
 
 /**
  * hook管理程序，同一处理需要hook的服务等
  */
 internal object HookManager {
     const val TAG = "HookManager"
-
+    private val logger = Logger.virtualLogger()
     private val mInjectors: MutableMap<Class<*>, IHook> = HashMap()
 
     fun initHook() {
         // 主进程和服务进程不处理hook
-        if (!VirtualCore.get().isVirtualProcess){
+        if (!VirtualBox.get().isVirtualProcess){
             L.vd("[%s] >> 初始化hook >> 非虚拟进程，不处理hook", TAG)
             return
         }
@@ -55,6 +57,14 @@ internal object HookManager {
 //        }
 ////        addInjector(ApplicationThreadProxy())
 //        injectAll()
+    }
+
+    fun nativeHook(){
+        logger.e(">> 第一次Hook之后加载So库Native方法")
+        NativeLib.kotlinDynamicRegister()
+//        VmCore.nativeHook()
+//        logger.e(">> 第二次Hook之后调用Native方法")
+//        NativeLib.kotlinStaticRegister()
     }
 
 }

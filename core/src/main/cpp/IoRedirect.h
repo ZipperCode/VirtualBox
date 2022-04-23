@@ -45,8 +45,6 @@ public:
     static jstring handleRedirectPath(JNIEnv *env, jstring filePath);
 
     static jobject handleRedirectPath(JNIEnv *env, jobject fileObj);
-
-private:
     static bool initJavaIoEnv(JNIEnv *env);
 };
 #endif

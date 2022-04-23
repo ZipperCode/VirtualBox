@@ -6,5 +6,15 @@ package com.virtual.box.core.hook.core;
  **/
 public class VmCore {
 
-    public static native int init();
+    static {
+        System.loadLibrary("virtual");
+    }
+
+    public static native int init(int buildSdkVersion, boolean isDebug);
+
+    public static native void addIoRules(String[] originPaths, String[] targetPaths);
+
+    public static native void nativeHook();
+
+    public static native String redirectPath(String originPath);
 }

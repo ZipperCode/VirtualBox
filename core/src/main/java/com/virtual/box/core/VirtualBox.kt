@@ -3,22 +3,21 @@ package com.virtual.box.core
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
-import android.content.Intent
+import android.os.Build
 import com.virtual.box.base.helper.SystemHelper
-import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
+import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.core.manager.HookManager
 import com.virtual.box.core.service.DaemonService
 import com.virtual.box.reflect.android.app.HActivityThread
 import me.weishu.reflection.Reflection
 
 @SuppressLint("StaticFieldLeak")
-class VirtualCore {
+class VirtualBox {
 
     private val logger = Logger.virtualLogger()
 
-    lateinit var application: Application
-        private set
     /**
      * 宿主的上下文
      */
@@ -40,6 +39,11 @@ class VirtualCore {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
+        VmCore.init(Build.VERSION.SDK_INT, true)
+        logger.e(">> 未加载So之前HookNative1")
+        VmCore.nativeHook()
+        logger.e(">> 未加载So之前HookNative2")
+        HookManager.nativeHook()
     }
 
     private fun initService(){
@@ -78,10 +82,10 @@ class VirtualCore {
         /**
          * 单例
          */
-        private val sVirtualCore = VirtualCore()
+        private val sVirtualCore = VirtualBox()
 
         @JvmStatic
-        fun get(): VirtualCore {
+        fun get(): VirtualBox {
             return sVirtualCore
         }
 
