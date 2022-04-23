@@ -76,5 +76,14 @@ int registerNativeMethod(JavaVM *jvm) {
 }
 
 
-
-
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_virtual_box_core_hook_core_VmCore_replaceMethod(JNIEnv *env, jclass clazz, jlong replace_method, jlong target_method) {
+    if (gVmCore == nullptr){
+        return -1;
+    }
+    memcpy(reinterpret_cast<void *const>(target_method),
+           reinterpret_cast<const void *>(replace_method),
+           ArtMethodHandle::sArtMethodSize * sizeof(uint32_t));
+    return 1;
+}

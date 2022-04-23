@@ -16,7 +16,7 @@ void JniHook::enableNativeHook(JNIEnv *env) {
 //    if (sTestJavaNativeHookHandle != nullptr){
 //        sTestJavaNativeHookHandle->nativeHook(env);
 //    }
-    if (sFileSystemHookHandle != nullptr){
-        sFileSystemHookHandle->nativeHook(env);
-    }
+//    if (sFileSystemHookHandle != nullptr){
+//        sFileSystemHookHandle->nativeHook(env);
+//    }
 }

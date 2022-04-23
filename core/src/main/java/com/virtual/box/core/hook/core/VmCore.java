@@ -1,5 +1,7 @@
 package com.virtual.box.core.hook.core;
 
+import java.lang.reflect.Method;
+
 /**
  * @author zhangzhipeng
  * @date 2022/4/19
@@ -17,4 +19,6 @@ public class VmCore {
     public static native void nativeHook();
 
     public static native String redirectPath(String originPath);
+
+    public static native long replaceMethod(long replaceMethod, long targetMethod);
 }
