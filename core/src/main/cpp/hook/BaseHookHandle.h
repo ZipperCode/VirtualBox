@@ -26,6 +26,8 @@ protected:
             env->ExceptionClear();
             return;
         }
+        // 正常情况下so库的加载和某个类一起，所以可以起到初始化so库作用，
+        // 至于加载地点不一致的地方，后续再看（系统库一般都很早会加载好）
         jobject initLibLoad = env->AllocObject(hookClass);
         if (initLibLoad != nullptr){
             env->DeleteLocalRef(initLibLoad);

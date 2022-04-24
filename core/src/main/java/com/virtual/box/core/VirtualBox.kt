@@ -9,9 +9,11 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
 import com.virtual.box.core.hook.TestHookHandle
 import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.core.hook.method.ArtMethod
 import com.virtual.box.core.manager.HookManager
 import com.virtual.box.core.service.DaemonService
 import com.virtual.box.reflect.android.app.HActivityThread
+import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import me.weishu.reflection.Reflection
 
 @SuppressLint("StaticFieldLeak")
@@ -40,6 +42,8 @@ class VirtualBox {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
+        val method = ArtMethod::class.java.getDeclaredMethod("nativeOffset")
+        logger.e(">> 反射获取artMethod指针 >> %d", System.identityHashCode(HExecutable.artMethod.get(method) ))
         VmCore.init(Build.VERSION.SDK_INT, true)
         logger.e(">> 未加载So之前HookNative1")
         VmCore.nativeHook()

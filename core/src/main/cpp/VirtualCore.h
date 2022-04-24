@@ -46,7 +46,7 @@ public:
 
 public:
 
-    void initVirtualEnv(JNIEnv* env, int android_level, bool debug) const;
+    void initVirtualEnv(JNIEnv* env, int android_level, bool debug);
 public:
     int getAndroidLevel() const{
         return androidLevel;

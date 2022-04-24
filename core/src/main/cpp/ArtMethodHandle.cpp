@@ -30,18 +30,21 @@ int ArtMethodHandle::initArtMethod(JNIEnv *env, int android_level) {
     jclass clazz = env->FindClass(JAVA_ART_METHOD);
     jmethodID offset1MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_1, OFFSET_METHOD_SIGN);
     jmethodID offset2MethodId = env->GetStaticMethodID(clazz, OFFSET_METHOD_2, OFFSET_METHOD_SIGN);
+
     // 获取jni方法对应的方法内存指针
     void *nativeOffset = getArtMethodPtr(env, clazz, offset1MethodId);
     void *nativeOffset2 = getArtMethodPtr(env, clazz, offset2MethodId);
 
-    ALOGD("ArtMethod >> offset1MethodId = %p, nativeOffset = %p", offset1MethodId, nativeOffset)
+    ALOGD("ArtMethod >> offset1MethodId = %p, nativeOffset  = %p", offset1MethodId, nativeOffset)
     ALOGD("ArtMethod >> offset2MethodId = %p, nativeOffset2 = %p", offset1MethodId, nativeOffset)
     // 得到两个相邻Native方法直接的偏移得出ArtMethod的大小
     sArtMethodSize = (size_t) nativeOffset2 - (size_t) nativeOffset;
+    ALOGD("ArtMethod >> sArtMethodSize = %d", sArtMethodSize)
     auto jniOffset1Method = native_offset;
-    auto artMethod = reinterpret_cast<uint32_t *>(nativeOffset);
+    auto artMethod = reinterpret_cast<size_t *>(nativeOffset);
+    ALOGD("ArtMethod >> artMethod = %p", artMethod)
     for (int i = 0; i < sArtMethodSize; i++) {
-        if (reinterpret_cast<void *>(artMethod[i]) == reinterpret_cast<void*>(jniOffset1Method)) {
+        if (reinterpret_cast<size_t *>(artMethod[i]) == reinterpret_cast<size_t*>(jniOffset1Method)) {
             sArtMethodNativeOffset = i;
             break;
         }
@@ -51,7 +54,7 @@ int ArtMethodHandle::initArtMethod(JNIEnv *env, int android_level) {
         sInitArtMethodOffsetStatus = false;
         return JNI_FALSE;
     }
-
+    ALOGD("ArtMethod >> 找到ArtMethod方法的偏移值 %d", sArtMethodNativeOffset)
     //class ArtMethod {
     //            uint32_t declaring_class_;
     //            uint32_t access_flags_;
@@ -148,11 +151,13 @@ bool ArtMethodHandle::clearAccessFlag(void *art_method, uint32_t flag) {
 void *ArtMethodHandle::getArtMethodPtr(JNIEnv *env, jclass clazz, jmethodID methodId) {
     // Android11 后获取artMethod指针通过反射，11以前methodId就是ArtMethod指针
     if (sAndroidLevel >= __ANDROID_API_Q__) {
+        ALOGE("需要使用反射获取ArtMethodId")
         jclass executable = env->FindClass("java/lang/reflect/Executable");
         jfieldID artId = env->GetFieldID(executable, "artMethod", "J");
         jobject method = env->ToReflectedMethod(clazz, methodId, true);
         return reinterpret_cast<void *>(env->GetLongField(method, artId));
     } else {
+        ALOGE("不需要使用反射获取ArtMethodId")
         return methodId;
     }
 }

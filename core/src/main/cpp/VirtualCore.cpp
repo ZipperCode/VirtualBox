@@ -11,7 +11,7 @@ const static JNINativeMethod jniNativeMethods[] = {
         {"nativeHook",   "()V",                                       (void *) nativeHook},
         {"redirectPath", "(Ljava/lang/String;)Ljava/lang/String;",    (jstring *) redirectPath}
 };
-const static VirtualCore *gVmCore;
+static VirtualCore *gVmCore;
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
     ALOGD(">> VirtualCore JNI OnLoad");
@@ -52,7 +52,8 @@ VirtualCore::VirtualCore(JavaVM *vm) {
     ALOGD(">> VirtualCore >> 获取当前线程id = %ld", mTid)
 }
 
-void VirtualCore::initVirtualEnv(JNIEnv *env, int android_level, bool debug) const {
+void VirtualCore::initVirtualEnv(JNIEnv *env, int android_level, bool debug) {
+    this->androidLevel = android_level;
     ArtMethodHandle::initArtMethod(env, this->androidLevel);
     IoRedirect::initJavaIoEnv(env);
     JniHook::initHookEnv(env);
@@ -72,18 +73,38 @@ int registerNativeMethod(JavaVM *jvm) {
         ALOGE(">> VirtualCore >> Register VirtualCore Native Method error")
         return JNI_EVERSION;
     }
+    ALOGE(">> VirtualCore Native 函数注册成功 %s", VM_CORE_CLASS)
     return JNI_VERSION_1_6;
 }
 
+struct ArtMethodContent{
+    uint8_t * originArtMethod;
+    uint8_t * targetArtMethod;
+} ;
 
-extern "C"
-JNIEXPORT jlong JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_virtual_box_core_hook_core_VmCore_replaceMethod(JNIEnv *env, jclass clazz, jlong replace_method, jlong target_method) {
     if (gVmCore == nullptr){
         return -1;
     }
-    memcpy(reinterpret_cast<void *const>(target_method),
-           reinterpret_cast<const void *>(replace_method),
+
+    const size_t artMethodUint8Size = ArtMethodHandle::sArtMethodSize * sizeof(uint32_t)
+
+    auto *originMethod  = reinterpret_cast<uint8_t *>(target_method);
+    auto *targetMethod  = reinterpret_cast<uint8_t *>(replace_method);
+
+    auto *copyOriginArtMethod = new ArtMethodContent();
+    uint8_t ** originHolder = new uint8_t[artMethodUint8Size]();
+    // 保存原artMethod内容
+    memccpy(holder, originMethod, artMethodUint8Size);
+    // 保存原ArtMethod方法内容的内存开始指针
+    copyOriginArtMethod->originArtMethod = holder;
+
+
+    ALOGE(">> VirtualCore >> 替换方法指针前 %p->%p",originMethod, targetMethod)
+    memcpy(originMethod,
+           targetMethod,
            ArtMethodHandle::sArtMethodSize * sizeof(uint32_t));
-    return 1;
+    ALOGE(">> VirtualCore >> 替换方法指针后 %p->%p",originMethod, targetMethod)
+    return reinterpret_cast<jlong>(originMethod);
 }
