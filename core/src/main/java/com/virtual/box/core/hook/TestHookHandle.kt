@@ -6,10 +6,12 @@ import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.util.*
+import kotlin.collections.HashMap
 
 class TestHookHandle: InvocationHandler {
 
-    private val obj: ITest = TestImpl()
+    private val obj: Any = TestImpl()
     private var proxy: ITest
 
     private val thisToObjArtMethodPtrMap: MutableMap<Long, Long> = mutableMapOf()
@@ -19,7 +21,7 @@ class TestHookHandle: InvocationHandler {
     private val proxyTargetMethodCache: HashMap<String, MethodHookInfo> = HashMap()
 
     private val filterMethodName = listOf(
-        ""
+        "toString","hashCode"
     )
 
     private var thisMethod: Method? = null
@@ -38,13 +40,23 @@ class TestHookHandle: InvocationHandler {
 
     private fun init(){
         val selfProxyDeclareMethods = javaClass.declaredMethods
-        val targetDeclareMethods = proxy.javaClass.declaredMethods
+        val targetDeclareMethods = if (proxy is Proxy){
+            proxy.javaClass.declaredMethods
+        }else{
+            val interList = mutableListOf<Method>()
+            for (inters in proxy.javaClass.interfaces) {
+                interList.addAll(inters.declaredMethods)
+            }
+            interList.toTypedArray()
+        }
+        System.err.println(">> selfProxyDeclareMethods 的方法 ${Arrays.toString(targetDeclareMethods)}")
+        System.err.println("> TestImplMethods ${Arrays.toString(proxy.javaClass.declaredMethods)}")
         for (selfProxyDeclareMethod in selfProxyDeclareMethods) {
             for (targetDeclareMethod in targetDeclareMethods) {
                 val methodIdentifier = MethodHookInfo.getMethodIdentifier(selfProxyDeclareMethod);
                 if (methodIdentifier == MethodHookInfo.getMethodIdentifier(targetDeclareMethod)){
                     System.err.println("> methodIdentifier = $methodIdentifier")
-                    val methodHookInfo = MethodHookInfo(selfProxyDeclareMethod)
+                    val methodHookInfo = MethodHookInfo(targetDeclareMethod, selfProxyDeclareMethod)
                     proxyTargetMethodCache[methodIdentifier] = methodHookInfo
                     System.err.println("> methodHookInfo = $methodHookInfo")
                 }
@@ -55,33 +67,27 @@ class TestHookHandle: InvocationHandler {
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
-        System.err.println("调用Invocation方法")
-        val key = MethodHookInfo.getMethodIdentifier(method)
-        if (!proxyTargetMethodCache.containsKey(key)){
+        val methodName = method.name
+        if (filterMethodName.contains(methodName)){
             return if (args == null){
                 method.invoke(obj)
             }else{
                 method.invoke(obj, args)
             }
         }
+        val key = MethodHookInfo.getMethodIdentifier(method)
+        System.err.println("调用Invocation方法 ${method.name} - ${method.declaringClass.name}")
+        System.err.println("obj = $obj proxy = ${proxy}")
+        if (!proxyTargetMethodCache.containsKey(key)){
+            return if (args == null){
+                method.invoke(proxy)
+            }else{
+                method.invoke(proxy, args)
+            }
+        }
         val methodHookInfo = proxyTargetMethodCache[key]!!
-        return methodHookInfo.checkAndSetProxyArtMethod(method).invoke(this, obj, args)
+        return methodHookInfo.checkAndSetOriginArtMethod(method).invoke(this, obj, args)
 
-//        val thisArtMethodPtr = HExecutable.artMethod.get(thisMethod)
-//        val targetArtMethodPtr = HExecutable.artMethod.get(method)
-//        if (!thisToObjArtMethodPtrMap.containsKey(thisArtMethodPtr)){
-//            thisToObjArtMethodPtrMap[thisArtMethodPtr] = targetArtMethodPtr
-//        }
-//        if (!objToThisArtMethodPtrMap.containsKey(targetArtMethodPtr)){
-//            objToThisArtMethodPtrMap[targetArtMethodPtr] = thisArtMethodPtr
-//        }
-//        println("> thisArtMethodPtr = $thisArtMethodPtr")
-//        println("> thisArtMethodPtr = $targetArtMethodPtr")
-//        VmCore.replaceMethod(thisArtMethodPtr, targetArtMethodPtr)
-//        println("> 替换成功, 调用方法执行")
-//        val result = method.invoke(this, )
-//        println("> 方法执行完成")
-//        return null
     }
 
     fun test(){
@@ -90,8 +96,8 @@ class TestHookHandle: InvocationHandler {
 
 
     fun todoMethod(){
-        proxy?.test()
-        proxy?.test()
+        proxy.test()
+        proxy.test()
     }
 }
 

@@ -1,5 +1,7 @@
 package com.virtual.box.core.hook.core;
 
+import com.virtual.box.core.hook.method.ArtMethod;
+
 import java.lang.reflect.Method;
 
 /**
@@ -21,4 +23,8 @@ public class VmCore {
     public static native String redirectPath(String originPath);
 
     public static native long replaceMethod(long replaceMethod, long targetMethod);
+
+    public static native long hookJavaMethod(Method proxyMethod, Method targetMethod);
+
+    public static native int restoreMethod(long methodContentPtr, long targetMethodPtr);
 }

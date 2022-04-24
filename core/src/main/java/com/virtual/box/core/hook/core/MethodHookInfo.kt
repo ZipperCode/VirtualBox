@@ -1,6 +1,7 @@
 package com.virtual.box.core.hook.core
 
 import com.virtual.box.reflect.java.lang.reflect.HExecutable
+import java.lang.Exception
 import java.lang.reflect.Method
 
 
@@ -10,6 +11,7 @@ import java.lang.reflect.Method
  * @date   2022/4/24
  **/
 class MethodHookInfo(
+    private val proxyMethod: Method,
     private val targetStubMethod: Method
 ) {
 
@@ -19,7 +21,7 @@ class MethodHookInfo(
 
     var result: Any? = null
 
-    private var proxyArtMethod: Long = -1
+    private var proxyArtMethod: Long = HExecutable.artMethod.get(proxyMethod)
 
     fun checkAndSetProxyArtMethod(method: Method): MethodHookInfo{
         val originProxyArtMethod = proxyArtMethod
@@ -29,22 +31,48 @@ class MethodHookInfo(
         return this
     }
 
+    fun checkAndSetOriginArtMethod(method: Method): MethodHookInfo{
+        val originOldArtMethod = originArtMethod
+        originArtMethod = HExecutable.artMethod.get(method)
+        System.err.println(">> originOldArtMethod   = $originOldArtMethod")
+        System.err.println(">> originArtMethod      = $originArtMethod")
+        return this
+    }
+
     fun invoke(proxyObj: Any?, originObj: Any?, args: Array<out Any?>?): Any?{
-        if (proxyArtMethod != -1L){
-            invokeProxyMethod(originObj, args)
-            if (hookResult){
-                return result
-            }
+        invokeProxyMethod(proxyObj, args)
+        if (hookResult){
+            return result
         }
-        return invokeOriginMethod(proxyObj, args)
+        return invokeOriginMethod(originObj, args)
+    }
+
+    fun invoke1(proxyObj: Any?, originObj: Any?, method: Method,args: Array<out Any?>?): Any?{
+        val targetMethodPtr = HExecutable.artMethod.get(method)
+        val proxyMethodPtr = HExecutable.artMethod.get(proxyMethod)
+        HExecutable.artMethod.set(method, proxyMethodPtr)
+        HExecutable.artMethod.set(proxyMethod, targetMethodPtr)
+        try {
+            if (args == null){
+                method.invoke(proxyObj)
+            }
+            method.invoke(originObj, args);
+        }catch (e: Exception){
+            e.printStackTrace()
+        }finally {
+            HExecutable.artMethod.set(method, targetMethodPtr)
+            HExecutable.artMethod.set(proxyMethod, proxyMethodPtr)
+        }
+        if (args == null){
+            return method.invoke(originObj)
+        }
+        return method.invoke(originObj, args);
     }
 
     private fun invokeProxyMethod(targetObj: Any?, args: Array<out Any?>?){
         System.err.println(">> 调用代理方法")
-        if (proxyArtMethod != -1L){
-            VmCore.replaceMethod(proxyArtMethod, originArtMethod)
-        }
         synchronized(this){
+            val holderPtr = VmCore.replaceMethod(proxyArtMethod, originArtMethod)
             try {
                 result = if (args == null){
                     targetStubMethod.invoke(targetObj)
@@ -56,9 +84,7 @@ class MethodHookInfo(
                 t.printStackTrace()
                 hookResult = false
             }finally {
-                if (proxyArtMethod != -1L){
-                    VmCore.replaceMethod(originArtMethod, proxyArtMethod)
-                }
+                VmCore.restoreMethod(holderPtr, proxyArtMethod)
             }
         }
     }
@@ -77,6 +103,7 @@ class MethodHookInfo(
 
 
     companion object{
+        @JvmStatic
         fun getMethodIdentifier(method: Method): String{
             return method.name + "#" + getParametersString(*method.parameterTypes)
         }

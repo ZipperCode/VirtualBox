@@ -7,6 +7,7 @@ import android.os.Build
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
+import com.virtual.box.core.hook.JavaTestHandle
 import com.virtual.box.core.hook.TestHookHandle
 import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.method.ArtMethod
@@ -49,7 +50,8 @@ class VirtualBox {
         VmCore.nativeHook()
         logger.e(">> 未加载So之前HookNative2")
 //        HookManager.nativeHook()
-        TestHookHandle().todoMethod()
+//        TestHookHandle().todoMethod()
+        JavaTestHandle().todoTest()
     }
 
     private fun initService(){
