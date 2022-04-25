@@ -56,7 +56,7 @@ class TestHookHandle: InvocationHandler {
                 val methodIdentifier = MethodHookInfo.getMethodIdentifier(selfProxyDeclareMethod);
                 if (methodIdentifier == MethodHookInfo.getMethodIdentifier(targetDeclareMethod)){
                     System.err.println("> methodIdentifier = $methodIdentifier")
-                    val methodHookInfo = MethodHookInfo(targetDeclareMethod, selfProxyDeclareMethod)
+                    val methodHookInfo = MethodHookInfo(selfProxyDeclareMethod)
                     proxyTargetMethodCache[methodIdentifier] = methodHookInfo
                     System.err.println("> methodHookInfo = $methodHookInfo")
                 }
@@ -86,7 +86,7 @@ class TestHookHandle: InvocationHandler {
             }
         }
         val methodHookInfo = proxyTargetMethodCache[key]!!
-        return methodHookInfo.checkAndSetOriginArtMethod(method).invoke(this, obj, args)
+        return methodHookInfo.invoke1(this, obj, method, args)
 
     }
 
@@ -106,4 +106,8 @@ class TestImpl: ITest{
         System.err.println("执行源函数的test方法")
     }
 
+    override fun test2(param1: Int, param2: String, param3: Any): String {
+        System.err.println("执行源函数的test2方法")
+        return "我是执行源函数返回的方法"
+    }
 }

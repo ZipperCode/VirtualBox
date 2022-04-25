@@ -2,6 +2,8 @@
 // Created by Zipper on 2022/4/19.
 //
 #include <unistd.h>
+#include <iostream>
+#include <string>
 #include "VirtualCore.h"
 #include "hook/BaseHookHandle.h"
 
@@ -77,21 +79,34 @@ int registerNativeMethod(JavaVM *jvm) {
     return JNI_VERSION_1_6;
 }
 
-//struct ArtMethodContent{
+//struct ArtMethodContentCopy{
 //    char * originArtMethod;
 //    char * targetArtMethod;
 //} ;
 
-class ArtMethodContent {
+class ArtMethodContentCopy {
 public:
     char *originArtMethod;
     char *targetArtMethod;
 
-    ArtMethodContent(char *origin_art_method, char *target_art_method) : originArtMethod(origin_art_method),
-                                                                         targetArtMethod(target_art_method) {
+    ArtMethodContentCopy(char &origin_art_method, char &target_art_method) {
+        originArtMethod = &origin_art_method;
+        targetArtMethod = &target_art_method;
     }
 
-    ~ArtMethodContent() {
+    ArtMethodContentCopy(size_t artMethodUInt8Size, jlong origin_method, jlong target_method){
+        auto *originMethod = reinterpret_cast<uint8_t *>(origin_method);
+        auto *targetMethod = reinterpret_cast<uint8_t *>(target_method);
+
+        originArtMethod = new char[artMethodUInt8Size]();
+        targetArtMethod = new char[artMethodUInt8Size]();
+        // 保存原artMethod内容
+        memcpy(originArtMethod, originMethod, artMethodUInt8Size);
+        // 保存原ArtMethod方法内容的内存开始指针
+        memcpy(targetArtMethod, targetMethod, artMethodUInt8Size);
+    }
+
+    ~ArtMethodContentCopy() {
         if (originArtMethod != nullptr) {
             delete originArtMethod;
         }
@@ -101,63 +116,62 @@ public:
     }
 };
 
+void HexDump(const char*name, uint8_t &start, unsigned int len){
+    auto *lineStart = (uintptr_t *) &start;
+    auto *linePos = &start;
+    int i = 0;
+    int lineSize = 32;
+
+    char buff[128];
+    ALOGE(">> ========================================= %s#Start", name)
+    while (i < len){
+        std::string lineStr;
+        int writePos = sprintf(buff,"%p :", lineStart);
+        lineStr.append(buff, 0, writePos);
+        if (i + lineSize >= len){
+            lineSize = len - i;
+        }
+
+        for (int j = 0; j < lineSize; j++){
+            if (j % 4 == 0){
+                lineStr.append("  ");
+            }
+            writePos = sprintf(buff,"%02X ", linePos[j]);
+            lineStr.append(buff, 0, writePos);
+        }
+        ALOGE(">> %s",lineStr.c_str())
+        linePos += lineSize;
+        i += lineSize;
+    }
+    ALOGE("<< ========================================= %s#End ", name)
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_virtual_box_core_hook_core_VmCore_replaceMethod(
         JNIEnv *env, jclass clazz, jlong replace_method, jlong target_method) {
     if (gVmCore == nullptr) {
         return -1;
     }
+
     if (ArtMethodHandle::sArtMethodSize == 0) {
         ALOGE(">> VirtualCore >> sArtMethodSize 大小 == 0 不处理替换")
         return -1;
     }
 
     const size_t artMethodUInt8Size = ArtMethodHandle::sArtMethodSize * sizeof(uint32_t);
-
-    auto *originMethod = reinterpret_cast<uint8_t *>(target_method);
-    auto *targetMethod = reinterpret_cast<uint8_t *>(replace_method);
-
-    auto *originHolder = new char[artMethodUInt8Size]();
-    auto *targetHolder = new char[artMethodUInt8Size]();
-    auto *copyOriginArtMethod = new ArtMethodContent(originHolder, targetHolder);
-    // 保存原artMethod内容
-    memcpy(originHolder, originMethod, artMethodUInt8Size);
-    // 保存原ArtMethod方法内容的内存开始指针
-    copyOriginArtMethod->originArtMethod = originHolder;
-    memcpy(targetHolder, targetMethod, artMethodUInt8Size);
-    copyOriginArtMethod->targetArtMethod = targetHolder;
-    ALOGE(">> VirtualCore >> 替换方法指针前 %p->%p", originMethod, targetMethod)
-    memcpy(originMethod, targetMethod, artMethodUInt8Size);
-    ALOGE(">> VirtualCore >> 替换方法指针后 %p->%p", originMethod, targetMethod)
+    auto *originMethod = reinterpret_cast<uint8_t *>(replace_method);
+    auto *targetMethod = reinterpret_cast<uint8_t *>(target_method);
+    auto *copyOriginArtMethod = new ArtMethodContentCopy(artMethodUInt8Size, replace_method, target_method);
+//    HexDump("Hook方法指针前的值",*targetMethod, artMethodUInt8Size);
+    memcpy(targetMethod, originMethod, artMethodUInt8Size);
+//    HexDump("Hook方法指针后的值",*targetMethod, artMethodUInt8Size);
     return reinterpret_cast<jlong>(copyOriginArtMethod);
-}
-
-extern "C"
-JNIEXPORT jlong JNICALL
-Java_com_virtual_box_core_hook_core_VmCore_hookJavaMethod(
-        JNIEnv *env, jclass clazz,
-        jobject proxy_method, jobject target_method
-) {
-    if (gVmCore == nullptr) {
-        return -1;
-    }
-    if (ArtMethodHandle::sArtMethodSize == 0) {
-        ALOGE(">> VirtualCore >> sArtMethodSize 大小 == 0 不处理替换")
-        return -1;
-    }
-    const size_t artMethodUInt8Size = ArtMethodHandle::sArtMethodSize * sizeof(uint32_t);
-    auto *originHolder = new char[artMethodUInt8Size]();
-    auto *targetHolder = new char[artMethodUInt8Size]();
-    auto *copyOriginArtMethod = new ArtMethodContent(originHolder, targetHolder);
-
-
-    return 1;
 }
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_virtual_box_core_hook_core_VmCore_restoreMethod(
         JNIEnv *env, jclass clazz, jlong method_content_ptr, jlong target_method_ptr) {
-    auto *copyOriginArtMethod = reinterpret_cast<ArtMethodContent *>(method_content_ptr);
+    auto *copyOriginArtMethod = reinterpret_cast<ArtMethodContentCopy *>(method_content_ptr);
     if (copyOriginArtMethod == nullptr) {
         ALOGE(">> VirtualCore >> 恢复被hook的方法失败: 方法拷贝不存在")
         return -1;
@@ -167,11 +181,10 @@ Java_com_virtual_box_core_hook_core_VmCore_restoreMethod(
         return -1;
     }
     const size_t artMethodUInt8Size = ArtMethodHandle::sArtMethodSize * sizeof(uint32_t);
-    auto originMethod = copyOriginArtMethod->targetArtMethod;
-    auto targetMethod = reinterpret_cast<uint8_t *>(target_method_ptr);
-    ALOGE(">> VirtualCore >> 恢复Hook方法指针前 %p->%p", originMethod, targetMethod)
+    auto *originMethod = reinterpret_cast<uint8_t *>(copyOriginArtMethod->targetArtMethod);
+    auto *targetMethod = reinterpret_cast<uint8_t *>(target_method_ptr);
     memcpy(targetMethod, originMethod, artMethodUInt8Size);
-    ALOGE(">> VirtualCore >> 恢复Hook方法指针后 %p->%p", originMethod, targetMethod)
+//    HexDump("恢复Hook方法指针后的值",*targetMethod, artMethodUInt8Size);
     delete copyOriginArtMethod;
     return 1;
 }

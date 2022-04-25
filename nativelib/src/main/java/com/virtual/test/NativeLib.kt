@@ -10,7 +10,7 @@ class NativeLib {
 
         // Used to load the 'test' library on application startup.
         init {
-            System.err.println(">> HookTest 半生类代码快执行，同时加载so")
+//            System.err.println(">> HookTest 半生类代码快执行，同时加载so")
             System.loadLibrary("test")
         }
     }

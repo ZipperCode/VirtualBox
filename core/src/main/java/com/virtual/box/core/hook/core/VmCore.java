@@ -24,7 +24,5 @@ public class VmCore {
 
     public static native long replaceMethod(long replaceMethod, long targetMethod);
 
-    public static native long hookJavaMethod(Method proxyMethod, Method targetMethod);
-
     public static native int restoreMethod(long methodContentPtr, long targetMethodPtr);
 }

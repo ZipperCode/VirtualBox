@@ -1,33 +1,63 @@
 package com.virtual.box.core.hook
 
+import com.virtual.box.core.hook.core.MethodHookInfo
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.*
 
 abstract class BaseHookHandle : InvocationHandler, IInjectHook {
-    private var mTarget: Any? = null
-    private var mProxyInvocation: Any? = null
+    protected open var target: Any? = null
+    protected var proxyInvocation: Any? = null
+        private set
 
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any {
-        TODO("Not yet implemented")
+    private val proxyTargetMethodCache: HashMap<String, MethodHookInfo> = HashMap()
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
+        val methodIdentifier = method.name
+        if (proxyTargetMethodCache.containsKey(methodIdentifier)){
+            return proxyTargetMethodCache[methodIdentifier]!!.invoke1(this, proxy, method, args)
+        }
+        return kotlinInvokeOrigin(proxy, method, args)
+    }
+
+    protected open fun kotlinInvokeOrigin(proxy: Any, method: Method, args: Array<out Any?>?): Any?{
+        return if (args == null){
+            method.invoke(proxy)
+        }else{
+            method.invoke(proxy, *args)
+        }
     }
 
     override fun initHook() {
-        mTarget = initTargetObj() ?: return
-        mProxyInvocation = Proxy.newProxyInstance(
-            mTarget!!.javaClass.classLoader,
-            getAllInterface(mTarget!!.javaClass),
+        target = initTargetObj() ?: return
+        proxyInvocation = Proxy.newProxyInstance(
+            target!!.javaClass.classLoader,
+            getAllInterface(target!!.javaClass),
             this
-        )
-        hookInject(mTarget!!, mProxyInvocation!!)
+        ) ?: return
+        val selfDeclareMethods = javaClass.declaredMethods
+        val proxyDeclareMethods = proxyInvocation!!.javaClass.declaredMethods
+
+        for (selfDeclareMethod in selfDeclareMethods) {
+            for (proxyDeclareMethod in proxyDeclareMethods) {
+                selfDeclareMethod.isAccessible = true
+                val methodIdentifier = selfDeclareMethod.name
+                if (methodIdentifier == proxyDeclareMethod.name){
+                    val methodHookInfo = MethodHookInfo(selfDeclareMethod)
+                    proxyTargetMethodCache[methodIdentifier] = methodHookInfo
+                }
+            }
+        }
+
+        hookInject(target!!, proxyInvocation!!)
     }
 
     protected abstract fun initTargetObj(): Any?
 
     protected abstract fun hookInject(target: Any, proxy: Any)
 
-    open fun getAllInterface(clazz: Class<*>): Array<Class<*>?> {
+    private fun getAllInterface(clazz: Class<*>): Array<Class<*>?> {
         val classes = HashSet<Class<*>>()
         getAllInterfaces(clazz, classes)
         val result: Array<Class<*>?> = arrayOfNulls(classes.size)
@@ -35,7 +65,7 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
         return result
     }
 
-    open fun getAllInterfaces(clazz: Class<*>, interfaceCollection: HashSet<Class<*>>) {
+    private fun getAllInterfaces(clazz: Class<*>, interfaceCollection: HashSet<Class<*>>) {
         val classes = clazz.interfaces
         if (classes.isNotEmpty()) {
             interfaceCollection.addAll(listOf(*classes))
