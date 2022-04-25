@@ -1,5 +1,16 @@
 package com.virtual.box.core.hook.service
 
+import android.app.IServiceConnection
+import android.app.Notification
+import android.app.PendingIntent
+import android.content.ComponentName
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.res.Configuration
+import android.net.Uri
+import android.os.Bundle
+import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.core.hook.BaseHookHandle
@@ -8,12 +19,14 @@ import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
 import com.virtual.box.reflect.android.util.HSingleton
 
+
 /**
  *
  * @author zhangzhipeng
  * @date   2022/4/25
  **/
-class ActivityManagerHookHandle: BaseHookHandle() {
+@Suppress("UNUSED")
+class ActivityManagerHookHandle : BaseHookHandle() {
     override fun initTargetObj(): Any? {
         val iActivityManager: Any? = if (BuildCompat.isAtLeastOreo) {
             HActivityManager.IActivityManagerSingleton.get()
@@ -36,20 +49,402 @@ class ActivityManagerHookHandle: BaseHookHandle() {
         return HSingleton.mInstance.get() != proxyInvocation
     }
 
-    fun openContentUri(methodHandle: MethodHandle, uriString: String): ParcelFileDescriptor?{
+    fun openContentUri(methodHandle: MethodHandle, uriString: String): ParcelFileDescriptor? {
         return methodHandle.invokeOriginMethod() as? ParcelFileDescriptor
     }
 
-    fun registerUidObserver(methodHandle: MethodHandle, observer: Any?, watch: Int, cutPoint: Int, callingPackage: String){
+    fun registerUidObserver(methodHandle: MethodHandle, observer: Any?, watch: Int, cutPoint: Int, callingPackage: String) {
         methodHandle.invokeOriginMethod()
     }
 
-    fun unregisterUidObserver(methodHandle: MethodHandle, observer: Any?){
+    fun unregisterUidObserver(methodHandle: MethodHandle, observer: Any?) {
         methodHandle.invokeOriginMethod()
     }
 
-    fun isUidActive(methodHandle: MethodHandle, uid: Int, callingPackage: String): Boolean{
+    fun isUidActive(methodHandle: MethodHandle, uid: Int, callingPackage: String): Boolean {
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
+    fun getUidProcessState(methodHandle: MethodHandle, uid: Int, callingPackage: String): Int {
+        return methodHandle.invokeOriginMethod(arrayOf(uid, callingPackage)) as Int
+    }
+
+    @Deprecated("maxTargetSdk=29", ReplaceWith("android.content.Context#startActivity(android.content.Intent) as Int"))
+    fun startActivity(
+        methodHandle: MethodHandle,
+        caller: Any?, callingPackage: String?, intent: Intent?, resolvedType: String,
+        resultTo: IBinder, resultWho: String,
+        requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun startActivityWithFeature(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
+        profilerInfo: Any?, options: Bundle?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun finishActivity(methodHandle: MethodHandle, token: IBinder, code: Int, data: Intent, finishTask: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    /**
+     * @param receiver IIntentReceiver
+     */
+    @Deprecated(
+        "maxTargetSdk=29",
+        ReplaceWith("android.content.Context#registerReceiver(android.content.BroadcastReceiver, android.content.IntentFilter)")
+    )
+    fun registerReceiver(
+        methodHandle: MethodHandle,
+        caller: Any, callerPackage: String,
+        receiver: Any?, filter: IntentFilter,
+        requiredPermission: String, userId: Int, flags: Int
+    ): Intent {
+        return methodHandle.invokeOriginMethod() as Intent
+    }
+
+    /**
+     * @param receiver IIntentReceiver
+     */
+    fun registerReceiverWithFeature(
+        methodHandle: MethodHandle,
+        caller: Any, callerPackage: String,
+        callingFeatureId: String, receiverId: String?, receiver: Any,
+        filter: IntentFilter, requiredPermission: String?, userId: Int, flags: Int
+    ): Intent {
+        return methodHandle.invokeOriginMethod() as Intent
+    }
+
+    /**
+     * @param caller IApplicationThread
+     * @param resultTo IIntentReceiver
+     */
+    @Deprecated(
+        "maxTargetSdk=29",
+        ReplaceWith("android.content.Context#sendBroadcast(android.content.Intent)")
+    )
+    fun broadcastIntent(
+        methodHandle: MethodHandle,
+        caller: Any?, intent: Intent?,
+        resolvedType: String, resultTo: Any?, resultCode: Int,
+        resultData: String?, map: Bundle?, requiredPermissions: Array<String>?,
+        appOp: Int, options: Bundle?, serialized: Boolean, sticky: Boolean, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    /**
+     * @param caller IApplicationThread
+     * @param resultTo IIntentReceiver
+     */
+    fun broadcastIntentWithFeature(
+        methodHandle: MethodHandle,
+        caller: Any, callingFeatureId: String?,
+        intent: Intent?, resolvedType: String?, resultTo: Any?, resultCode: Int,
+        resultData: String?, map: Bundle?, requiredPermissions: Array<String>?, excludePermissions: Array<String>?,
+        appOp: Int, options: Bundle?, serialized: Boolean, sticky: Boolean, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun unbroadcastIntent(
+        methodHandle: MethodHandle,
+        caller: Any?, intent: Intent?, userId: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun moveTaskToFront(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?, task: Int,
+        flags: Int, options: Bundle?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getContentProvider(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        name: String?, userId: Int, stable: Boolean
+    ): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    fun getRunningServiceControlPanel(methodHandle: MethodHandle, service: ComponentName?): PendingIntent? {
+        return methodHandle.invokeOriginMethod() as? PendingIntent
+    }
+
+    fun startService(
+        methodHandle: MethodHandle, caller: Any?, service: Intent?,
+        resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
+        callingFeatureId: String?, userId: Int
+    ): ComponentName? {
+        return methodHandle.invokeOriginMethod() as? ComponentName
+    }
+
+    fun stopService(
+        methodHandle: MethodHandle, caller: Any?, service: Intent?,
+        resolvedType: String?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun bindService(
+        methodHandle: MethodHandle, caller: Any?, token: IBinder?, service: Intent?,
+        resolvedType: String?, connection: IServiceConnection?, flags: Int,
+        callingPackage: String?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun bindIsolatedService(
+        methodHandle: MethodHandle, caller: Any?, token: IBinder?, service: Intent?,
+        resolvedType: String?, connection: IServiceConnection?, flags: Int,
+        instanceName: String?, callingPackage: String?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    @Deprecated("maxTargetSdk 30")
+    fun setDebugApp(methodHandle: MethodHandle, packageName: String?, waitForDebugger: Boolean, persistent: Boolean) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setAgentApp(methodHandle: MethodHandle, packageName: String?, agent: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * @param watcher IInstrumentationWatcher
+     * @param connection IUiAutomationConnection
+     */
+    fun startInstrumentation(
+        methodHandle: MethodHandle, className: ComponentName?, profileFile: String?,
+        flags: Int, arguments: Bundle?, watcher: Any?,
+        connection: Any?, userId: Int,
+        abiOverride: String?
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun grantUriPermission(
+        methodHandle: MethodHandle, caller: Any?, targetPkg: String?, uri: Uri?,
+        mode: Int, userId: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun revokeUriPermission(
+        methodHandle: MethodHandle, caller: Any?, targetPkg: String?, uri: Uri?,
+        mode: Int, userId: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getIntentSender(
+        methodHandle: MethodHandle, type: Int, packageName: String?, token: IBinder?,
+        resultWho: String?, requestCode: Int, intents: Array<Intent>?, resolvedTypes: Array<String>?,
+        flags: Int, options: Bundle?, userId: Int
+    ): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * @return IIntentSender
+     */
+    fun getIntentSenderWithFeature(
+        methodHandle: MethodHandle, type: Int, packageName: String?, featureId: String?,
+        token: IBinder?, resultWho: String?, requestCode: Int, intents: Array<Intent>?,
+        resolvedTypes: Array<String>?, flags: Int, options: Bundle?, userId: Int
+    ): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * @param sender IIntentSender
+     * @param workSource WorkSource
+     */
+    fun noteWakeupAlarm(
+        methodHandle: MethodHandle, sender: Any?, workSource: Any?, sourceUid: Int,
+        sourcePkg: String?, tag: String?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setServiceForeground(
+        methodHandle: MethodHandle, className: ComponentName?, token: IBinder?,
+        id: Int, notification: Notification?, flags: Int, foregroundServiceType: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getForegroundServiceType(methodHandle: MethodHandle, className: ComponentName?, token: IBinder?): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    /**
+     * @param observer IPackageDataObserver
+     */
+    fun clearApplicationUserData(
+        methodHandle: MethodHandle, packageName: String?, keepState: Boolean,
+        observer: Any?, userId: Int
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun forceStopPackage(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun killPids(methodHandle: MethodHandle, pids: IntArray, reason: String?, secure: Boolean): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun peekService(methodHandle: MethodHandle, service: Intent?, resolvedType: String?, callingPackage: String?): IBinder? {
+        return methodHandle.invokeOriginMethod() as? IBinder
+    }
+
+    /**
+     * @param profilerInfo: Any?
+     */
+    @Deprecated("maxTargetSdk = 30")
+    fun profileControl(
+        methodHandle: MethodHandle, process: String?, userId: Int, start: Boolean,
+        profilerInfo: Any?, profileType: Int
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun bindBackupAgent(
+        methodHandle: MethodHandle, packageName: String?, backupRestoreMode: Int, targetUserId: Int,
+        operationType: Int
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun backupAgentCreated(methodHandle: MethodHandle, packageName: String?, agent: IBinder?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun unbindBackupAgent(methodHandle: MethodHandle, appInfo: ApplicationInfo?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun handleIncomingUser(
+        methodHandle: MethodHandle, callingPid: Int, callingUid: Int, userId: Int, allowAll: Boolean,
+        requireFull: Boolean, name: String?, callerPackage: String?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun addPackageDependency(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun killApplication(methodHandle: MethodHandle, pkg: String?, appId: Int, userId: Int, reason: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun killApplicationProcess(methodHandle: MethodHandle, processName: String?, uid: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun killBackgroundProcesses(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun updatePersistentConfigurationWithAttribution(
+        methodHandle: MethodHandle, values: Configuration?,
+        callingPackageName: String?, callingAttributionTag: String?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+
+    @Deprecated("maxTargetSdk = 29")
+    fun startActivityAsUser(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        intent: Intent?, resolvedType: String?, resultTo: IBinder?, resultWho: String?,
+        requestCode: Int, flags: Int, profilerInfo: Any?,
+        options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun startActivityAsUserWithFeature(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
+        profilerInfo: Any?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun getPackageProcessState(methodHandle: MethodHandle, packageName: String?, callingPackage: String?): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun updateDeviceOwner(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun killPackageDependents(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun makePackageIdle(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun isVrModePackageEnabled(methodHandle: MethodHandle, packageName: ComponentName?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun notifyLockedProfile(methodHandle: MethodHandle, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun startConfirmDeviceCredentialIntent(methodHandle: MethodHandle, intent: Intent?, options: Bundle?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * @param target IIntentSender
+     * @param finishedReceiver IIntentReceiver
+     */
+    fun sendIntentSender(
+        methodHandle: MethodHandle, target: Any?, whitelistToken: IBinder?, code: Int,
+        intent: Intent?, resolvedType: String?, finishedReceiver: Any?,
+        requiredPermission: String?, options: Bundle?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun isBackgroundRestricted(methodHandle: MethodHandle, packageName: String?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    /**
+     * @return ParceledListSlice<ApplicationExitInfo?>
+     */
+    fun getHistoricalProcessExitReasons(
+        methodHandle: MethodHandle,
+        packageName: String?,
+        pid: Int, maxNum: Int, userId: Int
+    ): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * @param locusId LocusId
+     */
+    fun setActivityLocusContext(
+        methodHandle: MethodHandle, activity: ComponentName?, locusId: Any?,
+        appToken: IBinder?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
 }
