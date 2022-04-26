@@ -9,6 +9,8 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.PackageParserCompat
+import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.core.server.pm.entity.VmPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.core.server.pm.entity.VmPackageInstallResult
 import com.virtual.box.core.server.user.VmUserManagerService
@@ -120,11 +122,14 @@ internal class VmPackageManagerService private constructor(): IVmPackageManagerS
         }
         // 解析apk文件包
         val aPackage = parserApk(filePath) ?: return VmPackageInstallResult.installFail("解析apk文件：${filePath}失败")
+        logger.i("调用包安装服务进行安装：成功，保存安装数据到本地")
+        val hostPackageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(VirtualBox.get().hostPkg,0)
+        val vmPackageInfo = VmPackageInfo.convert(hostPackageInfo, aPackage)
+        // 停止同包名下的应用进程
 
         userManager.checkOrCreateUser(userId)
         val installResult = VmPackageInstallResult()
         installResult.packageName = aPackage.packageName
-
 
         return VmPackageInstallResult()
     }
