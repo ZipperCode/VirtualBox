@@ -1,74 +1,64 @@
-package com.virtual.box.core.hook.service;
+package com.virtual.box.core.hook.service
 
-import android.annotation.TargetApi;
-import android.app.ActivityManager;
-import android.app.PictureInPictureUiState;
-import android.app.assist.AssistContent;
-import android.app.assist.AssistStructure;
-import android.content.ComponentName;
-import android.content.Intent;
-import android.content.pm.ConfigurationInfo;
-import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.window.SplashScreenView;
+import android.annotation.TargetApi
+import android.os.Build
+import com.virtual.box.reflect.android.app.HIActivityTaskManager
+import com.virtual.box.reflect.android.os.HServiceManager
+import android.content.Intent
+import android.content.res.Configuration
+import android.os.IBinder
+import android.os.Bundle
+import com.virtual.box.core.hook.core.MethodHandle
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.virtual.box.core.hook.BaseHookHandle;
-import com.virtual.box.core.hook.core.MethodHandle;
-import com.virtual.box.reflect.android.app.HIActivityTaskManager;
-import com.virtual.box.reflect.android.os.HServiceManager;
-
-import java.util.List;
-
+/**
+ * @author zipper
+ */
 @TargetApi(Build.VERSION_CODES.P)
-public class ActivityTaskManagerHookHandle extends BaseBinderHookHandle {
-
-    public ActivityTaskManagerHookHandle() {
-        super("activity_task");
+@Suppress("UNUSED")
+class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
+    override fun initTargetObj(): Any? {
+        return HIActivityTaskManager.Stub.asInterface.call(proxyBinderObj)
     }
 
-    @Nullable
-    @Override
-    protected Object initTargetObj() {
-        return HIActivityTaskManager.Stub.asInterface.call(getProxyBinderObj());
+    override fun isSupport(): Boolean {
+        return HServiceManager.getService.call("activity_task") !== this
     }
 
-    @Override
-    public boolean isSupport() {
-        return HServiceManager.getService.call("activity_task") != this;
+    fun startActivity(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int,
+        flags: Int, profilerInfo: Any?, options: Bundle?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    int startActivity(MethodHandle methodHandle, Object caller, String callingPackage,
-                      String callingFeatureId, Intent intent, String resolvedType,
-                      IBinder resultTo, String resultWho, int requestCode,
-                      int flags, Object profilerInfo, Bundle options) {
-
+    fun startActivities(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intents: Array<Intent?>?, resolvedTypes: Array<String?>?,
+        resultTo: IBinder?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    int startActivities(Object caller, String callingPackage,
-                        String callingFeatureId, Intent[] intents, String[] resolvedTypes,
-                        IBinder resultTo, Bundle options, int userId) {
+    fun startActivityAsUser(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
+        profilerInfo: Any?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    int startActivityAsUser(Object caller, String callingPackage,
-                            String callingFeatureId, Intent intent, String resolvedType,
-                            IBinder resultTo, String resultWho, int requestCode, int flags,
-                            Object profilerInfo, Bundle options, int userId) {
+    fun startNextMatchingActivity(
+        methodHandle: MethodHandle, callingActivity: IBinder?,
+        intent: Intent?, options: Bundle?
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    boolean startNextMatchingActivity(IBinder callingActivity,
-                                      Intent intent, Bundle options) {
-    }
-
-    boolean startDreamActivity(Intent intent) {
+    fun startDreamActivity(methodHandle: MethodHandle, intent: Intent?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
     }
 
     /**
@@ -76,10 +66,13 @@ public class ActivityTaskManagerHookHandle extends BaseBinderHookHandle {
      * @param caller IApplicationThread
      * @param target IIntentSender
      */
-    int startActivityIntentSender(Object caller,
-                                  IIntentSender target, IBinder whitelistToken, Intent fillInIntent,
-                                  String resolvedType, IBinder resultTo, String resultWho, int requestCode,
-                                  int flagsMask, int flagsValues, Bundle options) {
+    fun startActivityIntentSender(
+        methodHandle: MethodHandle, caller: Any?,
+        target: Any?, whitelistToken: IBinder?, fillInIntent: Intent?,
+        resolvedType: String?, resultTo: IBinder?, resultWho: String?, requestCode: Int,
+        flagsMask: Int, flagsValues: Int, options: Bundle?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
     /**
@@ -87,16 +80,22 @@ public class ActivityTaskManagerHookHandle extends BaseBinderHookHandle {
      * @param caller IApplicationThread
      * @return WaitResult
      */
-    Object startActivityAndWait(Object caller, String callingPackage,
-                                    String callingFeatureId, Intent intent, String resolvedType,
-                                    IBinder resultTo, String resultWho, int requestCode, int flags,
-                                    Object profilerInfo, Bundle options, int userId) {
+    fun startActivityAndWait(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
+        profilerInfo: Any?, options: Bundle?, userId: Int
+    ): Any? {
+        return methodHandle.invokeOriginMethod()
     }
 
-    int startActivityWithConfig(Object caller, String callingPackage,
-                                String callingFeatureId, Intent intent, String resolvedType,
-                                IBinder resultTo, String resultWho, int requestCode, int startFlags,
-                                Configuration newConfig, Bundle options, int userId) {
+    fun startActivityWithConfig(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        callingFeatureId: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?, requestCode: Int, startFlags: Int,
+        newConfig: Configuration?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
     /**
@@ -104,77 +103,104 @@ public class ActivityTaskManagerHookHandle extends BaseBinderHookHandle {
      * @param session IVoiceInteractionSession
      * @param interactor IVoiceInteractor
      */
-    int startVoiceActivity(String callingPackage, String callingFeatureId, int callingPid,
-                           int callingUid, Intent intent, String resolvedType,
-                           Object session, Object interactor, int flags,
-                           Object profilerInfo, Bundle options, int userId) {
+    fun startVoiceActivity(
+        methodHandle: MethodHandle, callingPackage: String?, callingFeatureId: String?, callingPid: Int,
+        callingUid: Int, intent: Intent?, resolvedType: String?,
+        session: Any?, interactor: Any?, flags: Int,
+        profilerInfo: Any?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    int startAssistantActivity(String callingPackage, String callingFeatureId, int callingPid,
-                               int callingUid, Intent intent, String resolvedType, Bundle options, int userId) {
+    fun startAssistantActivity(
+        methodHandle: MethodHandle, callingPackage: String?, callingFeatureId: String?, callingPid: Int,
+        callingUid: Int, intent: Intent?, resolvedType: String?, options: Bundle?, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
     /**
      *
      * @param recentsAnimationRunner IRecentsAnimationRunner
      */
-    void startRecentsActivity(Intent intent, long eventTime,
-                              Object recentsAnimationRunner) {
+    fun startRecentsActivity(
+        methodHandle: MethodHandle, intent: Intent?, eventTime: Long,
+        recentsAnimationRunner: Any?
+    ) {
+        methodHandle.invokeOriginMethod()
     }
 
-    int startActivityFromRecents(int taskId, Bundle options) {
+    fun startActivityFromRecents(methodHandle: MethodHandle, taskId: Int, options: Bundle?): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    int startActivityAsCaller(Object caller, String callingPackage,
-                              Intent intent, String resolvedType, IBinder resultTo, String resultWho,
-                              int requestCode, int flags, Object profilerInfo, Bundle options,
-                              IBinder permissionToken, boolean ignoreTargetSecurity, int userId) {
+    fun startActivityAsCaller(
+        methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
+        intent: Intent?, resolvedType: String?, resultTo: IBinder?, resultWho: String?,
+        requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?,
+        permissionToken: IBinder?, ignoreTargetSecurity: Boolean, userId: Int
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    boolean isActivityStartAllowedOnDisplay(int displayId, Intent intent, String resolvedType,
-                                            int userId) {
+    fun isActivityStartAllowedOnDisplay(
+        methodHandle: MethodHandle, displayId: Int, intent: Intent?, resolvedType: String?,
+        userId: Int
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
     }
 
     /**
      *
      * @param app IApplicationThread
      */
-    void moveTaskToFront(Object app, String callingPackage, int task,
-                         int flags, Bundle options) {
+    fun moveTaskToFront(
+        methodHandle: MethodHandle, app: Any?, callingPackage: String?, task: Int,
+        flags: Int, options: Bundle?
+    ) {
+        methodHandle.invokeOriginMethod()
     }
 
-
-    List<IBinder> getAppTasks(String callingPackage) {
+    /**
+     * @return List<IBinder>
+    </IBinder> */
+    fun getAppTasks(methodHandle: MethodHandle, callingPackage: String?): Any? {
+        return methodHandle.invokeOriginMethod()
     }
 
     /**
      * @param receiver IAssistDataReceiver
      */
-    boolean requestAssistDataForTask(Object receiver, int taskId,
-                                     String callingPackageName) {
+    fun requestAssistDataForTask(
+        methodHandle: MethodHandle, receiver: Any?, taskId: Int,
+        callingPackageName: String?
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
     }
-
-
 
     /**
-     * Registers a remote animation to be run for all activity starts from a certapackage during
-     * a short predefined amount of time.
      * @param adapter RemoteAnimationAdapter
      */
-    void registerRemoteAnimationForNextActivityStart(String packageName,
-                                                     Object adapter) {
+    fun registerRemoteAnimationForNextActivityStart(
+        methodHandle: MethodHandle, packageName: String?,
+        adapter: Any?
+    ) {
+        methodHandle.invokeOriginMethod()
     }
 
-    int getPackageScreenCompatMode(String packageName) {
+    fun getPackageScreenCompatMode(methodHandle: MethodHandle, packageName: String?): Int {
+        return methodHandle.invokeOriginMethod() as Int
     }
 
-    void setPackageScreenCompatMode(String packageName, int mode) {
+    fun setPackageScreenCompatMode(methodHandle: MethodHandle, packageName: String?, mode: Int) {
+        methodHandle.invokeOriginMethod()
     }
 
-    boolean getPackageAskScreenCompat(String packageName) {
+    fun getPackageAskScreenCompat(methodHandle: MethodHandle, packageName: String?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    void setPackageAskScreenCompat(String packageName, boolean ask) {
+    fun setPackageAskScreenCompat(methodHandle: MethodHandle, packageName: String?, ask: Boolean) {
+        methodHandle.invokeOriginMethod()
     }
-
 }

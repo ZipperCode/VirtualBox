@@ -234,6 +234,10 @@ public class PackageParser {
     public void collectManifestDigest(final Package pkg) throws PackageParserException {
         throw new RuntimeException("Stub!");
     }
+    public static void collectCertificates(final Package pkg, boolean skipVerify)
+            throws PackageParserException {
+        throw new RuntimeException("Stub!");
+    }
 
     public void collectCertificates(final Package pkg, final int flags) throws PackageParserException {
         throw new RuntimeException("Stub!");
