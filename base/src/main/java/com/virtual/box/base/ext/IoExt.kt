@@ -15,6 +15,16 @@ fun File.checkAndMkdirs(): Boolean{
     }
 }
 
+fun File.checkAndCreate(): Boolean{
+    parentFile?.checkAndMkdirs()
+    return try {
+        createNewFile()
+    }catch (e: Exception){
+        e.printStackTrace()
+        false
+    }
+}
+
 fun File.checkOrCreateDirAndFile(): Boolean{
     return try {
         if (parentFile?.exists() == false){

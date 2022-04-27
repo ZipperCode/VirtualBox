@@ -14,18 +14,32 @@ internal object VmPackageInstallManager {
     fun installVmPackageAsUser(vmPackageInfo: VmPackageInfo, userId: Int){
         createVmPackageEnv(vmPackageInfo, userId)
         adjustInstallPackageInfo(vmPackageInfo, userId)
+        val packageInfoFile = VmFileEnvironment.getInstallAppPackageInfoFile(vmPackageInfo.packageName)
+        PackageHelper.saveInstallPackageInfo(vmPackageInfo, packageInfoFile)
+    }
+
+    fun uninstallVmPackageAsUser(packageName: String, userId: Int){
+        deleteInstallDir(packageName, userId)
+    }
+
+    fun checkPackageInstalled(packageName: String): Boolean{
+        return VmFileEnvironment.getInstallAppPackageInfoFile(packageName).exists()
     }
 
     private fun initInstallEnv(vmPackageInfo: VmPackageInfo, userId: Int) {
         val packageName = vmPackageInfo.packageName
-        // 删除安装目录
-        VmFileEnvironment.getAppInstall(packageName).deleteDir()
-        // 删除数据目录
-        VmFileEnvironment.getDataDir(packageName, userId).deleteDir()
+        deleteInstallDir(packageName, userId)
         // 创建安装目录
         VmFileEnvironment.mkdirAppInstall(packageName)
         // 创建数据目录
         VmFileEnvironment.mkdirAppData(packageName, userId)
+    }
+
+    private fun deleteInstallDir(packageName: String, userId: Int){
+        // 删除安装目录
+        VmFileEnvironment.getAppInstall(packageName).deleteDir()
+        // 删除数据目录
+        VmFileEnvironment.getDataDir(packageName, userId).deleteDir()
     }
 
     private fun createVmPackageEnv(vmPackageInfo: VmPackageInfo, userId: Int) {

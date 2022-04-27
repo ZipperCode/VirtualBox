@@ -55,6 +55,10 @@ internal object VmFileEnvironment {
         return File(getAppInstall(packageName), "oat")
     }
 
+    fun getInstallAppPackageInfoFile(packageName: String): File{
+        return File(getAppInstall(packageName), "packageInfo.conf")
+    }
+
     /**
      * 用户空间目录
      */

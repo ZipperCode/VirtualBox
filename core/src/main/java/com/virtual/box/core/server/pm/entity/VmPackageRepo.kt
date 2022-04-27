@@ -31,6 +31,10 @@ class VmPackageRepo {
             syncData()
         }
     }
+    @Synchronized
+    fun checkPackageInfo(packageName: String): Boolean{
+        return vmPackageConfig.containsKey(packageName)
+    }
 
     @Synchronized
     fun syncData(){

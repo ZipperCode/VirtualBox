@@ -12,28 +12,26 @@ class VmPackageSetting: Parcelable {
 
     val packageName: String
 
-    val appId: Int
-
     var vmPackageInfo: VmPackageInfo?
 
     var installOption: VmPackageInstallOption? = null
 
-    constructor(packageName: String, appId: Int, vmPackageInfo: VmPackageInfo){
-        this.packageName = packageName
-        this.appId = appId
+    constructor(vmPackageInfo: VmPackageInfo, vmPackageInstallOption: VmPackageInstallOption){
+        this.packageName = vmPackageInfo.packageName
         this.vmPackageInfo = vmPackageInfo
+        this.installOption = vmPackageInstallOption
     }
 
     constructor(parcel: Parcel){
         packageName = parcel.readString() ?: ""
-        appId = parcel.readInt()
         vmPackageInfo = parcel.readParcelable(VmPackageInfo::class.java.classLoader)
+        installOption = parcel.readParcelable(VmPackageInstallOption::class.java.classLoader)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(packageName)
-        parcel.writeInt(appId)
-        parcel.writeParcelable(vmPackageInfo, 0)
+        parcel.writeParcelable(vmPackageInfo, flags)
+        parcel.writeParcelable(installOption, flags)
     }
 
     override fun describeContents(): Int {
