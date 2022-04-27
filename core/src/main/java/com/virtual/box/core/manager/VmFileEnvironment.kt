@@ -18,12 +18,14 @@ internal object VmFileEnvironment {
     lateinit var mUserInfoConfig: File
         private set
 
+    lateinit var mInstallPackageInfoConfig: File
 
     fun initSystem(context: Context){
         mContext = context
         mVirtualRoot = File(mContext.filesDir, "virtual")
         mVirtualRoot.checkAndMkdirs()
         mUserInfoConfig = File(mVirtualRoot,"user.conf")
+        mInstallPackageInfoConfig = File(mVirtualRoot, "install.conf")
     }
 
     /**
@@ -31,6 +33,26 @@ internal object VmFileEnvironment {
      */
     fun getAppInstall(packageName: String): File{
         return File(mVirtualRoot, String.format(Locale.CHINA,"data/app/%s"))
+    }
+
+    fun getInstallBaseApkFile(packageName: String): File {
+        return File(getAppInstall(packageName), "base.apk")
+    }
+
+    fun getInstallAppLibDir(packageName: String): File {
+        return File(getAppInstall(packageName), "lib")
+    }
+
+    fun getInstallAppArmLibDir(packageName: String): File {
+        return File(getAppInstall(packageName), "lib/arm")
+    }
+
+    fun getInstallAppArm64LibDir(packageName: String): File {
+        return File(getAppInstall(packageName), "lib/arm64")
+    }
+
+    fun getInstallAppOatDir(packageName: String): File{
+        return File(getAppInstall(packageName), "oat")
     }
 
     /**
@@ -51,20 +73,32 @@ internal object VmFileEnvironment {
         return File(mVirtualRoot, String.format(Locale.CHINA, "data/user_de/%d/%s", userId, packageName))
     }
 
-    fun getInstallDir(packageName: String): File{
-        return File(mVirtualRoot, "data/app/$packageName")
+    fun checkArm64(packageName: String): Boolean{
+        val installAppArm64LibDir = getInstallAppArm64LibDir(packageName)
+        return installAppArm64LibDir.exists() && installAppArm64LibDir.listFiles()?.isNotEmpty() == true
     }
 
-    fun getInstallBaseApkFile(packageName: String): File {
-        return File(getInstallDir(packageName), "base.apk")
+    fun mkdirAppInstall(packageName: String){
+        val installDir = getAppInstall(packageName)
+        if (!installDir.exists()){
+            return
+        }
+        File(installDir, "lib").checkAndMkdirs()
+        File(installDir, "oat").checkAndMkdirs()
     }
 
-    fun getInstallAppLibDir(packageName: String): File {
-        return File(getInstallDir(packageName), "lib")
+    fun mkdirAppData(packageName: String, userId: Int){
+        val appDataDir = getDataDir(packageName, userId)
+        if (!appDataDir.exists()){
+            return
+        }
+        File(appDataDir, "files").checkAndMkdirs()
+        File(appDataDir, "cache").checkAndMkdirs()
+        File(appDataDir, "lib").checkAndMkdirs()
+        File(appDataDir, "databases").checkAndMkdirs()
+        File(appDataDir, "shared_prefs").checkAndMkdirs()
+        File(appDataDir, "oat").checkAndMkdirs()
     }
 
-    fun getInstallAppOatDir(packageName: String): File{
-        return File(getInstallDir(packageName), "oat")
-    }
 
 }

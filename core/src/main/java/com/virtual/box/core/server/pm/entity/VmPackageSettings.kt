@@ -1,4 +1,4 @@
-package com.virtual.box.core.entity
+package com.virtual.box.core.server.pm.entity
 
 import android.os.Parcel
 import android.os.Parcelable
@@ -6,18 +6,15 @@ import android.os.Parcelable
 /**
  *
  * @author zhangzhipeng
- * @date   2022/4/26
+ * @date   2022/4/27
  **/
-class VmPackageSettings() : Parcelable {
-
-    var packageName: String = ""
-
+class VmPackageSettings() : HashMap<String, VmPackageSetting>(10), Parcelable {
     constructor(parcel: Parcel) : this() {
-        packageName = parcel.readString() ?: ""
+        parcel.readMap(this, javaClass.classLoader)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeString(packageName)
+        parcel.writeMap(this)
     }
 
     override fun describeContents(): Int {

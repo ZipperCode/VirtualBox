@@ -1,35 +1,39 @@
 package com.virtual.box.core.entity
 
 import android.content.pm.ApplicationInfo
-import android.os.Binder
-import android.os.ConditionVariable
-import android.os.Parcelable
+import android.os.*
+import androidx.versionedparcelable.ParcelField
 
-class VmProcessRecord: Binder, Parcelable {
+
+class VmProcessRecord : Binder, Parcelable {
 
     /**
      * 虚拟应用程序信息
      */
     @JvmField
-    val info: ApplicationInfo
+    var info: ApplicationInfo?
 
     /**
-     * 进程名称
+     * 宿主进程名称
      */
-    @JvmField
-    val processName: String
-
+    var systemProcessName: String?
     /**
-     * 当前进程的进程id
+     * 宿主进程的进程id
      */
     @JvmField
     var systemPid = 0
 
     /**
-     * 当前进程的用户id
+     * 宿主进程的用户id
      */
     @JvmField
     var systemUid = 0
+
+    /**
+     * 虚拟进程名称（应用自身的进程名称）
+     */
+    @JvmField
+    var processName: String?
 
     /**
      * 自定义的虚拟应用的用户id
@@ -49,10 +53,60 @@ class VmProcessRecord: Binder, Parcelable {
     @JvmField
     var initLock = ConditionVariable()
 
-    constructor(info: ApplicationInfo, processName: String, buid: Int, bpid: Int) {
+    /**
+     * 虚拟进程的 IApplicationThread 代理对象
+     */
+    @JvmField
+    var appThread: IInterface? = null
+
+
+    constructor(info: ApplicationInfo, systemProcessName: String, processName: String, buid: Int, bpid: Int): super() {
         this.info = info
+        this.systemProcessName = systemProcessName
+        Binder.getCallingPid()
         this.vmUid = buid
         this.vmPid = bpid
         this.processName = processName
     }
+
+    /**
+     * 获取应用包名
+     */
+    val packageName: String? get() = info?.packageName
+
+    constructor(parcel: Parcel) : super() {
+        info = parcel.readParcelable(ApplicationInfo::class.java.classLoader)
+        systemProcessName = parcel.readString()
+        systemPid = parcel.readInt()
+        systemUid = parcel.readInt()
+        processName = parcel.readString()
+        vmUid = parcel.readInt()
+        vmPid = parcel.readInt()
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeParcelable(info, flags)
+        parcel.writeString(systemProcessName)
+        parcel.writeInt(systemPid)
+        parcel.writeInt(systemUid)
+        parcel.writeString(processName)
+        parcel.writeInt(vmUid)
+        parcel.writeInt(vmPid)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<VmProcessRecord> {
+        override fun createFromParcel(parcel: Parcel): VmProcessRecord {
+            return VmProcessRecord(parcel)
+        }
+
+        override fun newArray(size: Int): Array<VmProcessRecord?> {
+            return arrayOfNulls(size)
+        }
+    }
+
+
 }

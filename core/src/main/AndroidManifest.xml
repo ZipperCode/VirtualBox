@@ -2,4 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.virtual.box.core">
 
+    <application>
+
+        <provider
+            android:name="com.virtual.box.core.server.VmSystemProvider"
+            android:authorities="${applicationId}.virtualbox.VmSystemProvider"
+            android:exported="false"
+            android:process="@string/server_process_name" />
+
+    </application>
 </manifest>

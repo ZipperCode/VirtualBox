@@ -70,7 +70,7 @@ class VmPackageInfo() : PackageInfo(){
 
     companion object{
 
-        fun convert(hostPackageInfo: PackageInfo, aPackage: PackageParser.Package): PackageInfo{
+        fun convert(hostPackageInfo: PackageInfo, aPackage: PackageParser.Package): VmPackageInfo{
             val parcel = Parcel.obtain()
             try {
                 parcel.setDataPosition(0)

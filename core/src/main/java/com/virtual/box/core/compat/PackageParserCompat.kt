@@ -1,12 +1,10 @@
 package com.virtual.box.core.compat
 
 import android.content.pm.PackageParser
-import androidx.core.content.PackageManagerCompat
 import com.virtual.box.base.util.compat.BuildCompat
-import com.virtual.box.core.entity.VmPackageSettings
+import com.virtual.box.core.server.pm.entity.VmPackageSetting
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.reflect.android.content.pm.HPackageParser
-import java.io.File
 
 /**
  * 安装包解析器适配类
@@ -33,10 +31,10 @@ object PackageParserCompat {
      * @param aPackage
      * @return
      */
-    fun convertBPackageSettings(aPackage: PackageParser.Package, installOption: VmPackageInstallOption): VmPackageSettings {
+    fun convertBPackageSettings(aPackage: PackageParser.Package, installOption: VmPackageInstallOption): VmPackageSetting {
         val packageName: String = aPackage.packageName
         // logger.method("系统包配置转化为自定义实现的包配置", "packageName = %s, aPackage = %s", packageName, aPackage)
-        val origSettings = VmPackageSettings()
+        val origSettings = VmPackageSetting()
 //        origSettings.pkg = BPackage(aPackage)
 //        origSettings.pkg!!.mExtras = origSettings
 //        origSettings.pkg!!.applicationInfo = PackageManagerCompat

@@ -9,6 +9,19 @@ import android.os.Parcelable
  * @date   2022/4/26
  **/
 class VmAppConfig() : Parcelable {
+
+    /**
+     * 安装包
+     */
+    @JvmField
+    var packageName: String = ""
+
+    /**
+     * 进程名称
+     */
+    @JvmField
+    var processName: String = ""
+
     constructor(parcel: Parcel) : this() {
     }
 
@@ -28,5 +41,7 @@ class VmAppConfig() : Parcelable {
         override fun newArray(size: Int): Array<VmAppConfig?> {
             return arrayOfNulls(size)
         }
+
+        const val IPC_BUNDLE_KEY = "_VM_|app_config"
     }
 }
