@@ -10,7 +10,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ProviderInfo;
 
 import com.virtual.box.core.server.pm.IVmPackageObserver;
-import com.virtual.box.core.server.pm.entity.VmPackageInstallResult;
+import com.virtual.box.core.server.pm.entity.VmPackageResult;
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption;
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo;
 
@@ -21,13 +21,13 @@ interface IVmPackageManagerService {
 
     void unregisterPackageObserver(in IVmPackageObserver observer);
 
-    VmPackageInstallResult installPackageAsUser(in VmPackageInstallOption installOptions, int userId);
+    VmPackageResult installPackageAsUser(in VmPackageInstallOption installOptions, int userId);
 
     int installPackageAsUserAsync(in VmPackageInstallOption installOptions, int userId);
 
-    int uninstallPackageAdUser(String packageName, int userId);
+    VmPackageResult uninstallPackageAsUser(String packageName, int userId);
 
     boolean isInstalled(String packageName, int userId);
 
-
+    List<VmInstalledPackageInfo> getVmInstalledPackageInfo(int flag);
 }

@@ -33,6 +33,10 @@ class VmPackageInstallOption() : Parcelable {
         parcel.writeString(filePath)
     }
 
+    val isFromSystemFlag: Boolean get() = isOriginFlag(FLAG_SYSTEM)
+
+    val isFromStorageFlag: Boolean get() = isOriginFlag(FLAG_STORAGE)
+
     fun checkOriginFlag(): Boolean{
         return isOriginFlag(FLAG_SYSTEM) ||isOriginFlag(FLAG_STORAGE)
     }

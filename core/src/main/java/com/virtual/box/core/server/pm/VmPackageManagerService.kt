@@ -9,6 +9,7 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.PackageParserCompat
+import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmPackageInstallManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.server.pm.entity.*
@@ -47,8 +48,6 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
      */
     private val packageObservers: MutableList<IVmPackageObserver> = ArrayList(10)
 
-    private val userManager = VmUserManagerService
-
     /**
      * 安装线程锁
      */
@@ -57,24 +56,24 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
     private val vmPackageRepo: VmPackageRepo = VmPackageRepo()
 
     override fun registerPackageObserver(observer: IVmPackageObserver?) {
-        if (observer == null || packageObservers.contains(observer)) {
+        if (observer == null || packageObservers.contains(observer) || observer.asBinder()?.isBinderAlive == false) {
             return
         }
         packageObservers.add(observer)
     }
 
     override fun unregisterPackageObserver(observer: IVmPackageObserver?) {
-        if (observer == null || !packageObservers.contains(observer)) {
+        if (observer == null || !packageObservers.contains(observer) || observer.asBinder()?.isBinderAlive == false) {
             return
         }
         packageObservers.remove(observer)
     }
 
-    override fun installPackageAsUser(installOptions: VmPackageInstallOption?, userId: Int): VmPackageInstallResult {
+    override fun installPackageAsUser(installOptions: VmPackageInstallOption?, userId: Int): VmPackageResult {
         if (installOptions == null) {
-            return VmPackageInstallResult.installFail( "install fial installOptions == null")
+            return VmPackageResult.installFail( "install fial installOptions == null")
         }
-        logger.i("【IPC】开始安装应用 >> install = %s, userId = %s", installOptions, userId)
+        logger.method("【IPC】开始安装应用 >> install = %s, userId = %s", installOptions, userId)
         val tid = Process.myTid()
         val threadId = Thread.currentThread().id
         logger.method("IPC >> 调用服务进程进行包安装", "tid = %s, threadId = %s, option = %s, userId = %s", tid, threadId, installOptions, userId)
@@ -94,29 +93,30 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return 1
     }
 
-    private fun installPackageAsUserLocked(option: VmPackageInstallOption, userId: Int): VmPackageInstallResult {
+    private fun installPackageAsUserLocked(option: VmPackageInstallOption, userId: Int): VmPackageResult {
         if (!option.checkOriginFlag()) {
-            return VmPackageInstallResult.installFail("安装失败，安装flag错误，flag = ${option.originFlags}")
+            return VmPackageResult.installFail("安装失败，安装flag错误，flag = ${option.originFlags}")
         }
+        val start = System.currentTimeMillis()
         val filePath = if (option.isOriginFlag(VmPackageInstallOption.FLAG_STORAGE)) {
             val file = File(option.filePath)
             if (!file.exists()) {
-                return VmPackageInstallResult.installFail("安装失败，文件路径不存在：${option.filePath}")
+                return VmPackageResult.installFail("安装失败，文件路径不存在：${option.filePath}")
             }
             option.filePath
         } else {
             if (!option.packageName.isNotNullOrEmpty()) {
-                return VmPackageInstallResult.installFail("安装失败，packageName == null")
+                return VmPackageResult.installFail("安装失败，packageName == null")
             }
             var packageInfo: PackageInfo? = null
             try {
                 packageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(option.packageName, 0);
             } catch (e: Exception) {
-                return VmPackageInstallResult.installFail("安装失败，未找到对应的package = ${option.packageName}")
+                return VmPackageResult.installFail("安装失败，未找到对应的package = ${option.packageName}")
             }
             packageInfo.applicationInfo.publicSourceDir
         }
-        val installResult = VmPackageInstallResult()
+        val installResult = VmPackageResult()
         AppExecutors.get().executeMultiThreadWithLock {
             // 解析apk文件包
             val aPackage = parserApk(filePath)
@@ -126,34 +126,41 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
             }
             logger.i("调用包安装服务进行安装：成功，保存安装数据到本地")
             val hostPackageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(VirtualBox.get().hostPkg, 0)
-            val vmPackageInfo = VmPackageInfo.convert(hostPackageInfo, aPackage)
-            userManager.checkOrCreateUser(userId)
+            val vmPackageInfo = PackageHelper.getInstallPackageInfo(hostPackageInfo, aPackage)
+//            val vmPackageInfo = PackageHelper.getInstallPackageInfoByFile(VirtualBox.get().hostContext, filePath)
+//            if (vmPackageInfo == null) {
+//                installResult.msg = "解析apk文件：${filePath}失败"
+//                return@executeMultiThreadWithLock
+//            }
+            VmUserManagerService.checkOrCreateUser(userId)
             // 停止同包名下的应用进程
-            VmProcessManager.killProcess(userId)
+            VmProcessManager.killProcess(vmPackageInfo.packageName, userId)
             // 安装处理
-            VmPackageInstallManager.installVmPackageAsUser(vmPackageInfo, userId)
+            VmPackageInstallManager.installVmPackageAsUser(vmPackageInfo, filePath, userId)
             // 安装包配置
             val vmPackageSetting = VmPackageSetting(vmPackageInfo, option)
             vmPackageRepo.addPackageSetting(vmPackageSetting)
-            installResult.packageName = aPackage.packageName
+            installResult.packageName = vmPackageInfo.packageName
             installResult.success = true
+            logger.i("应用包安装成功 end = ${System.currentTimeMillis() - start}")
         }
         return installResult
     }
 
-    override fun uninstallPackageAdUser(packageName: String?, userId: Int): Int {
-        if (!isInstalled(packageName, userId)){
-            logger.e("【IPC】用户卸载安装包失败，校验不通过")
-            return -1
-        }
+    override fun uninstallPackageAsUser(packageName: String?, userId: Int): VmPackageResult {
         synchronized(mInstallLock){
+            if (!isInstalled(packageName, userId)){
+                logger.e("【IPC】用户卸载安装包失败，校验不通过")
+                return VmPackageResult.installFail("用户卸载安装包失败，校验不通过")
+            }
+            logger.i("【IPC】正在卸载用户安装包")
             // 关闭应用进程
-
+            VmProcessManager.killProcess(packageName!!, userId)
             // 删除用户安装配置
-
+            VmPackageInstallManager.uninstallVmPackageAsUser(packageName, userId)
             // 如果没有用户安装了此安装包，删除安装路径
         }
-        return 0
+        return VmPackageResult.installSuccess(packageName!!)
     }
 
     override fun isInstalled(packageName: String?, userId: Int): Boolean {
@@ -162,7 +169,7 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
             return false
         }
 
-        if (!userManager.exists(userId)){
+        if (!VmUserManagerService.exists(userId)){
             logger.e("【IPC】检查是否安装，用户不存在 userId = %s", userId)
             return false
         }
@@ -180,10 +187,26 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return true
     }
 
+    override fun getVmInstalledPackageInfo(flag: Int): MutableList<VmInstalledPackageInfo> {
+        logger.i("【IPC】查找安装的应用")
+        val installPackageInfoList = vmPackageRepo.getPackageInfoList(flag)
+        return installPackageInfoList.map { VmInstalledPackageInfo(0, it.packageName, it) }.toMutableList()
+    }
 
-    private fun dispatcherPackageInstall(installResult: VmPackageInstallResult){
+    private fun dispatcherPackageInstall(installResult: VmPackageResult){
+        checkPackageObserver()
         for (packageObserver in packageObservers) {
             packageObserver.onPackageResult(installResult)
+        }
+    }
+
+    private fun checkPackageObserver(){
+        val iterator = packageObservers.iterator()
+        while (iterator.hasNext()){
+            val iter = iterator.next()
+            if (!iter.asBinder().isBinderAlive){
+                iterator.remove()
+            }
         }
     }
 

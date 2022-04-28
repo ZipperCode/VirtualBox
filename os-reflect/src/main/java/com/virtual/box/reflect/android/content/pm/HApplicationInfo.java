@@ -15,6 +15,8 @@ public class HApplicationInfo {
     public static MirrorReflection.FieldWrapper<String> secondaryCpuAbi = REF.field("secondaryCpuAbi");
     public static MirrorReflection.FieldWrapper<String[]> splitPublicSourceDirs = REF.field("splitPublicSourceDirs");
     public static MirrorReflection.FieldWrapper<String> nativeLibraryRootDir = REF.field("nativeLibraryRootDir");
+    public static MirrorReflection.FieldWrapper<Integer> networkSecurityConfigRes = REF.field("networkSecurityConfigRes");
+    public static MirrorReflection.FieldWrapper<String[]> sharedLibraryFiles = REF.field("sharedLibraryFiles");
 
     @TargetApi(Build.VERSION_CODES.N)
     public static MirrorReflection.FieldWrapper<String> deviceProtectedDataDir = REF.field("deviceProtectedDataDir");

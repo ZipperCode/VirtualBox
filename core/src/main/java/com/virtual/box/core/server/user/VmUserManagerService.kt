@@ -2,7 +2,7 @@ package com.virtual.box.core.server.user
 
 import com.virtual.box.base.storage.IParcelDataHandle
 import com.virtual.box.base.storage.MapParcelDataHandle
-import com.virtual.box.core.manager.VmFileEnvironment
+import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.server.user.entity.VmUserInfo
 import com.virtual.box.core.server.user.entity.VmUserInfoRepo
 
@@ -16,7 +16,7 @@ object VmUserManagerService : IVmUserManagerService.Stub() {
     private const val MAP_USER_INFO_KEY = "MAP_USER_INFO_KEY"
 
     private val configStorageHandle: IParcelDataHandle<VmUserInfoRepo> =
-        MapParcelDataHandle(VmFileEnvironment.mUserInfoConfig.name.replace(".conf", ""), VmUserInfoRepo::class.java)
+        MapParcelDataHandle(VmFileSystem.mUserInfoConfig.name.replace(".conf", ""), VmUserInfoRepo::class.java)
 
     private var userConfig: VmUserInfoRepo
 

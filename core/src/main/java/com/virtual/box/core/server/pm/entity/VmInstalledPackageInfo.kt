@@ -1,5 +1,6 @@
 package com.virtual.box.core.server.pm.entity
 
+import android.content.pm.PackageInfo
 import android.os.Parcel
 import android.os.Parcelable
 
@@ -8,12 +9,23 @@ import android.os.Parcelable
  * @author zhangzhipeng
  * @date   2022/4/26
  **/
-class VmInstalledPackageInfo() : Parcelable {
-    constructor(parcel: Parcel) : this() {
-    }
+class VmInstalledPackageInfo(
+    val userId: Int = 0,
+    val packageName: String? = null,
+    val packageInfo: PackageInfo? = null
+) : Parcelable {
+
+
+    constructor(parcel: Parcel) : this(
+        parcel.readInt(),
+        parcel.readString(),
+        parcel.readParcelable(PackageInfo::class.java.classLoader)
+    )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-
+        parcel.writeInt(userId)
+        parcel.writeString(packageName)
+        parcel.writeParcelable(packageInfo, flags)
     }
 
     override fun describeContents(): Int {

@@ -19,7 +19,7 @@ import com.virtual.box.base.util.log.L
  * 用于进程保活
  */
 class DaemonService : Service() {
-    override fun onBind(intent: Intent): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -27,7 +27,7 @@ class DaemonService : Service() {
         initNotificationManager()
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         L.sd("守护进程 >> onStartCommand")
         val innerIntent = Intent(this, DaemonInnerService::class.java)
         startService(innerIntent)

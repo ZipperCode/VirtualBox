@@ -1,9 +1,10 @@
 package com.virtual.box.core.manager
 
 import android.os.IBinder
+import com.virtual.box.core.server.pm.VmPackageManagerService
 import java.util.HashMap
 
-object VmServiceManager {
+internal object VmServiceManager {
     const val PACKAGE_MANAGER = "package_manager"
 
     /**
@@ -11,15 +12,13 @@ object VmServiceManager {
      */
     private val vmServiceCaches: MutableMap<String, IBinder> = HashMap(10)
 
-
-    init {
-
+    fun initService(){
+        vmServiceCaches[PACKAGE_MANAGER] = VmPackageManagerService.get()
     }
 
     @JvmStatic
     fun getService(name: String): IBinder?{
         return vmServiceCaches[name]
     }
-
 
 }

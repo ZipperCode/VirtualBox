@@ -1,20 +1,19 @@
 package com.virtual.box.core.manager
 
+import android.content.pm.PackageInfo
 import com.virtual.box.base.ext.deleteDir
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.helper.PackageHelper
-import com.virtual.box.core.server.pm.entity.VmPackageInfo
-import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import java.io.File
 
 internal object VmPackageInstallManager {
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmPackageInstallManager")
 
-    fun installVmPackageAsUser(vmPackageInfo: VmPackageInfo, userId: Int){
-        createVmPackageEnv(vmPackageInfo, userId)
-        adjustInstallPackageInfo(vmPackageInfo, userId)
-        val packageInfoFile = VmFileEnvironment.getInstallAppPackageInfoFile(vmPackageInfo.packageName)
+    fun installVmPackageAsUser(vmPackageInfo: PackageInfo,filePath:String, userId: Int){
+        createVmPackageEnv(vmPackageInfo,filePath, userId)
+        PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo)
+        val packageInfoFile = VmFileSystem.getInstallAppPackageInfoFile(vmPackageInfo.packageName)
         PackageHelper.saveInstallPackageInfo(vmPackageInfo, packageInfoFile)
     }
 
@@ -23,60 +22,33 @@ internal object VmPackageInstallManager {
     }
 
     fun checkPackageInstalled(packageName: String): Boolean{
-        return VmFileEnvironment.getInstallAppPackageInfoFile(packageName).exists()
+        return VmFileSystem.getInstallAppPackageInfoFile(packageName).exists()
     }
 
-    private fun initInstallEnv(vmPackageInfo: VmPackageInfo, userId: Int) {
+    private fun initInstallEnv(vmPackageInfo: PackageInfo, userId: Int) {
         val packageName = vmPackageInfo.packageName
         deleteInstallDir(packageName, userId)
         // 创建安装目录
-        VmFileEnvironment.mkdirAppInstall(packageName)
+        VmFileSystem.mkdirAppInstall(packageName)
         // 创建数据目录
-        VmFileEnvironment.mkdirAppData(packageName, userId)
+        VmFileSystem.mkdirAppData(packageName, userId)
     }
 
     private fun deleteInstallDir(packageName: String, userId: Int){
         // 删除安装目录
-        VmFileEnvironment.getAppInstall(packageName).deleteDir()
+        VmFileSystem.getAppInstall(packageName).deleteDir()
         // 删除数据目录
-        VmFileEnvironment.getDataDir(packageName, userId).deleteDir()
+        VmFileSystem.getDataDir(packageName, userId).deleteDir()
     }
 
-    private fun createVmPackageEnv(vmPackageInfo: VmPackageInfo, userId: Int) {
+    private fun createVmPackageEnv(vmPackageInfo: PackageInfo,filePath: String, userId: Int) {
         val packageName = vmPackageInfo.packageName
         initInstallEnv(vmPackageInfo, userId)
+        val originFile = File(filePath)
         // 拷贝apk文件
-        val pksOriginFile = vmPackageInfo.applicationInfo.publicSourceDir
-        val originFile = File(pksOriginFile)
-        originFile.copyTo(VmFileEnvironment.getInstallBaseApkFile(packageName))
+        originFile.copyTo(VmFileSystem.getInstallBaseApkFile(packageName))
         // 拷贝so库
-        PackageHelper.copyLibrary(originFile, VmFileEnvironment.getInstallAppLibDir(packageName))
-    }
-
-    private fun adjustInstallPackageInfo(vmPackageInfo: VmPackageInfo,userId: Int){
-        val packageName = vmPackageInfo.packageName
-        val is64 = VmFileEnvironment.checkArm64(packageName)
-        val abiName = if (is64){
-            // 64
-            "arm64-v8a"
-        }else{
-            "armeabi"
-        }
-        vmPackageInfo.applicationInfo?.apply {
-            nativeLibraryDir = if (is64){
-                VmFileEnvironment.getInstallAppArm64LibDir(packageName).absolutePath
-            }else{
-                VmFileEnvironment.getInstallAppArmLibDir(packageName).absolutePath
-            }
-            HApplicationInfo.primaryCpuAbi.set(this, abiName)
-            HApplicationInfo.nativeLibraryRootDir.set(this, VmFileEnvironment.getInstallAppLibDir(packageName).absolutePath)
-            val installFile = VmFileEnvironment.getInstallBaseApkFile(packageName)
-            publicSourceDir = installFile.absolutePath
-            sourceDir = installFile.absolutePath
-            val installDir = VmFileEnvironment.getAppInstall(packageName)
-            HApplicationInfo.scanPublicSourceDir.set(this,installDir.absoluteFile )
-            HApplicationInfo.scanSourceDir.set(this,installDir.absoluteFile)
-        }
+        PackageHelper.copyLibrary(originFile, VmFileSystem.getInstallAppLibDir(packageName))
     }
 
 }

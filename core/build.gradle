@@ -11,6 +11,9 @@ android {
         minSdk 21
         targetSdk 31
 
+        manifestPlaceholders = [vmApplicationId:"com.virtual.box.core"]
+        buildConfigField("String", "HOST_PACKAGE", '"com.virtual.box"')
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
 

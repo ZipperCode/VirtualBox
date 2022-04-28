@@ -6,7 +6,7 @@ import com.virtual.box.base.ext.checkAndMkdirs
 import java.io.File
 import java.util.*
 @SuppressLint("StaticFieldLeak")
-internal object VmFileEnvironment {
+internal object VmFileSystem {
 
     const val USER_INFO_CONFIG_NAME = "user"
     const val PACKAGE_INFO_CONFIG_NAME = "package"
@@ -20,19 +20,25 @@ internal object VmFileEnvironment {
 
     lateinit var mInstallPackageInfoConfig: File
 
+    private var isInit = false
+
     fun initSystem(context: Context){
-        mContext = context
+        if (isInit){
+            return
+        }
+        mContext = context.applicationContext
         mVirtualRoot = File(mContext.filesDir, "virtual")
         mVirtualRoot.checkAndMkdirs()
         mUserInfoConfig = File(mVirtualRoot,"user.conf")
         mInstallPackageInfoConfig = File(mVirtualRoot, "install.conf")
+        isInit = true
     }
 
     /**
      * 应用的安装目录
      */
     fun getAppInstall(packageName: String): File{
-        return File(mVirtualRoot, String.format(Locale.CHINA,"data/app/%s"))
+        return File(mVirtualRoot, String.format(Locale.CHINA,"data/app/%s", packageName))
     }
 
     fun getInstallBaseApkFile(packageName: String): File {

@@ -5,23 +5,38 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.os.Debug
+import com.tencent.mmkv.MMKV
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.manager.VmFileSystem
+import com.virtual.box.core.manager.VmServiceManager
 
 /**
  *
  * @author zhangzhipeng
  * @date   2022/4/27
  **/
-class VmSystemProvider: ContentProvider() {
+class VmServiceProvider: ContentProvider() {
+
+    private val logger = Logger.getLogger(L.SERVER_TAG,"VmServiceProvider")
 
     override fun onCreate(): Boolean {
+        logger.d("初始化服务内容提供者")
+        MMKV.initialize(context!!)
+        // 初始化服务
+        VmFileSystem.initSystem(context!!)
+        VmServiceManager.initService()
         return true
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
-        if (VM_METHOD_NAME == method){
+        logger.methodLine("【IPC】","method = %s, arg = %s, extras = %s", method, arg, extras)
+        if (VM_METHOD_NAME == method && extras != null){
             val bundle = Bundle()
-
-
+            val vmServiceName = extras.getString(VM_SERVICE_NAME_KEY)!!
+            bundle.putBinder(VM_SERVICE_BINDER_KEY, VmServiceManager.getService(vmServiceName))
+            return bundle
         }
         return super.call(method, arg, extras)
     }

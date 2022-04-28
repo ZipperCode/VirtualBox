@@ -396,6 +396,11 @@ public class PackageParser {
         public int mOverlayPriority;
         public boolean mTrustedOverlay;
 
+        public boolean mOverlayIsStatic;
+
+        public int mCompileSdkVersion;
+        public String mCompileSdkVersionCodename;
+
         /**
          * Data used to feed the KeySetManagerService
          */
@@ -412,6 +417,8 @@ public class PackageParser {
          * and prods fields out of {@code this.applicationInfo}.
          */
         public String cpuAbiOverride;
+
+
 
         public Package(String packageName) {
             throw new RuntimeException("Stub!");

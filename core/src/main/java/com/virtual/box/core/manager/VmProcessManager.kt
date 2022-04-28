@@ -13,7 +13,7 @@ object VmProcessManager {
     /**
      * 用户id: [进程名称：进程信息]
      */
-    private val processMap: MutableMap<Int, VmAppProcess> = HashMap(10)
+    private val processMap: MutableMap<Int, List<VmAppProcess>> = HashMap(10)
 
     /**
      * 准备启动一个新的进程
@@ -35,9 +35,7 @@ object VmProcessManager {
 
     }
 
-    fun killProcess(vmUid: Int){
-        processMap[vmUid]?.run {
-            this.killAppProcess()
-        }
+    fun killProcess(packageName:String, vmUid: Int){
+        processMap[vmUid]?.find { it.packageName == packageName }?.killAppProcess()
     }
 }

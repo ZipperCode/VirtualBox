@@ -25,34 +25,5 @@ object PackageParserCompat {
         }
     }
 
-    /**
-     * 将指定包转换为BPackageSetting
-     * @param packageName
-     * @param aPackage
-     * @return
-     */
-    fun convertBPackageSettings(aPackage: PackageParser.Package, installOption: VmPackageInstallOption): VmPackageSetting {
-        val packageName: String = aPackage.packageName
-        // logger.method("系统包配置转化为自定义实现的包配置", "packageName = %s, aPackage = %s", packageName, aPackage)
-        val origSettings = VmPackageSetting()
-//        origSettings.pkg = BPackage(aPackage)
-//        origSettings.pkg!!.mExtras = origSettings
-//        origSettings.pkg!!.applicationInfo = PackageManagerCompat
-//            .generateApplicationInfo(origSettings.pkg, 0, BPackageUserState.create(), 0)
-//        origSettings.installOption = installOption
-//        synchronized(mPackages) {
-//            val pkgSettings = mPackages[packageName]
-//            if (pkgSettings != null) {
-//                origSettings.appId = pkgSettings.appId
-//                origSettings.userState = pkgSettings.userState
-//            } else {
-//                val isCreateSuccess = registerAppIdLPw(origSettings)
-//                if (!isCreateSuccess){
-//                    throw IllegalStateException("创建appId失败")
-//                }
-//            }
-//        }
-        return origSettings
-    }
 
 }

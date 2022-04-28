@@ -7,6 +7,7 @@ import android.os.Parcel
 import com.virtual.box.reflect.android.content.pm.HPackageInfo
 import com.virtual.box.reflect.android.os.HParcel
 
+@Deprecated("")
 class VmPackageInfo() : PackageInfo(){
 
     constructor(source: Parcel):this(){
@@ -65,103 +66,6 @@ class VmPackageInfo() : PackageInfo(){
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             isApex = source.readBoolean()
-        }
-    }
-
-    companion object{
-
-        fun convert(hostPackageInfo: PackageInfo, aPackage: PackageParser.Package): VmPackageInfo{
-            val parcel = Parcel.obtain()
-            try {
-                parcel.setDataPosition(0)
-                hostPackageInfo.writeToParcel(parcel, 0)
-                val vmPackageInfo = VmPackageInfo(parcel)
-                vmPackageInfo.apply {
-                    packageName = aPackage.packageName
-                    splitNames = emptyArray()
-                    versionCode = aPackage.mVersionCode
-                    versionName = aPackage.mVersionName
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                        baseRevisionCode = aPackage.baseRevisionCode
-                        splitRevisionCodes = aPackage.splitRevisionCodes
-                    }
-                    sharedUserId = aPackage.mSharedUserId
-                    sharedUserLabel = aPackage.mSharedUserLabel
-
-                    applicationInfo = aPackage.applicationInfo
-                    applicationInfo.metaData = aPackage.mAppMetaData;
-                    applicationInfo.sharedLibraryFiles
-                    firstInstallTime = System.currentTimeMillis()
-                    lastUpdateTime = System.currentTimeMillis()
-                    gids = intArrayOf()
-
-                    val activityList = ArrayList<ActivityInfo>(aPackage.activities.size)
-                    for (activity in aPackage.activities) {
-                        val activityInfo = activity.info
-                        activityList.add(activityInfo)
-                    }
-                    activities = activityList.toTypedArray()
-
-                    val receiverList = ArrayList<ActivityInfo>(aPackage.receivers.size)
-                    for (receiver in aPackage.receivers) {
-                        receiverList.add(receiver.info)
-                    }
-                    receivers = receiverList.toTypedArray()
-
-                    val serviceList =ArrayList<ServiceInfo>(aPackage.services.size)
-                    for (service in aPackage.services) {
-                        serviceList.add(service.info)
-                    }
-                    services = serviceList.toTypedArray()
-
-                    val providerList = ArrayList<ProviderInfo>(aPackage.providers.size)
-                    for (provider in aPackage.providers) {
-                        providerList.add(provider.info)
-                    }
-                    providers = providerList.toTypedArray()
-
-                    val instrumentationList = ArrayList<InstrumentationInfo>(aPackage.instrumentation.size)
-                    for (instrumentation in aPackage.instrumentation) {
-                        instrumentationList.add(instrumentation.info)
-                    }
-                    instrumentation = instrumentationList.toTypedArray()
-
-                    val permissionsList = ArrayList<PermissionInfo>(aPackage.permissions.size)
-                    for (permission in aPackage.permissions) {
-                        permissionsList.add(permission.info)
-                    }
-                    permissions = permissionsList.toTypedArray()
-
-//                    val permissionsGroupList = ArrayList<PermissionGroupInfo>(aPackage.permissionGroups.size)
-//                    for (permissionGroup in aPackage.permissionGroups) {
-//                        permissionsGroupList.add(permissionGroup.info)
-//                    }
-//                    per = permissionsGroupList.toTypedArray()
-
-                    requestedPermissions = aPackage.requestedPermissions.toTypedArray()
-                    requestedPermissionsFlags = IntArray(requestedPermissions.size  )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        attributions = emptyArray()
-                    }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        signingInfo = SigningInfo()
-                        signatures = aPackage.mSigningDetails.signatures
-                    }else{
-                        signatures = aPackage.mSignatures
-                    }
-                    configPreferences = aPackage.configPreferences.toTypedArray()
-                    reqFeatures = aPackage.reqFeatures.toTypedArray()
-                    val featureGroupInfoList = ArrayList<FeatureGroupInfo>(aPackage.featureGroups)
-                    for (featureGroup in aPackage.featureGroups) {
-                        featureGroupInfoList.add(featureGroup)
-                    }
-                    featureGroups = featureGroupInfoList.toTypedArray()
-                }
-                return vmPackageInfo
-            }finally {
-                parcel.recycle()
-            }
         }
     }
 }

@@ -20,7 +20,7 @@ public class HPackageParser {
             REF.method("collectCertificates", PackageParser.Package.class, boolean.class);
 
     public static MirrorReflection.ConstructorWrapper<android.content.pm.PackageParser> constructor =
-            REF.constructor(String.class);
+            REF.constructor();
 
     public static MirrorReflection.MethodWrapper<android.content.pm.PackageParser.Package> parsePackage1 =
             REF.method("parsePackage", File.class, String.class, DisplayMetrics.class, int.class);

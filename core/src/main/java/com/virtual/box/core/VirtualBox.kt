@@ -12,6 +12,10 @@ import com.virtual.box.core.hook.TestHookHandle
 import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.method.ArtMethod
 import com.virtual.box.core.manager.HookManager
+import com.virtual.box.core.manager.ServiceManager
+import com.virtual.box.core.manager.VmPackageManager
+import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
+import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.core.service.DaemonService
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.java.lang.reflect.HExecutable
@@ -43,15 +47,11 @@ class VirtualBox {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
-        val method = ArtMethod::class.java.getDeclaredMethod("nativeOffset")
-        logger.e(">> 反射获取artMethod指针 >> %d", System.identityHashCode(HExecutable.artMethod.get(method) ))
-        VmCore.init(Build.VERSION.SDK_INT, true)
-        logger.e(">> 未加载So之前HookNative1")
-        VmCore.nativeHook()
-        logger.e(">> 未加载So之前HookNative2")
-//        HookManager.nativeHook()
-//        TestHookHandle().todoMethod()
-        JavaTestHandle().todoTest()
+
+        initService()
+        if (isVirtualProcess){
+            VmCore.init(Build.VERSION.SDK_INT, true)
+        }
     }
 
     private fun initService(){
@@ -64,14 +64,17 @@ class VirtualBox {
 
     }
 
-    fun installPackage(sysPackageName: String){
-
+    fun installPackage(installOption: VmPackageInstallOption){
+        VmPackageManager.installPackage(installOption)
     }
 
     fun uninstallPackage(packageName: String){
-
+        VmPackageManager.uninstallPackage(packageName, 0)
     }
 
+    fun getInstalledPackageInfo(): List<VmInstalledPackageInfo>{
+        return VmPackageManager.getInstalledPackageInfo(0)
+    }
 
     /**
      * 当前进程类型
