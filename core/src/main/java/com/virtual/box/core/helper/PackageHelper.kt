@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.pm.*
 import android.os.Build
 import android.os.Parcel
+import android.util.AtomicFile
 import androidx.annotation.WorkerThread
+import androidx.core.util.readBytes
 import com.virtual.box.base.ext.checkAndCreate
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
@@ -54,8 +56,13 @@ object PackageHelper {
     }
 
     @Synchronized
-    fun loadInstallPackageInfo(packageName: String): PackageInfo {
+    fun loadInstallPackageInfoWithLock(packageName: String): PackageInfo {
         val packageInfoFile = VmFileSystem.getInstallAppPackageInfoFile(packageName)
+        return loadInstallPackageInfoNoLock(packageInfoFile)
+    }
+
+    @WorkerThread
+    fun loadInstallPackageInfoNoLock(packageInfoFile: File): PackageInfo{
         FileInputStream(packageInfoFile).use { input ->
             val parcal = Parcel.obtain()
             try {
@@ -226,7 +233,8 @@ object PackageHelper {
 
     fun fixRunApplicationInfo(vmApplicationInfo: ApplicationInfo, userId: Int) {
         val packageName = vmApplicationInfo.packageName
-        val dataFileDir = VmFileSystem.getDataDir(packageName, userId)
+        // TODO 后续这边改成获取配置的目录
+        val dataFileDir = VmFileSystem.getUserDataDir(packageName, userId)
         vmApplicationInfo.dataDir = dataFileDir.absolutePath
         if (BuildCompat.isAtLeastN) {
             HApplicationInfo.credentialProtectedDataDir.set(vmApplicationInfo, dataFileDir.absolutePath)

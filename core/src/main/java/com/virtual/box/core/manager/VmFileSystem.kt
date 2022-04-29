@@ -8,8 +8,12 @@ import java.util.*
 @SuppressLint("StaticFieldLeak")
 internal object VmFileSystem {
 
+    const val SYSTEM_USER_ID = 0
+
     const val USER_INFO_CONFIG_NAME = "user"
     const val PACKAGE_INFO_CONFIG_NAME = "package"
+
+    const val INSTALL_PACKAGE_INFO_FILE_NAME = "packageInfo.conf"
 
     private lateinit var mContext: Context
 
@@ -62,7 +66,7 @@ internal object VmFileSystem {
     }
 
     fun getInstallAppPackageInfoFile(packageName: String): File{
-        return File(getAppInstall(packageName), "packageInfo.conf")
+        return File(getAppInstall(packageName), INSTALL_PACKAGE_INFO_FILE_NAME)
     }
 
     /**
@@ -75,8 +79,16 @@ internal object VmFileSystem {
     /**
      * 应用的私有数据目录
      */
-    fun getDataDir(packageName: String, userId: Int): File {
+    fun getUserDataDir(packageName: String, userId: Int): File {
         return File(mVirtualRoot, String.format(Locale.CHINA, "data/user/%d/%s", userId, packageName))
+    }
+
+    fun getDataDir(packageName: String, userId: Int): File{
+        return if (userId == SYSTEM_USER_ID){
+            File(mVirtualRoot, String.format("data/data/%s", packageName))
+        }else{
+            getUserDataDir(packageName, userId)
+        }
     }
 
     fun getDeDataDir(packageName: String, userId: Int): File {
@@ -98,7 +110,7 @@ internal object VmFileSystem {
     }
 
     fun mkdirAppData(packageName: String, userId: Int){
-        val appDataDir = getDataDir(packageName, userId)
+        val appDataDir = getUserDataDir(packageName, userId)
         if (!appDataDir.exists()){
             return
         }

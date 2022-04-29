@@ -45,10 +45,20 @@ object VmUserManagerService : IVmUserManagerService.Stub() {
         }
         synchronized(lock){
             userConfig[userId] = userInfo
-            configStorageHandle.save(MAP_USER_INFO_KEY, userConfig)
+            syncData()
         }
     }
 
+    fun deleteUser(userId: Int){
+        // TODO
+
+    }
+
+    private fun syncData(){
+        synchronized(lock){
+            configStorageHandle.save(MAP_USER_INFO_KEY, userConfig)
+        }
+    }
 
 
 }

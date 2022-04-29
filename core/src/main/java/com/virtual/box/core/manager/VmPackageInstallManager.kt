@@ -38,7 +38,7 @@ internal object VmPackageInstallManager {
         // 删除安装目录
         VmFileSystem.getAppInstall(packageName).deleteDir()
         // 删除数据目录
-        VmFileSystem.getDataDir(packageName, userId).deleteDir()
+        VmFileSystem.getUserDataDir(packageName, userId).deleteDir()
     }
 
     private fun createVmPackageEnv(vmPackageInfo: PackageInfo,filePath: String, userId: Int) {
@@ -49,6 +49,10 @@ internal object VmPackageInstallManager {
         originFile.copyTo(VmFileSystem.getInstallBaseApkFile(packageName))
         // 拷贝so库
         PackageHelper.copyLibrary(originFile, VmFileSystem.getInstallAppLibDir(packageName))
+    }
+
+    fun deleteUserSpaceData(packageName: String, userId: Int){
+        VmFileSystem.getDataDir(packageName, userId).deleteDir()
     }
 
 }

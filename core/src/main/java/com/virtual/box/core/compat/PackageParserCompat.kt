@@ -2,8 +2,6 @@ package com.virtual.box.core.compat
 
 import android.content.pm.PackageParser
 import com.virtual.box.base.util.compat.BuildCompat
-import com.virtual.box.core.server.pm.entity.VmPackageSetting
-import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.reflect.android.content.pm.HPackageParser
 
 /**

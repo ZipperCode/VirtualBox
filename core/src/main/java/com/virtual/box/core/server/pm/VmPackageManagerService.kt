@@ -138,8 +138,9 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
             // 安装处理
             VmPackageInstallManager.installVmPackageAsUser(vmPackageInfo, filePath, userId)
             // 安装包配置
-            val vmPackageSetting = VmPackageSetting(vmPackageInfo, option)
-            vmPackageRepo.addPackageSetting(vmPackageSetting)
+            val vmPackageSetting = VmPackageConfigInfo(vmPackageInfo, option)
+            // 保存安装信息
+            vmPackageRepo.addInstallPackageInfoWithLock(vmPackageSetting)
             installResult.packageName = vmPackageInfo.packageName
             installResult.success = true
             logger.i("应用包安装成功 end = ${System.currentTimeMillis() - start}")
@@ -174,7 +175,7 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
             return false
         }
 
-        if (!vmPackageRepo.checkPackageInfo(packageName)){
+        if (!vmPackageRepo.checkPackageInstalled(packageName)){
             logger.e("【IPC】检查是否安装，未找到安装包配置")
             return false
         }
