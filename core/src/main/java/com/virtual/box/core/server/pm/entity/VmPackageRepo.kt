@@ -88,9 +88,29 @@ class VmPackageRepo {
             return false
         }
         try {
-            val userSpaceConfigInfo = vmPackageConfig.packageUserSpaceSetting[VmFileSystem.SYSTEM_USER_ID] ?: return false
-            userSpaceConfigInfo.packageUserSpace[VmFileSystem.SYSTEM_USER_ID]
+            val packageConf = vmPackageConfig.packageSetting[packageName] ?: return false
+            // 更新信息
+            packageConf.apply {
+                installOption = vmPackageConfigInfo.installOption
+                installPackageApkFilePath = vmPackageConfigInfo.installPackageApkFilePath
+                installPackageInfoFilePath = vmPackageConfigInfo.installPackageInfoFilePath
+                installPackageInfoVersionCode = vmPackageConfigInfo.installPackageInfoVersionCode
+                installPackageInfoVersionCodeName = vmPackageConfigInfo.installPackageInfoVersionCodeName
+            }
 
+            val userSpaceConfigInfo = vmPackageConfig.packageUserSpaceSetting[VmFileSystem.SYSTEM_USER_ID] ?: return false
+            val userSpace = userSpaceConfigInfo.packageUserSpace[packageName] ?: return false
+            userSpace.apply {
+                // 存储安装文件的配置文件 {vmRoot}/data/app/{pkg}/packageInfo.conf
+                installVmPackageInfoFilePath = vmPackageConfigInfo.installPackageInfoFilePath
+                // 存储安装目录 {vmRoot}/data/app/{pkg}/
+                installVmPackageDirPath = File(vmPackageConfigInfo.installPackageInfoFilePath).parent
+                // 这边存储的是应用的数据空间 {vmRoot}/data/data/{pkg}/
+                userPackageSpaceRootDirPath = VmFileSystem.getDataDir(packageName, VmFileSystem.SYSTEM_USER_ID).absolutePath
+                isOpened = false
+                lastInstallUpdateTime = System.currentTimeMillis()
+            }
+            return true
         }finally {
             syncData()
         }
