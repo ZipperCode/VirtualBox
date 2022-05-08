@@ -1,24 +1,18 @@
 package com.virtual.box.core
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
-import com.virtual.box.core.hook.JavaTestHandle
-import com.virtual.box.core.hook.TestHookHandle
 import com.virtual.box.core.hook.core.VmCore
-import com.virtual.box.core.hook.method.ArtMethod
-import com.virtual.box.core.manager.HookManager
-import com.virtual.box.core.manager.ServiceManager
 import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.core.service.DaemonService
 import com.virtual.box.reflect.android.app.HActivityThread
-import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import me.weishu.reflection.Reflection
 
 @SuppressLint("StaticFieldLeak")
@@ -34,9 +28,40 @@ class VirtualBox {
 
     lateinit var hostPkg: String
 
+    lateinit var hostPm: PackageManager
+
+    lateinit var mainAThread: Any
+
+    /**
+     * 当前的LoadedApk对象，不是宿主的LoadedApk对象
+     */
+    lateinit var mVmLoadedApk:Any
+
+    /**
+     * 当前运行程序的包名
+     */
+    lateinit var mVmPackageName: String
+
+    /**
+     * 当前虚拟用户id
+     * 启动Activity的时候需要指定启动哪个用户下的程序
+     */
+    var currentProcessVmUserId: Int = 0
+
+    fun setVmLoadedApkAndPks(pks: String, loadedApk: Any){
+        if (!::mVmPackageName.isInitialized){
+            mVmPackageName = pks
+        }
+        if (!::mVmLoadedApk.isInitialized){
+            mVmLoadedApk = loadedApk
+        }
+    }
+
     fun doAttachAppBaseContext(context: Context){
         hostContext = context
         hostPkg = hostContext.packageName
+        hostPm = context.packageManager
+        mainAThread = HActivityThread.currentActivityThread.call()
         // 去除反射限制
         Reflection.unseal(context)
         logger.method("context = %s", context)
@@ -73,7 +98,7 @@ class VirtualBox {
     }
 
     fun getInstalledPackageInfo(): List<VmInstalledPackageInfo>{
-        return VmPackageManager.getInstalledPackageInfo(0)
+        return VmPackageManager.getInstalledPackageInfoList(0)
     }
 
     /**

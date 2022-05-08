@@ -29,5 +29,11 @@ interface IVmPackageManagerService {
 
     boolean isInstalled(String packageName, int userId);
 
-    List<VmInstalledPackageInfo> getVmInstalledPackageInfo(int flag);
+    List<VmInstalledPackageInfo> getVmInstalledPackageInfos(int flag);
+
+    VmInstalledPackageInfo getVmInstalledPackageInfo(String packageName, int flags);
+
+    ResolveInfo resolveActivity(in Intent intent, int flags, String resolvedType, int userId);
+
+    ActivityInfo getActivityInfo(in ComponentName componentName, int flags, int userId);
 }

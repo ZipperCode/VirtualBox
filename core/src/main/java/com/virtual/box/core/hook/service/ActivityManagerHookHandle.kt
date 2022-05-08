@@ -46,7 +46,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         HSingleton.mInstance.set(iActivityManager, proxy)
     }
 
-    override fun isSupport(): Boolean {
+    override fun isHooked(): Boolean {
         return HSingleton.mInstance.get() != proxyInvocation
     }
 

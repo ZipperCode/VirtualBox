@@ -77,7 +77,7 @@ object PackageHelper {
         }
     }
 
-    fun getInstallPackageInfo(hostPackageInfo: PackageInfo, aPackage: PackageParser.Package): PackageInfo {
+    fun convertPackageInfo(hostPackageInfo: PackageInfo, aPackage: PackageParser.Package): PackageInfo {
         val parcel = Parcel.obtain()
         try {
             parcel.setDataPosition(0)
@@ -296,6 +296,18 @@ object PackageHelper {
             }
         }
 
+    }
+
+    @JvmStatic
+    fun getTaskAffinity(info: ActivityInfo): String {
+        if (info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+            return "-SingleInstance-" + info.packageName + "/" + info.name
+        } else if (info.taskAffinity == null && info.applicationInfo.taskAffinity == null) {
+            return info.packageName
+        } else if (info.taskAffinity != null) {
+            return info.taskAffinity
+        }
+        return info.applicationInfo.taskAffinity
     }
 
     fun getPackageArchiveInfoAllFlag(): Int {

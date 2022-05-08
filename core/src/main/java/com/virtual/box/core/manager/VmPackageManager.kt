@@ -1,5 +1,7 @@
 package com.virtual.box.core.manager
 
+import android.content.ComponentName
+import android.content.pm.ActivityInfo
 import android.os.RemoteException
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -54,12 +56,31 @@ object VmPackageManager {
         }
     }
 
-    fun getInstalledPackageInfo(flag: Int): List<VmInstalledPackageInfo>{
+    fun getInstalledPackageInfoList(flag: Int): List<VmInstalledPackageInfo>{
         return try {
-            requirePackageService().getVmInstalledPackageInfo(flag)
+            requirePackageService().getVmInstalledPackageInfos(flag)
         }catch (e: RemoteException){
             logger.e(e)
             emptyList<VmInstalledPackageInfo>()
+        }
+    }
+
+    fun getInstalledVmPackageInfo(packageName: String, flags: Int): VmInstalledPackageInfo?{
+        return try {
+            requirePackageService().getVmInstalledPackageInfo(packageName, flags)
+        }catch (e: RemoteException){
+            logger.e(e)
+            return null
+        }
+    }
+
+
+    fun getActivityInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo?{
+        return try {
+            requirePackageService().getActivityInfo(componentName, flags, userId)
+        }catch (e: RemoteException){
+            logger.e(e)
+            null
         }
     }
 

@@ -1,7 +1,10 @@
 package com.virtual.box.core.server.pm.entity
 
+import android.content.ComponentName
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.storage.IParcelDataHandle
 import com.virtual.box.base.storage.MapParcelDataHandle
@@ -28,6 +31,9 @@ class VmPackageRepo {
 
     private val vmPackageConfig: VmPackageSettings = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
 
+    fun checkNeedInstalledOrUpdated(packageName: String, versionCode: Long): Boolean{
+        return !checkPackageInstalled(packageName) || (checkPackageInstalled(packageName) && checkPackageVersion(packageName,versionCode))
+    }
     /**
      * 检查包是否安装
      */
@@ -42,7 +48,7 @@ class VmPackageRepo {
         if (!checkPackageInstalled(packageName)){
             return false
         }
-        return vmPackageConfig.packageSetting[packageName]!!.installPackageInfoVersionCode >= versionCode
+        return vmPackageConfig.packageSetting[packageName]!!.installPackageInfoVersionCode < versionCode
     }
 
     /**
@@ -116,6 +122,9 @@ class VmPackageRepo {
         }
     }
 
+    /**
+     * 删除安装包数据
+     */
     @Synchronized
     fun removeInstallPackageInfoWithLock(packageName: String){
         try {
@@ -141,9 +150,39 @@ class VmPackageRepo {
                 vmPackageConfig.packageUserSpaceSetting.remove(needRemoveUser)
                 VmUserManagerService.deleteUser(needRemoveUser)
             }
-
+            // 删除安装包数据
+            vmPackageConfig.packageSetting.remove(packageName)
             // 删除安装目录
-            VmPackageInstallManager.uninstallVmPackageAsUser(packageName, VmFileSystem.SYSTEM_USER_ID)
+            VmPackageInstallManager.uninstallVmPackage(packageName)
+        }finally {
+            syncData()
+        }
+    }
+
+    /**
+     * 移除安装用户的数据
+     */
+    @Synchronized
+    fun remoteInstallPackageUserDataWithLock(packageName: String, userId: Int){
+        logger.i("删除指定包的用户数据 packageName = %s, userId = %s", packageName, userId)
+        try {
+            vmPackageConfig.packageUserSpaceSetting[userId]?.run {
+                val userSpacePkgConfIterator = packageUserSpace.iterator()
+                while (userSpacePkgConfIterator.hasNext()){
+                    val next = userSpacePkgConfIterator.next()
+                    if (next.value.packageName == packageName){
+                        userSpacePkgConfIterator.remove()
+                        // 删除指定应用包下的用户空间
+                        VmPackageInstallManager.deleteUserSpaceData(packageName, userId)
+                    }
+                }
+            }
+            if (!vmPackageConfig.checkPackageUsed(packageName)){
+                logger.e("安装包packageName = %s已经不存在使用的用户了，卸载安装包",packageName)
+                // 删除安装包数据
+                vmPackageConfig.packageSetting.remove(packageName)
+                VmPackageInstallManager.uninstallVmPackage(packageName)
+            }
         }finally {
             syncData()
         }
@@ -169,6 +208,32 @@ class VmPackageRepo {
         return result
     }
 
+    fun getVmPackageInfo(packageName: String, flags: Int): PackageInfo?{
+        val vmPackageConf = vmPackageConfig.packageSetting[packageName] ?: return null
+        val file = File(vmPackageConf.installPackageApkFilePath)
+        val confFile = File(vmPackageConf.installPackageInfoFilePath)
+        if (!file.exists() || !confFile.exists()){
+            // 文件不存在，删除此记录
+            removeInstallPackageInfoWithLock(vmPackageConf.packageName)
+            return null
+        }
+        // TODO 暂时不考虑flags标志，直接全家内容返回
+        val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
+//        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
+//            packageInfo.activities = emptyArray()
+//        }
+        return packageInfo
+    }
+
+    fun getActivityInfo(componentName: ComponentName, flags: Int): ActivityInfo?{
+        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
+        val findActivityInfo = vmPackageInfo.activities.find { it.name == componentName.className } ?: return null
+        return ActivityInfo(findActivityInfo)
+    }
+
+    fun resolveActivities(): List<ResolveInfo>{
+        return emptyList()
+    }
 
     @Synchronized
     fun syncData(){

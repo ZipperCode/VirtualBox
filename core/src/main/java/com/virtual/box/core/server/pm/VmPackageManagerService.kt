@@ -1,13 +1,18 @@
 package com.virtual.box.core.server.pm
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageParser
+import android.content.pm.ResolveInfo
 import android.os.Process
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.util.AppExecutors
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.compat.PackageParserCompat
 import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmPackageInstallManager
@@ -16,32 +21,14 @@ import com.virtual.box.core.server.pm.entity.*
 import com.virtual.box.core.server.user.VmUserManagerService
 import com.virtual.box.reflect.android.content.pm.HPackageParser
 import java.io.File
-import kotlin.Exception
 
 /**
  *
  * @author zhangzhipeng
  * @date   2022/4/26
  **/
-internal class VmPackageManagerService private constructor() : IVmPackageManagerService.Stub() {
-    private val logger = Logger.getLogger(L.SERVER_TAG, "BPackageManagerService")
-
-    companion object {
-        const val TAG = "BPackageManagerService"
-        private var sService: VmPackageManagerService? = null
-
-        @JvmStatic
-        fun get(): VmPackageManagerService {
-            if (sService == null) {
-                synchronized(this) {
-                    if (sService == null) {
-                        sService = VmPackageManagerService()
-                    }
-                }
-            }
-            return sService!!
-        }
-    }
+internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
+    private val logger = Logger.getLogger(L.SERVER_TAG, "VmPackageManagerService")
 
     /**
      * 跨进程监听包监听
@@ -80,7 +67,6 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return installPackageAsUserLocked(installOptions, userId)
     }
 
-
     override fun installPackageAsUserAsync(installOptions: VmPackageInstallOption?, userId: Int): Int {
         if (installOptions == null) {
             logger.e("【IPC】异步安装应用失败，installOptions == null")
@@ -117,6 +103,8 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
             packageInfo.applicationInfo.publicSourceDir
         }
         val installResult = VmPackageResult()
+        // TODO 后续添加检查是否安装过此应用了
+        logger.method("【IPC】安装应用（应用包），文件路径 path = %s", filePath)
         AppExecutors.get().executeMultiThreadWithLock {
             // 解析apk文件包
             val aPackage = parserApk(filePath)
@@ -124,19 +112,20 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
                 installResult.msg = "解析apk文件：${filePath}失败"
                 return@executeMultiThreadWithLock
             }
-            logger.i("调用包安装服务进行安装：成功，保存安装数据到本地")
-            val hostPackageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(VirtualBox.get().hostPkg, 0)
-            val vmPackageInfo = PackageHelper.getInstallPackageInfo(hostPackageInfo, aPackage)
-//            val vmPackageInfo = PackageHelper.getInstallPackageInfoByFile(VirtualBox.get().hostContext, filePath)
-//            if (vmPackageInfo == null) {
-//                installResult.msg = "解析apk文件：${filePath}失败"
-//                return@executeMultiThreadWithLock
-//            }
+            val packageName = aPackage.packageName
+            val versionCode = aPackage.mVersionCode
+            val hostPackageInfo = VirtualBox.get().hostPm.getPackageInfo(VirtualBox.get().hostPkg, 0)
+            val vmPackageInfo = PackageHelper.convertPackageInfo(hostPackageInfo, aPackage)
+            // 检查是否安装或更新
+            if (vmPackageRepo.checkNeedInstalledOrUpdated(packageName, versionCode.toLong())){
+                VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath)
+            }
+            // 创建用户
             VmUserManagerService.checkOrCreateUser(userId)
             // 停止同包名下的应用进程
             VmProcessManager.killProcess(vmPackageInfo.packageName, userId)
-            // 安装处理
-            VmPackageInstallManager.installVmPackageAsUser(vmPackageInfo, filePath, userId)
+            // 安装用户数据
+            VmPackageInstallManager.installVmPackageAsUserData(vmPackageInfo, userId)
             // 安装包配置
             val vmPackageSetting = VmPackageConfigInfo(vmPackageInfo, option)
             // 保存安装信息
@@ -148,18 +137,17 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return installResult
     }
 
+
     override fun uninstallPackageAsUser(packageName: String?, userId: Int): VmPackageResult {
         synchronized(mInstallLock){
             if (!isInstalled(packageName, userId)){
                 logger.e("【IPC】用户卸载安装包失败，校验不通过")
                 return VmPackageResult.installFail("用户卸载安装包失败，校验不通过")
             }
-            logger.i("【IPC】正在卸载用户安装包")
+            logger.i("【IPC】正在卸载用户安装包 packageName = %s", packageName)
             // 关闭应用进程
             VmProcessManager.killProcess(packageName!!, userId)
-            // 删除用户安装配置
-            VmPackageInstallManager.uninstallVmPackageAsUser(packageName, userId)
-            // 如果没有用户安装了此安装包，删除安装路径
+            vmPackageRepo.remoteInstallPackageUserDataWithLock(packageName, userId)
         }
         return VmPackageResult.installSuccess(packageName!!)
     }
@@ -188,10 +176,28 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return true
     }
 
-    override fun getVmInstalledPackageInfo(flag: Int): MutableList<VmInstalledPackageInfo> {
+    override fun getVmInstalledPackageInfos(flag: Int): MutableList<VmInstalledPackageInfo> {
         logger.i("【IPC】查找安装的应用")
         val installPackageInfoList = vmPackageRepo.getPackageInfoList(flag)
         return installPackageInfoList.map { VmInstalledPackageInfo(0, it.packageName, it) }.toMutableList()
+    }
+
+    override fun getVmInstalledPackageInfo(packageName: String, flags: Int): VmInstalledPackageInfo?{
+        logger.i("【IPC】查找指定包名的安装应用（非系统）")
+        //return vmPackageRepo.getVmPackageInfo(packageName, flags)
+        return null
+    }
+
+    override fun resolveActivity(intent: Intent?, flags: Int, resolvedType: String?, userId: Int): ResolveInfo? {
+        return null
+    }
+
+    override fun getActivityInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo? {
+        val activityInfo = vmPackageRepo.getActivityInfo(componentName, flags) ?: return null
+        val applicationInfo = activityInfo.applicationInfo
+        ComponentFixCompat.fixApplicationAbi(applicationInfo)
+        ComponentFixCompat.fixApplicationInfo(applicationInfo, userId)
+        return activityInfo
     }
 
     private fun dispatcherPackageInstall(installResult: VmPackageResult){
@@ -228,5 +234,29 @@ internal class VmPackageManagerService private constructor() : IVmPackageManager
         return null
     }
 
+    public fun resolveActivityInfo(intent: Intent?, flags: Int, resolvedType: String, userId: Int): ActivityInfo?{
+        logger.i("解析ActivityInfo intent = %s, userId = %s", intent, userId)
+        intent?: return null
+        if (!VmUserManagerService.exists(userId)){
+            logger.e("解析ActivityInfo 失败，用户 %s 不存在", userId)
+            return null
+        }
+        val packageName = intent.getPackage()
+        val componentName = intent.component
+        if (packageName.isNullOrEmpty()){
+            logger.e("解析ActivityInfo 失败，包名不能为空")
+            return null
+        }
+
+        if (componentName != null){
+            val activityInfo = vmPackageRepo.getActivityInfo(componentName, flags)
+            return activityInfo
+        }
+        // 组件为空，那就解析 TODO 暂时不考虑解析的intent
+        val scheme = intent.scheme
+
+        // 最后兜底使用系统解析
+        return VirtualBox.get().hostPm.resolveActivity(intent, flags)?.activityInfo
+    }
 
 }

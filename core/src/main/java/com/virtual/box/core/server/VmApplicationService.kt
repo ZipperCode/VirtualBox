@@ -15,6 +15,10 @@ internal object VmApplicationService: IVmApplicationService.Stub() {
         return HActivityThread.getApplicationThread.call(mainThread())
     }
 
+    override fun getVmMainApplication(): IBinder {
+        TODO("Not yet implemented")
+    }
+
     /**
      * 进程初始化
      */

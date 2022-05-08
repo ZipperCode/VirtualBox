@@ -4,8 +4,12 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import android.os.Binder
 import android.os.Bundle
+import android.os.Process
+import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.core.entity.VmAppConfig
+import com.virtual.box.core.server.VmActivityThread
 import com.virtual.box.core.server.VmApplicationService
 
 /**
@@ -23,6 +27,21 @@ open class ProxyContentProvider : ContentProvider() {
          * bundle包装IBinder服务的key值
          */
         const val IPC_VM_BINDER_HANDLE_KEY = "_VM_|_app_handle_"
+
+        const val IPC_VM_CALLING_PID_KEY = "_VM_|_calling_pid_"
+        const val IPC_VM_CALLING_UID_KEY = "_VM_|_calling_uid_"
+
+        /**
+         * 启动进程的pid
+         */
+        const val IPC_VM_CUR_PID_KEY = "_VM_|_current_pid_"
+
+        /**
+         * 启动进程的uid
+         */
+        const val IPC_VM_CUR_UID_KEY = "_VM_|_current_uid_"
+
+        const val IPC_VM_PROXY_PROCESS_NAME_KEY = "_VM_|_current_process_name_"
     }
     override fun onCreate(): Boolean = false
 
@@ -32,7 +51,19 @@ open class ProxyContentProvider : ContentProvider() {
             val appConfig: VmAppConfig = extras.getParcelable(VmAppConfig.IPC_BUNDLE_KEY)!!
             VmApplicationService.initAppConfig(appConfig)
             val bundle = Bundle()
-            // putBinder(bundle, IPC_VM_BINDER_HANDLE_KEY, VmApplicationService)
+            // 进程启动后返回VmActivityThread引用
+            bundle.putBinder(IPC_VM_BINDER_HANDLE_KEY, VmActivityThread)
+            // 返回调用者pid和uid，确定调用来源
+            val callingPid = Binder.getCallingPid()
+            val callingUid = Binder.getCallingUid()
+            bundle.putInt(IPC_VM_CALLING_PID_KEY, callingPid)
+            bundle.putInt(IPC_VM_CALLING_UID_KEY, callingUid)
+            val pid = Process.myPid()
+            val uid = Process.myUid()
+            Process.myUserHandle()
+            bundle.putInt(IPC_VM_CUR_PID_KEY, pid)
+            bundle.putInt(IPC_VM_CUR_UID_KEY, uid)
+            bundle.putString(IPC_VM_PROXY_PROCESS_NAME_KEY,SystemHelper.getCurrentProcessName())
             return bundle
         }
         return super.call(method, arg, extras)

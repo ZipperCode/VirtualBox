@@ -20,7 +20,7 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         return HIActivityTaskManager.Stub.asInterface.call(proxyBinderObj)
     }
 
-    override fun isSupport(): Boolean {
+    override fun isHooked(): Boolean {
         return HServiceManager.getService.call("activity_task") !== this
     }
 

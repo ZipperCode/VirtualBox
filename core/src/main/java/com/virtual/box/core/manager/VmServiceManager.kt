@@ -6,6 +6,7 @@ import java.util.HashMap
 
 internal object VmServiceManager {
     const val PACKAGE_MANAGER = "package_manager"
+    const val ACTIVITY_MANAGER = "package_manager"
 
     /**
      * 服务进程的服务管理对象

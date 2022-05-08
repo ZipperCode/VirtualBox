@@ -1,6 +1,7 @@
 package com.virtual.box.core.entity
 
 import android.os.Binder
+import android.os.ConditionVariable
 import android.os.Process
 import com.virtual.box.base.util.log.L
 
@@ -9,19 +10,29 @@ import com.virtual.box.base.util.log.L
  * @author zhangzhipeng
  * @date   2022/4/27
  **/
-class VmAppProcess(val appId: Int, val packageName: String) {
+class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val processName: String) {
     /**
      * 应用运行的进程
-     * 进程Id：进程信息
+     * 代理应用进程名称：进程信息
      */
-    private val currentAppProcessRecord: MutableMap<Int, VmProcessRecord> = HashMap(5)
+    private val currentAppProcessRecord: MutableMap<String, VmProcessRecord> = HashMap(5)
 
     /**
      * 虚拟进程对应的系统进程
      */
     private val vmPid2SystemPId: MutableMap<Int, Int> = HashMap(5)
 
-    private var mainVmPid: Int = -1
+    /**
+     * 应用主进程的进程信息
+     */
+    var mainProcessRecord: VmProcessRecord? = null
+
+    val appProcessHandleLock = Any()
+
+    /**
+     * 主进程创建lock
+     */
+    val mainProcessInitLock = ConditionVariable()
 
     fun startMainProcess(vmPid: Int){
         val callingUid = Binder.getCallingUid()
@@ -30,6 +41,40 @@ class VmAppProcess(val appId: Int, val packageName: String) {
 
     fun startProxyProcess(){
 
+    }
+
+    fun addSubProcessInfo(vmProcessRecord: VmProcessRecord){
+
+    }
+    /**
+     * 检查应用进程是否存在
+     */
+    fun checkProcessExists(vmProcessName: String): Boolean{
+        return currentAppProcessRecord.containsKey(vmProcessName)
+    }
+
+    fun checkMainProcess(): Boolean{
+        return mainProcessRecord != null
+    }
+
+    fun checkAndWaitMainProcess(){
+//        if (checkMainProcess()){
+//            if (mainProcessRecord!!.appThread != null)
+//        }
+    }
+
+    fun checkAndSetMainProcess(vmProcessRecord: VmProcessRecord){
+        if (mainProcessRecord == null){
+            mainProcessRecord = vmProcessRecord
+        }
+    }
+
+    fun checkAndSetProcess(vmProcessRecord: VmProcessRecord){
+        if (mainProcessRecord == null){
+            mainProcessRecord = vmProcessRecord
+        }else{
+            currentAppProcessRecord[vmProcessRecord.processName!!] = vmProcessRecord
+        }
     }
 
     fun kill(vmPid: Int){
@@ -49,11 +94,26 @@ class VmAppProcess(val appId: Int, val packageName: String) {
             vmPid2SystemPId.clear()
         }
     }
+
+    fun killProcessByName(processName: String){
+        try {
+
+        }catch (e: Throwable){
+            L.printStackTrace(e)
+        }
+    }
+
     private fun killProcess(pid: Int){
         try {
             Process.killProcess(pid)
         }catch (e: Throwable){
             L.printStackTrace(e)
+        }
+    }
+
+    fun getVmProcessAppConfig(): VmAppConfig{
+        return VmAppConfig().apply {
+            this.packageName = this@VmAppProcess.packageName
         }
     }
 }

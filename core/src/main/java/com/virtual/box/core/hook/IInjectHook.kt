@@ -4,5 +4,5 @@ interface IInjectHook {
 
     fun initHook()
 
-    fun isSupport(): Boolean
+    fun isHooked(): Boolean
 }

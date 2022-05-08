@@ -3,6 +3,7 @@ package com.virtual.box.core.entity
 import android.content.pm.ApplicationInfo
 import android.os.*
 import androidx.versionedparcelable.ParcelField
+import com.virtual.box.core.proxy.ProxyManifest
 
 
 class VmProcessRecord : Binder, Parcelable {
@@ -16,7 +17,7 @@ class VmProcessRecord : Binder, Parcelable {
     /**
      * 宿主进程名称
      */
-    var systemProcessName: String?
+    var systemProcessName: String? = null
     /**
      * 宿主进程的进程id
      */
@@ -60,13 +61,11 @@ class VmProcessRecord : Binder, Parcelable {
     var appThread: IInterface? = null
 
 
-    constructor(info: ApplicationInfo, systemProcessName: String, processName: String, buid: Int, bpid: Int): super() {
+    constructor(info: ApplicationInfo, vmUid: Int, vmPid: Int): super() {
         this.info = info
-        this.systemProcessName = systemProcessName
-        Binder.getCallingPid()
-        this.vmUid = buid
-        this.vmPid = bpid
-        this.processName = processName
+        this.processName = info.processName
+        this.vmUid = vmUid
+        this.vmPid = vmPid
     }
 
     /**
@@ -94,6 +93,10 @@ class VmProcessRecord : Binder, Parcelable {
         parcel.writeInt(vmPid)
     }
 
+    fun getProxyAuthority(): String{
+        return ProxyManifest.getProxyActivity(vmPid)
+    }
+
     override fun describeContents(): Int {
         return 0
     }
@@ -106,6 +109,8 @@ class VmProcessRecord : Binder, Parcelable {
         override fun newArray(size: Int): Array<VmProcessRecord?> {
             return arrayOfNulls(size)
         }
+
+        const val SERVER_2_CLIENT_PROCESS_RECORD_KEY = "SERVER_2_CLIENT_PROCESS_RECORD_KEY"
     }
 
 

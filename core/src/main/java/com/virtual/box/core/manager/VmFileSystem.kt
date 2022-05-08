@@ -103,7 +103,7 @@ internal object VmFileSystem {
     fun mkdirAppInstall(packageName: String){
         val installDir = getAppInstall(packageName)
         if (!installDir.exists()){
-            return
+            installDir.checkAndMkdirs()
         }
         File(installDir, "lib").checkAndMkdirs()
         File(installDir, "oat").checkAndMkdirs()
@@ -112,7 +112,7 @@ internal object VmFileSystem {
     fun mkdirAppData(packageName: String, userId: Int){
         val appDataDir = getUserDataDir(packageName, userId)
         if (!appDataDir.exists()){
-            return
+            appDataDir.checkAndMkdirs()
         }
         File(appDataDir, "files").checkAndMkdirs()
         File(appDataDir, "cache").checkAndMkdirs()

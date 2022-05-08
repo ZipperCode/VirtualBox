@@ -36,6 +36,12 @@ class VmPackageSettings(): Parcelable {
         parcel.writeMap(packageUserSpaceSetting)
     }
 
+    fun checkPackageUsed(packageName: String): Boolean{
+        if (!packageSetting.containsKey(packageName)){
+            return false
+        }
+        return packageUserSpaceSetting.values.find { it.packageUserSpace.containsKey(packageName) } != null
+    }
 
     override fun describeContents(): Int {
         return 0
@@ -50,6 +56,5 @@ class VmPackageSettings(): Parcelable {
         override fun newArray(size: Int): Array<VmPackageSettings?> {
             return arrayOfNulls(size)
         }
-
     }
 }

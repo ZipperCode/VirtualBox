@@ -11,4 +11,6 @@ import android.content.pm.ResolveInfo;
 
 interface IVmApplicationService {
     IBinder getSystemApplicationThread();
+
+    IBinder getVmMainApplication();
 }

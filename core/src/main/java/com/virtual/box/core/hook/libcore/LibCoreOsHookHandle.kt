@@ -29,7 +29,7 @@ class LibCoreOsHookHandle: BaseHookHandle() {
         HLibcore.os.set(proxy)
     }
 
-    override fun isSupport(): Boolean {
+    override fun isHooked(): Boolean {
         return HLibcore.os.get() !== proxyInvocation
     }
 

@@ -22,6 +22,9 @@ class VmAppConfig() : Parcelable {
     @JvmField
     var processName: String = ""
 
+    var callingUid: Int = 0
+
+
     constructor(parcel: Parcel) : this() {
     }
 
