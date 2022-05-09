@@ -8,7 +8,6 @@ import android.os.IBinder
 class VmActivityRecord(
     val userId: Int,
     val intent: Intent,
-
     val activityInfo: ActivityInfo
 ){
     var component: ComponentName? = null

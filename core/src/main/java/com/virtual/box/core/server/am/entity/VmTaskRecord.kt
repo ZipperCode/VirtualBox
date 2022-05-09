@@ -1,5 +1,6 @@
 package com.virtual.box.core.server.am.entity
 
+import android.content.ComponentName
 import android.content.Intent
 import java.util.*
 
@@ -33,4 +34,17 @@ class VmTaskRecord(
      * 窗口栈的Activity记录
      */
     val activityTaskList: MutableList<VmActivityRecord> = LinkedList()
+
+
+    fun findActivityTaskRecord(intent: Intent): VmActivityRecord?{
+        val componentName = intent.component
+        for (vmActivityRecord in activityTaskList) {
+            if (vmActivityRecord.component != null && componentName == vmActivityRecord.component){
+                return vmActivityRecord
+            }
+        }
+        return null
+    }
+
+
 }

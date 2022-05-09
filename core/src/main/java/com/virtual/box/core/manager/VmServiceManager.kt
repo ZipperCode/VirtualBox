@@ -14,7 +14,7 @@ internal object VmServiceManager {
     private val vmServiceCaches: MutableMap<String, IBinder> = HashMap(10)
 
     fun initService(){
-        vmServiceCaches[PACKAGE_MANAGER] = VmPackageManagerService.get()
+        vmServiceCaches[PACKAGE_MANAGER] = VmPackageManagerService
     }
 
     @JvmStatic

@@ -7,6 +7,8 @@ import java.lang.String;
 
 interface IVmActivityManagrService {
 
+    void launchActivity(in Intent intent, int userId);
+
     Intent prepareStartActivity(in Intent intent, int userId);
 
     int startActivity(in Intent intent, in int userId);

@@ -2,10 +2,7 @@ package com.virtual.box.core.server.pm
 
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.PackageInfo
-import android.content.pm.PackageParser
-import android.content.pm.ResolveInfo
+import android.content.pm.*
 import android.os.Process
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.util.AppExecutors
@@ -234,7 +231,17 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         return null
     }
 
-    public fun resolveActivityInfo(intent: Intent?, flags: Int, resolvedType: String, userId: Int): ActivityInfo?{
+    fun resolveApplicationInfo(intent: Intent, flags: Int, userId: Int): ApplicationInfo?{
+        logger.i("解析ApplicationInfo intent = %s, userId = %s", intent, userId)
+        if (!VmUserManagerService.exists(userId)){
+            logger.e("解析ApplicationInfo 失败，用户 %s 不存在", userId)
+            return null
+        }
+        val packageName = intent.getPackage() ?: return null
+        return vmPackageRepo.getApplicationInfo(packageName, flags)
+    }
+
+    fun resolveActivityInfo(intent: Intent?, flags: Int, resolvedType: String, userId: Int): ActivityInfo?{
         logger.i("解析ActivityInfo intent = %s, userId = %s", intent, userId)
         intent?: return null
         if (!VmUserManagerService.exists(userId)){

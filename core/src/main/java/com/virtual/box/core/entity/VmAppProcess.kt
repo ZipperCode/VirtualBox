@@ -30,14 +30,15 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
     val appProcessHandleLock = Any()
 
     /**
+     * 进程是否启动
+     */
+    val processHasStarted: Boolean get() {
+        return mainProcessRecord != null && vmPid2SystemPId.isNotEmpty()
+    }
+    /**
      * 主进程创建lock
      */
     val mainProcessInitLock = ConditionVariable()
-
-    fun startMainProcess(vmPid: Int){
-        val callingUid = Binder.getCallingUid()
-        val callingPid = Binder.getCallingPid()
-    }
 
     fun startProxyProcess(){
 
@@ -75,6 +76,7 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
         }else{
             currentAppProcessRecord[vmProcessRecord.processName!!] = vmProcessRecord
         }
+        vmPid2SystemPId[vmProcessRecord.vmPid] = vmProcessRecord.systemPid
     }
 
     fun kill(vmPid: Int){

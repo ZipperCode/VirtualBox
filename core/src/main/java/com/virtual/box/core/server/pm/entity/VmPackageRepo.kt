@@ -1,10 +1,7 @@
 package com.virtual.box.core.server.pm.entity
 
 import android.content.ComponentName
-import android.content.pm.ActivityInfo
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
+import android.content.pm.*
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.storage.IParcelDataHandle
 import com.virtual.box.base.storage.MapParcelDataHandle
@@ -223,6 +220,11 @@ class VmPackageRepo {
 //            packageInfo.activities = emptyArray()
 //        }
         return packageInfo
+    }
+
+    fun getApplicationInfo(packageName: String, flags: Int): ApplicationInfo?{
+        val vmPackageInfo = getVmPackageInfo(packageName, flags) ?: return null
+        return vmPackageInfo.applicationInfo
     }
 
     fun getActivityInfo(componentName: ComponentName, flags: Int): ActivityInfo?{

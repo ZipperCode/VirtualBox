@@ -94,7 +94,7 @@ class VmProcessRecord : Binder, Parcelable {
     }
 
     fun getProxyAuthority(): String{
-        return ProxyManifest.getProxyActivity(vmPid)
+        return ProxyManifest.getProxyAuthorities(vmPid)
     }
 
     override fun describeContents(): Int {
