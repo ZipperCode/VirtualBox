@@ -41,9 +41,8 @@ class VmPackageConfigInfo: Parcelable {
     constructor(vmPackageInfo: PackageInfo, vmPackageInstallOption: VmPackageInstallOption){
         this.packageName = vmPackageInfo.packageName
         this.installOption = vmPackageInstallOption
-        this.installPackageApkFilePath = vmPackageInfo.applicationInfo.sourceDir
-        this.installPackageInfoFilePath = File(vmPackageInfo.applicationInfo.publicSourceDir,
-            VmFileSystem.INSTALL_PACKAGE_INFO_FILE_NAME).absolutePath
+        this.installPackageApkFilePath = vmPackageInfo.applicationInfo.sourceDir!!
+        this.installPackageInfoFilePath = File(vmPackageInfo.applicationInfo.publicSourceDir).parent!! + File.separator + VmFileSystem.INSTALL_PACKAGE_INFO_FILE_NAME
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             this.installPackageInfoVersionCode = vmPackageInfo.longVersionCode
         }else{

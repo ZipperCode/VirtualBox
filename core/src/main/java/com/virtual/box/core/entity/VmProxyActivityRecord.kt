@@ -6,6 +6,6 @@ import com.virtual.box.core.helper.IntentHelper
 
 class VmProxyActivityRecord(
     val userId: Int,
-    val originIntent: Intent,
-    val activityInfo: ActivityInfo,
+    val originIntent: Intent?,
+    val activityInfo: ActivityInfo?,
 )

@@ -33,6 +33,10 @@ interface IVmPackageManagerService {
 
     VmInstalledPackageInfo getVmInstalledPackageInfo(String packageName, int flags);
 
+    PackageInfo getPackageInfo(String packageName, int flags, int userId);
+
+    ApplicationInfo getApplication(String packageName, int flags, int userId);
+
     ResolveInfo resolveActivity(in Intent intent, int flags, String resolvedType, int userId);
 
     ActivityInfo getActivityInfo(in ComponentName componentName, int flags, int userId);

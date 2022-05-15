@@ -1,5 +1,8 @@
 package com.virtual.box.core.manager
 
+import android.app.IServiceConnection
+import android.content.ComponentName
+import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import androidx.core.app.BundleCompat
@@ -10,6 +13,8 @@ import com.virtual.box.core.helper.ProviderCallHelper
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.VmServiceProvider
 import com.virtual.box.core.server.pm.IVmPackageManagerService
+import com.virtual.box.core.service.BindDaemonService
+import com.virtual.box.core.service.DaemonService
 
 /**
  * 客户端使用
@@ -22,8 +27,19 @@ object ServiceManager {
      */
     private val vmService: MutableMap<String, IBinder> = HashMap()
 
+    private val serviceConnection: ServiceConnection = object : ServiceConnection{
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            logger.d("服务连接成功")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            logger.d("服务连接断开")
+        }
+    }
+
     fun initService() {
         if (VirtualBox.get().isServerProcess){
+            BindDaemonService.bindService(VirtualBox.get().hostContext, serviceConnection)
             return
         }
         logger.d("非服务进程，初始化服务进程的代理对象")
@@ -36,7 +52,31 @@ object ServiceManager {
     private fun initServiceInternal(){
         // 包管理服务 aidl
         getService(VmServiceManager.PACKAGE_MANAGER)
+        getService(VmServiceManager.ACTIVITY_MANAGER)
     }
+//
+//    /**
+//     * 主进程监控server进程
+//     */
+//    private fun listenServer(){
+//        // 主进程监控server进程
+//        if (VirtualBox.get().isMainProcess){
+//            currentBActivityThread = currentBActivityThread()
+//            currentBActivityThread?.linkToDeath({
+//                L.ve("主线程与服务进程失去连接 >> 服务进程可能挂了 >> 重新初始化服务")
+//                currentBActivityThread = null
+//                reAttachServerProcess()
+//            },0)
+//        }
+//    }
+//
+//    private fun reAttachServerProcess(){
+//        if (currentBActivityThread == null){
+//            currentBActivityThread = currentBActivityThread()
+//            mServices.clear()
+//            initService()
+//        }
+//    }
 
     /**
      * 服务获取服务进程的代理对象

@@ -1,10 +1,19 @@
 package com.virtual.box.core.manager
 
+import android.os.Build
+import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.BuildConfig
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.hook.IInjectHook
 import com.virtual.box.core.hook.annotation.IHook
 import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.core.hook.delegate.AppInstrumentation
+import com.virtual.box.core.hook.delegate.VmHandlerCallback
+import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
+import com.virtual.box.core.hook.service.ActivityManagerHookHandle
+import com.virtual.box.core.hook.service.ActivityTaskManagerHookHandle
 import com.virtual.test.NativeLib
 
 /**
@@ -13,15 +22,22 @@ import com.virtual.test.NativeLib
 internal object HookManager {
     const val TAG = "HookManager"
     private val logger = Logger.virtualLogger()
-    private val mInjectors: MutableMap<Class<*>, IHook> = HashMap()
 
     fun initHook() {
-        // 主进程和服务进程不处理hook
-        if (!VirtualBox.get().isVirtualProcess){
-            L.vd("[%s] >> 初始化hook >> 非虚拟进程，不处理hook", TAG)
-            return
-        }
+        VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
         L.vd("[%s] >> 初始化hook", TAG)
+        val list = mutableListOf<IInjectHook>(
+            LibCoreOsHookHandle(),
+            VmHandlerCallback(),
+            AppInstrumentation(),
+            ActivityManagerHookHandle(),
+        )
+        if (BuildCompat.isAtLeastPie) {
+            list.add(ActivityTaskManagerHookHandle())
+        }
+        list.forEach {
+            it.initHook()
+        }
 //        // hook 系统文件重定向
 //        addInjector(OsStub())
 //        // hook ActivityManager 服务
@@ -59,7 +75,7 @@ internal object HookManager {
 //        injectAll()
     }
 
-    fun nativeHook(){
+    fun nativeHook() {
         logger.e(">> 第一次Hook之后加载So库Native方法")
         NativeLib.kotlinDynamicRegister()
 //        VmCore.nativeHook()

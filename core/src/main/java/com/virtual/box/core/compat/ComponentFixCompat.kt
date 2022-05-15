@@ -13,6 +13,7 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.ContextHelper
+import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.reflect.MirrorReflection
@@ -78,7 +79,7 @@ object ComponentFixCompat {
     }
 
     fun fixResourceOnActivity(activity: Activity){
-        val vmResources = HLoadedApk.mResources.get(VirtualBox.get().mVmLoadedApk)
+        val vmResources = HLoadedApk.mResources.get(VmActivityThread.mVmLoadedApk)
 //        try {
 //            val field = MirrorReflection.on(Activity::class.java).field<Resources>("mResources")
 //            field.set(activity, vmResources)

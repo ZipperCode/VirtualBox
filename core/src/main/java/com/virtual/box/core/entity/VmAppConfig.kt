@@ -1,5 +1,6 @@
 package com.virtual.box.core.entity
 
+import android.app.LoadedApk
 import android.os.Parcel
 import android.os.Parcelable
 
@@ -22,14 +23,50 @@ class VmAppConfig() : Parcelable {
     @JvmField
     var processName: String = ""
 
-    var callingUid: Int = 0
+    @JvmField
+    var userId: Int = 0
 
+    var isMainProcess: Boolean = false
+
+    /**
+     * 主进程的vmPid
+     */
+    var mainProcessVmPid: Int = -1
+
+    /**
+     * 主进程的系统pid
+     */
+    var mainProcessSystemPid: Int = -1
+
+    /**
+     * 主进程的系统uid
+     */
+    var mainProcessSystemUid: Int = -1
+    /**
+     * 进程记录
+     */
+    var vmProcessRecord: VmProcessRecord? = null
 
     constructor(parcel: Parcel) : this() {
+        packageName = parcel.readString() ?: ""
+        processName = parcel.readString() ?: ""
+        userId = parcel.readInt()
+        isMainProcess = parcel.readByte() != 0.toByte()
+        mainProcessVmPid = parcel.readInt()
+        mainProcessSystemPid = parcel.readInt()
+        mainProcessSystemUid = parcel.readInt()
+        vmProcessRecord = parcel.readStrongBinder() as? VmProcessRecord
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-
+        parcel.writeString(packageName)
+        parcel.writeString(processName)
+        parcel.writeInt(userId)
+        parcel.writeByte(if (isMainProcess) 1 else 0)
+        parcel.writeInt(mainProcessVmPid)
+        parcel.writeInt(mainProcessSystemPid)
+        parcel.writeInt(mainProcessSystemUid)
+        parcel.writeStrongBinder(vmProcessRecord)
     }
 
     override fun describeContents(): Int {

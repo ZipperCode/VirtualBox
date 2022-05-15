@@ -22,6 +22,8 @@ public class VmCore {
 
     public static native String redirectPath(String originPath);
 
+    public static native void switchRedirect(boolean enable);
+
     public static native long replaceMethod(long replaceMethod, long targetMethod);
 
     public static native int restoreMethod(long methodContentPtr, long targetMethodPtr);

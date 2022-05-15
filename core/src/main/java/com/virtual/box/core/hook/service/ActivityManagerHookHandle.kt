@@ -28,7 +28,7 @@ import com.virtual.box.reflect.android.util.HSingleton
  **/
 @Suppress("UNUSED")
 class ActivityManagerHookHandle : BaseHookHandle() {
-    override fun initTargetObj(): Any? {
+    override fun getOriginObject(): Any? {
         val iActivityManager: Any? = if (BuildCompat.isAtLeastOreo) {
             HActivityManager.IActivityManagerSingleton.get()
         } else {

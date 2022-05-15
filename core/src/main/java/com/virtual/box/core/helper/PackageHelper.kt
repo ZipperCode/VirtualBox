@@ -223,8 +223,8 @@ object PackageHelper {
             publicSourceDir = installFile.absolutePath
             sourceDir = installFile.absolutePath
             val installDir = VmFileSystem.getAppInstall(packageName)
-            HApplicationInfo.scanPublicSourceDir.set(this, installDir)
-            HApplicationInfo.scanSourceDir.set(this, installDir)
+            HApplicationInfo.scanPublicSourceDir.set(this, installDir.absolutePath)
+            HApplicationInfo.scanSourceDir.set(this, installDir.absolutePath)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vmApplicationInfo.storageUuid = UUID.randomUUID()
             }

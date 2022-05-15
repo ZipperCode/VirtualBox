@@ -35,6 +35,10 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
     val processHasStarted: Boolean get() {
         return mainProcessRecord != null && vmPid2SystemPId.isNotEmpty()
     }
+
+    val vmPackageName: String get() = mainProcessRecord?.processName ?: ""
+
+    val vmPid:Int get() = mainProcessRecord?.vmPid ?: -1
     /**
      * 主进程创建lock
      */

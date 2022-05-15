@@ -1,13 +1,21 @@
 package com.virtual.box.core
 
 import android.annotation.SuppressLint
+import android.app.ActivityThread
+import android.app.LoadedApk
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import com.virtual.box.base.helper.SystemHelper
+import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
 import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
+import com.virtual.box.core.manager.HookManager
+import com.virtual.box.core.manager.ServiceManager
+import com.virtual.box.core.manager.VmActivityManager
 import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
@@ -30,38 +38,13 @@ class VirtualBox {
 
     lateinit var hostPm: PackageManager
 
-    lateinit var mainAThread: Any
-
-    /**
-     * 当前的LoadedApk对象，不是宿主的LoadedApk对象
-     */
-    lateinit var mVmLoadedApk:Any
-
-    /**
-     * 当前运行程序的包名
-     */
-    lateinit var mVmPackageName: String
-
-    /**
-     * 当前虚拟用户id
-     * 启动Activity的时候需要指定启动哪个用户下的程序
-     */
-    var currentProcessVmUserId: Int = 0
-
-    fun setVmLoadedApkAndPks(pks: String, loadedApk: Any){
-        if (!::mVmPackageName.isInitialized){
-            mVmPackageName = pks
-        }
-        if (!::mVmLoadedApk.isInitialized){
-            mVmLoadedApk = loadedApk
-        }
-    }
+    lateinit var mainAThread: ActivityThread
 
     fun doAttachAppBaseContext(context: Context){
         hostContext = context
         hostPkg = hostContext.packageName
         hostPm = context.packageManager
-        mainAThread = HActivityThread.currentActivityThread.call()
+        mainAThread = ActivityThread.currentActivityThread()
         // 去除反射限制
         Reflection.unseal(context)
         logger.method("context = %s", context)
@@ -72,25 +55,28 @@ class VirtualBox {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
-
         initService()
-        if (isVirtualProcess){
-            VmCore.init(Build.VERSION.SDK_INT, true)
-        }
+        initHook()
     }
 
     private fun initService(){
-        if (isServerProcess) {
-            DaemonService.startService(hostContext)
-        }
+        ServiceManager.initService()
     }
 
     private fun initHook(){
-
+        if(!isVirtualProcess){
+            logger.d("初始化hook >> 非虚拟进程，不处理hook")
+            return
+        }
+        HookManager.initHook()
     }
 
     fun installPackage(installOption: VmPackageInstallOption){
         VmPackageManager.installPackage(installOption)
+    }
+
+    fun launchApp(intent: Intent){
+        VmActivityManager.launchActivity(intent, 0)
     }
 
     fun uninstallPackage(packageName: String){
@@ -123,14 +109,6 @@ class VirtualBox {
         @JvmStatic
         fun get(): VirtualBox {
             return sVirtualCore
-        }
-
-        /**
-         * 当前进程的 ActivityThread
-         */
-        @JvmStatic
-        fun mainThread(): Any {
-            return HActivityThread.currentActivityThread.call()
         }
     }
 }

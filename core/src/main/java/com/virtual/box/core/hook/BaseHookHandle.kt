@@ -1,5 +1,6 @@
 package com.virtual.box.core.hook
 
+import com.virtual.box.base.util.log.L
 import com.virtual.box.core.hook.core.MethodHookInfo
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -16,9 +17,9 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
         val methodIdentifier = method.name
         if (proxyTargetMethodCache.containsKey(methodIdentifier)){
-            return proxyTargetMethodCache[methodIdentifier]!!.invoke1(this, proxy, method, args)
+            return proxyTargetMethodCache[methodIdentifier]!!.invoke(this, target!!, method, args)
         }
-        return kotlinInvokeOrigin(proxy, method, args)
+        return kotlinInvokeOrigin(target!!, method, args)
     }
 
     protected open fun kotlinInvokeOrigin(proxy: Any, method: Method, args: Array<out Any?>?): Any?{
@@ -30,30 +31,34 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
     }
 
     override fun initHook() {
-        target = initTargetObj() ?: return
-        proxyInvocation = Proxy.newProxyInstance(
-            target!!.javaClass.classLoader,
-            getAllInterface(target!!.javaClass),
-            this
-        ) ?: return
-        val selfDeclareMethods = javaClass.declaredMethods
-        val proxyDeclareMethods = proxyInvocation!!.javaClass.declaredMethods
+        try {
+            target = getOriginObject() ?: return
+            proxyInvocation = Proxy.newProxyInstance(
+                target!!.javaClass.classLoader,
+                getAllInterface(target!!.javaClass),
+                this
+            ) ?: return
+            val selfDeclareMethods = javaClass.declaredMethods
+            val proxyDeclareMethods = proxyInvocation!!.javaClass.declaredMethods
 
-        for (selfDeclareMethod in selfDeclareMethods) {
-            for (proxyDeclareMethod in proxyDeclareMethods) {
-                selfDeclareMethod.isAccessible = true
-                val methodIdentifier = selfDeclareMethod.name
-                if (methodIdentifier == proxyDeclareMethod.name){
-                    val methodHookInfo = MethodHookInfo(selfDeclareMethod)
-                    proxyTargetMethodCache[methodIdentifier] = methodHookInfo
+            for (selfDeclareMethod in selfDeclareMethods) {
+                for (proxyDeclareMethod in proxyDeclareMethods) {
+                    selfDeclareMethod.isAccessible = true
+                    val methodIdentifier = selfDeclareMethod.name
+                    if (methodIdentifier == proxyDeclareMethod.name){
+                        val methodHookInfo = MethodHookInfo(selfDeclareMethod)
+                        proxyTargetMethodCache[methodIdentifier] = methodHookInfo
+                    }
                 }
             }
-        }
 
-        hookInject(target!!, proxyInvocation!!)
+            hookInject(target!!, proxyInvocation!!)
+        }catch (e: Throwable){
+            L.printStackTrace(e)
+        }
     }
 
-    protected abstract fun initTargetObj(): Any?
+    protected abstract fun getOriginObject(): Any?
 
     protected abstract fun hookInject(target: Any, proxy: Any)
 

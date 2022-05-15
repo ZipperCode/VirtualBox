@@ -21,7 +21,7 @@ class VmPackageUserSpaceConfigInfo : Parcelable {
     val packageUserSpace: HashMap<String, VmPackageUserSpace> = HashMap(20)
 
     constructor(parcel: Parcel) : this(parcel.readInt()) {
-        parcel.readMap(packageUserSpace, HashMap::class.java.classLoader)
+        parcel.readMap(packageUserSpace, VmPackageUserSpace::class.java.classLoader)
     }
 
     constructor(userId: Int){

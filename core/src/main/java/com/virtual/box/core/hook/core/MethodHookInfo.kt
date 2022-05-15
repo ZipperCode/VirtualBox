@@ -15,7 +15,7 @@ class MethodHookInfo(
 ) {
     private var originArtMethod: Long = HExecutable.artMethod.get(targetStubMethod)
 
-    fun invoke1(proxyObj: Any?, originObj: Any?, method: Method, args: Array<out Any?>?): Any?{
+    fun invoke(proxyObj: Any?, originObj: Any?, method: Method, args: Array<out Any?>?): Any?{
         var result: Any? = null
         val curProxyMethod1Ptr = originArtMethod
         val curTargetMethodPtr = HExecutable.artMethod.get(method)

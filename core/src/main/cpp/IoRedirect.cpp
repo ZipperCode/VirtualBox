@@ -45,6 +45,9 @@ bool IoRedirect::initRedirectRule(JNIEnv *env, jobjectArray originPaths, jobject
 }
 
 const char *IoRedirect::handleRedirectPath(const char *path) {
+    if (!sHasInit){
+        return path;
+    }
     if (path == nullptr || strlen(path) == 0){
         ALOGE("handleRedirectPath >> 参数 path == null")
         return path;
@@ -86,6 +89,9 @@ const char *IoRedirect::handleRedirectPath(const char *path) {
 }
 
 jstring IoRedirect::handleRedirectPath(JNIEnv *env, jstring filePath) {
+    if (!sHasInit){
+        return filePath;
+    }
     const char* path = env->GetStringUTFChars(filePath, JNI_FALSE);
     const char* target =handleRedirectPath(path);
     if (target == nullptr){
@@ -97,6 +103,9 @@ jstring IoRedirect::handleRedirectPath(JNIEnv *env, jstring filePath) {
 }
 
 jobject IoRedirect::handleRedirectPath(JNIEnv *env, jobject fileObj) {
+    if (!sHasInit){
+        return fileObj;
+    }
     auto filePath = reinterpret_cast<jstring>(env->CallObjectMethod(fileObj, sFileGetAbsolutePathMethod));
     jstring result = handleRedirectPath(env, filePath);
     if (result == nullptr){

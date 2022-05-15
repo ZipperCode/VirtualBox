@@ -28,7 +28,7 @@ object IntentHelper {
 
     fun replaceActivityIntentInfo(intent: Intent){
         val originComponent = intent.component
-        VmProcessManager.findAvailableVmPid()
+        // VmProcessManager.findAvailableVmPid()
     }
 
     /**
@@ -45,8 +45,8 @@ object IntentHelper {
      */
     fun parseIntent(shadowIntent: Intent): VmProxyActivityRecord {
         val userId: Int = shadowIntent.getIntExtra(IPC_USER_ID_INTENT_KEY, 0)
-        val activityInfo: ActivityInfo = shadowIntent.getParcelableExtra(IPC_ACTIVITY_INFO_INTENT_KEY)!!
-        val originIntent: Intent = shadowIntent.getParcelableExtra<Intent>(IPC_ORIGIN_INTENT_INTENT_KEY)!!
+        val activityInfo: ActivityInfo? = shadowIntent.getParcelableExtra(IPC_ACTIVITY_INFO_INTENT_KEY)
+        val originIntent: Intent? = shadowIntent.getParcelableExtra<Intent>(IPC_ORIGIN_INTENT_INTENT_KEY)
         return VmProxyActivityRecord(userId, originIntent, activityInfo)
     }
 }

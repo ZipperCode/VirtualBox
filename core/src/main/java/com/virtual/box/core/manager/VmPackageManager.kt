@@ -2,6 +2,7 @@ package com.virtual.box.core.manager
 
 import android.content.ComponentName
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageInfo
 import android.os.RemoteException
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -74,6 +75,14 @@ object VmPackageManager {
         }
     }
 
+    fun getPackageInfo(packageName: String, flags: Int, userId: Int): PackageInfo?{
+        return try {
+            requirePackageService().getPackageInfo(packageName, flags, userId)
+        }catch (e: RemoteException){
+            logger.e(e)
+            null
+        }
+    }
 
     fun getActivityInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo?{
         return try {

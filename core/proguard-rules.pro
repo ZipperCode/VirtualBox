@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+#-keeppackagenames androidx.*
+-keep class androidx.core.app.CoreComponentFactory { *; }
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}

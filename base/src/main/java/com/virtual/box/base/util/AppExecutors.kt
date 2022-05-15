@@ -64,6 +64,19 @@ class AppExecutors private constructor() {
         }
     }
 
+    inline fun<reified T> executeMultiThreadWithLockAsResult(task: Callable<T>): T?{
+        val lock = ConditionVariable()
+        var result: T? = null
+        synchronized(this){
+            execute{
+                result = task.call()
+                lock.open()
+            }
+            lock.block()
+            return result
+        }
+    }
+
     fun execute(runnable: Runnable){
         defaultExecutor.execute(runnable)
     }

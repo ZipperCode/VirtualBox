@@ -1,7 +1,7 @@
 package com.virtual.box.core.server
 
+import android.app.ActivityThread
 import android.os.IBinder
-import com.virtual.box.core.VirtualBox.Companion.mainThread
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.reflect.android.app.HActivityThread
 
@@ -12,17 +12,11 @@ import com.virtual.box.reflect.android.app.HActivityThread
  **/
 internal object VmApplicationService: IVmApplicationService.Stub() {
     override fun getSystemApplicationThread(): IBinder {
-        return HActivityThread.getApplicationThread.call(mainThread())
+        return HActivityThread.getApplicationThread.call( ActivityThread.currentActivityThread())
     }
 
     override fun getVmMainApplication(): IBinder {
         TODO("Not yet implemented")
     }
 
-    /**
-     * 进程初始化
-     */
-    fun initAppConfig(appConfig: VmAppConfig){
-
-    }
 }

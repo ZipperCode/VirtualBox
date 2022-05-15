@@ -15,6 +15,8 @@ const static JNINativeMethod jniNativeMethods[] = {
 };
 static VirtualCore *gVmCore;
 
+bool hasInit = false;
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
     ALOGD(">> VirtualCore JNI OnLoad");
     gVmCore = new VirtualCore(vm);
@@ -26,9 +28,14 @@ int initVm(JNIEnv *env, jclass clazz, jint android_level, jboolean debug) {
         ALOGE(">> VirtualCore#init fail: gVmCore == null")
         return JNI_ERR;
     }
+    if (hasInit){
+        ALOGE(">> VirtualCore#init fail: has init")
+        return JNI_OK;
+    }
     ALOGD(">> VirtualCore init");
     // initDebugLog(debug);
     gVmCore->initVirtualEnv(env, android_level, debug);
+    hasInit = true;
     return JNI_OK;
 }
 
@@ -78,11 +85,6 @@ int registerNativeMethod(JavaVM *jvm) {
     ALOGE(">> VirtualCore Native 函数注册成功 %s", VM_CORE_CLASS)
     return JNI_VERSION_1_6;
 }
-
-//struct ArtMethodContentCopy{
-//    char * originArtMethod;
-//    char * targetArtMethod;
-//} ;
 
 class ArtMethodContentCopy {
 public:
@@ -146,6 +148,12 @@ void HexDump(const char*name, uint8_t &start, unsigned int len){
     ALOGE("<< ========================================= %s#End ", name)
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_virtual_box_core_hook_core_VmCore_switchRedirect(JNIEnv *env, jclass clazz, jboolean enable) {
+
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_virtual_box_core_hook_core_VmCore_replaceMethod(
         JNIEnv *env, jclass clazz, jlong replace_method, jlong target_method) {
@@ -188,3 +196,4 @@ Java_com_virtual_box_core_hook_core_VmCore_restoreMethod(
     delete copyOriginArtMethod;
     return 1;
 }
+

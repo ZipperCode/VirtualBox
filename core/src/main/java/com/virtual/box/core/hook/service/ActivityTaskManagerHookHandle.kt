@@ -16,8 +16,8 @@ import com.virtual.box.core.hook.core.MethodHandle
 @TargetApi(Build.VERSION_CODES.P)
 @Suppress("UNUSED")
 class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
-    override fun initTargetObj(): Any? {
-        return HIActivityTaskManager.Stub.asInterface.call(proxyBinderObj)
+    override fun getOriginObject(): Any? {
+        return HIActivityTaskManager.Stub.asInterface.call(originBinder)
     }
 
     override fun isHooked(): Boolean {

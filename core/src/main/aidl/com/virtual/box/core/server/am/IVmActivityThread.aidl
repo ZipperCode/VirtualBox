@@ -5,4 +5,6 @@ import android.os.IBinder;
 
 interface IVmActivityThread {
     IBinder getVmActivityThread();
+
+    void handleApplication();
 }

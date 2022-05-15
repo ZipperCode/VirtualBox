@@ -9,7 +9,8 @@ import android.os.Bundle
 import android.os.Process
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.core.entity.VmAppConfig
-import com.virtual.box.core.server.VmActivityThread
+import com.virtual.box.core.entity.VmProcessRecord
+import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.server.VmApplicationService
 
 /**
@@ -49,7 +50,7 @@ open class ProxyContentProvider : ContentProvider() {
         if (method == IPC_VM_INIT_METHOD_NAME && extras != null) {
             extras.classLoader = VmAppConfig::class.java.classLoader
             val appConfig: VmAppConfig = extras.getParcelable(VmAppConfig.IPC_BUNDLE_KEY)!!
-            VmApplicationService.initAppConfig(appConfig)
+            VmActivityThread.initProcessAppConfig(appConfig)
             val bundle = Bundle()
             // 进程启动后返回VmActivityThread引用
             bundle.putBinder(IPC_VM_BINDER_HANDLE_KEY, VmActivityThread)

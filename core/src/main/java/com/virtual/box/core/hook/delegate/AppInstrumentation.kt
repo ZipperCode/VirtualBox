@@ -3,6 +3,7 @@ package com.virtual.box.core.hook.delegate
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.os.IBinder
 import android.os.UserHandle
@@ -111,6 +112,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         }
     }
 
+    override fun startActivitySync(intent: Intent): Activity {
+        return super.startActivitySync(intent)
+    }
+
+    override fun callActivityOnNewIntent(activity: Activity?, intent: Intent?) {
+        super.callActivityOnNewIntent(activity, intent)
+    }
+
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
@@ -122,13 +131,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
     ): ActivityResult {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s",
             context, contextThread, token, activity, intent, requestCode)
+        var realIntent: Intent? = intent
         if (VirtualBox.get().isVirtualProcess) {
-            // 虚拟应用内启动Activity
-                VmActivityManager.startActivity(intent, 0)
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+            if (shadowIntent != null){
+                realIntent = shadowIntent
+            }
         }
-        return super.execStartActivity(context, contextThread, token, activity, intent, requestCode)
+        return super.execStartActivity(context, contextThread, token, activity, realIntent, requestCode)
     }
 
     @Throws(Throwable::class)
@@ -141,11 +151,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         requestCode: Int
     ): ActivityResult {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s", context, contextThread, token, fragment, intent, requestCode)
+        var realIntent: Intent? = intent
         if (VirtualBox.get().isVirtualProcess) {
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+            if (shadowIntent != null){
+                realIntent = shadowIntent
+            }
         }
-        return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode)
+        return super.execStartActivity(context, contextThread, token, fragment, realIntent, requestCode)
     }
 
     @Throws(Throwable::class)
@@ -161,12 +174,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, str = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, str, intent, requestCode, bundle)
+        var realIntent: Intent? = intent
         if (VirtualBox.get().isVirtualProcess) {
-            VmActivityManager.startActivity(intent, 0)
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+            if (shadowIntent != null){
+                realIntent = shadowIntent
+            }
         }
-        return super.execStartActivity(context, contextThread, token, str, intent, requestCode, bundle)
+        return super.execStartActivity(context, contextThread, token, str, realIntent, requestCode, bundle)
     }
 
     @Throws(Throwable::class)
@@ -204,11 +219,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, fragment, intent, requestCode, bundle)
+        var realIntent: Intent? = intent
         if (VirtualBox.get().isVirtualProcess) {
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+            if (shadowIntent != null){
+                realIntent = shadowIntent
+            }
         }
-        return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode, bundle)
+        return super.execStartActivity(context, contextThread, token, fragment, realIntent, requestCode, bundle)
     }
 
     @Throws(Throwable::class)
@@ -227,15 +245,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             "context = %s, iBinder = %s, iBinder2 = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s, userHandle = %s",
             context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle
         )
+        var realIntent: Intent? = intent
         if (VirtualBox.get().isVirtualProcess) {
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+            if (shadowIntent != null){
+                realIntent = shadowIntent
+            }
         }
-        return super.execStartActivity(context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle)
-    }
-
-    override fun startActivitySync(intent: Intent): Activity {
-        return super.startActivitySync(intent)
+        return super.execStartActivity(context, iBinder, iBinder2, activity, realIntent, requestCode, bundle, userHandle)
     }
 
     companion object {

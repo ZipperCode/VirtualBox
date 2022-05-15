@@ -21,7 +21,7 @@ class LibCoreOsHookHandle: BaseHookHandle() {
 
     private val logger = Logger.getLogger(L.HOOK_TAG)
 
-    override fun initTargetObj(): Any? {
+    override fun getOriginObject(): Any? {
         return HLibcore.os.get()
     }
 
@@ -34,47 +34,56 @@ class LibCoreOsHookHandle: BaseHookHandle() {
     }
 
     fun access(methodHandle: MethodHandle, path: String?, mode: Int): Boolean {
+        logger.e(">> Libcore.os#access path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath, mode)) as Boolean
     }
 
     fun chmod(methodHandle: MethodHandle, path: String?, mode: Int) {
+        logger.e(">> Libcore.os#chmod path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, mode))
     }
 
     fun chown(methodHandle: MethodHandle, path: String?, uid: Int, gid: Int)  {
+        logger.e(">> Libcore.os#chown path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, uid, gid))
     }
 
     fun lchown(methodHandle: MethodHandle, path: String?, uid: Int, gid: Int) {
+        logger.e(">> Libcore.os#lchown path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, uid, gid))
     }
 
     fun link(methodHandle: MethodHandle, oldPath: String?, newPath: String?) {
+        logger.e(">> Libcore.os#link oldPath = %s, newPath = %s", oldPath, newPath)
         val oldRedirectPath = VmCore.redirectPath(oldPath)
         val newRedirectPath = VmCore.redirectPath(newPath)
         methodHandle.invokeOriginMethod(arrayOf(oldRedirectPath, newRedirectPath))
     }
 
     fun lstat(methodHandle: MethodHandle, path: String?): StructStat? {
+        logger.e(">> Libcore.os#lstat path = %s", path)
         val oldRedirectPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(oldRedirectPath)) as? StructStat
     }
 
     fun mkdir(methodHandle: MethodHandle, path: String?, mode: Int) {
+        logger.e(">> Libcore.os#mkdir path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, mode))
     }
 
     fun mkfifo(methodHandle: MethodHandle, path: String?, mode: Int) {
+        logger.e(">> Libcore.os#mkfifo path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, mode))
     }
 
     fun open(methodHandle: MethodHandle, path: String?, flags: Int, mode: Int): FileDescriptor? {
+        logger.e(">> Libcore.os#open path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath, flags, mode)) as? FileDescriptor
     }

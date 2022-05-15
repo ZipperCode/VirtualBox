@@ -9,6 +9,7 @@ import android.app.NotificationManager
 import android.app.NotificationChannel
 import android.app.Service
 import android.content.Context
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.util.Log
 import com.virtual.box.base.util.compat.BuildCompat
@@ -99,13 +100,15 @@ class DaemonService : Service() {
         private val NOTIFY_ID = (System.currentTimeMillis() / 1000).toInt()
 
         @JvmStatic
-        fun startService(context: Context){
-            val intent = Intent(context , DaemonService::class.java)
-            if (BuildCompat.isAtLeastOreo){
+        fun startService(context: Context) {
+            val intent = Intent(context, DaemonService::class.java)
+            if (BuildCompat.isAtLeastOreo) {
                 context.startForegroundService(intent)
-            }else{
+            } else {
                 context.startService(intent)
             }
         }
+
+
     }
 }

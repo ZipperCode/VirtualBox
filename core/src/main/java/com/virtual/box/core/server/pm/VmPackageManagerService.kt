@@ -37,7 +37,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
      */
     private val mInstallLock = Any()
 
-    private val vmPackageRepo: VmPackageRepo = VmPackageRepo()
+    private val vmPackageRepo: VmPackageRepo by lazy { VmPackageRepo() }
 
     override fun registerPackageObserver(observer: IVmPackageObserver?) {
         if (observer == null || packageObservers.contains(observer) || observer.asBinder()?.isBinderAlive == false) {
@@ -80,34 +80,34 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         if (!option.checkOriginFlag()) {
             return VmPackageResult.installFail("安装失败，安装flag错误，flag = ${option.originFlags}")
         }
-        val start = System.currentTimeMillis()
-        val filePath = if (option.isOriginFlag(VmPackageInstallOption.FLAG_STORAGE)) {
-            val file = File(option.filePath)
-            if (!file.exists()) {
-                return VmPackageResult.installFail("安装失败，文件路径不存在：${option.filePath}")
+        return AppExecutors.get().executeMultiThreadWithLockAsResult res@ {
+            val start = System.currentTimeMillis()
+            val filePath = if (option.isOriginFlag(VmPackageInstallOption.FLAG_STORAGE)) {
+                val file = File(option.filePath)
+                if (!file.exists()) {
+                    return@res VmPackageResult.installFail("安装失败，文件路径不存在：${option.filePath}")
+                }
+                option.filePath
+            } else {
+                if (!option.packageName.isNotNullOrEmpty()) {
+                    return@res VmPackageResult.installFail("安装失败，packageName == null")
+                }
+                var packageInfo: PackageInfo? = null
+                try {
+                    packageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(option.packageName, 0);
+                } catch (e: Exception) {
+                    return@res VmPackageResult.installFail("安装失败，未找到对应的package = ${option.packageName}")
+                }
+                packageInfo.applicationInfo.publicSourceDir
             }
-            option.filePath
-        } else {
-            if (!option.packageName.isNotNullOrEmpty()) {
-                return VmPackageResult.installFail("安装失败，packageName == null")
-            }
-            var packageInfo: PackageInfo? = null
-            try {
-                packageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(option.packageName, 0);
-            } catch (e: Exception) {
-                return VmPackageResult.installFail("安装失败，未找到对应的package = ${option.packageName}")
-            }
-            packageInfo.applicationInfo.publicSourceDir
-        }
-        val installResult = VmPackageResult()
-        // TODO 后续添加检查是否安装过此应用了
-        logger.method("【IPC】安装应用（应用包），文件路径 path = %s", filePath)
-        AppExecutors.get().executeMultiThreadWithLock {
+            val installResult = VmPackageResult()
+            // TODO 后续添加检查是否安装过此应用了
+            logger.method("【IPC】安装应用（应用包），文件路径 path = %s", filePath)
             // 解析apk文件包
             val aPackage = parserApk(filePath)
             if (aPackage == null) {
                 installResult.msg = "解析apk文件：${filePath}失败"
-                return@executeMultiThreadWithLock
+                return@res installResult
             }
             val packageName = aPackage.packageName
             val versionCode = aPackage.mVersionCode
@@ -116,6 +116,8 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             // 检查是否安装或更新
             if (vmPackageRepo.checkNeedInstalledOrUpdated(packageName, versionCode.toLong())){
                 VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath)
+            }else{
+                PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo)
             }
             // 创建用户
             VmUserManagerService.checkOrCreateUser(userId)
@@ -130,8 +132,8 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             installResult.packageName = vmPackageInfo.packageName
             installResult.success = true
             logger.i("应用包安装成功 end = ${System.currentTimeMillis() - start}")
-        }
-        return installResult
+            return@res installResult
+        }!!
     }
 
 
@@ -185,6 +187,15 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         return null
     }
 
+    override fun getPackageInfo(packageName: String, flags: Int, userId: Int): PackageInfo? {
+        return vmPackageRepo.getVmPackageInfo(packageName,flags)
+    }
+
+    override fun getApplication(packageName: String, flags: Int, userId: Int): ApplicationInfo? {
+        return vmPackageRepo.getApplicationInfo(packageName, flags)
+    }
+
+
     override fun resolveActivity(intent: Intent?, flags: Int, resolvedType: String?, userId: Int): ResolveInfo? {
         return null
     }
@@ -237,7 +248,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             logger.e("解析ApplicationInfo 失败，用户 %s 不存在", userId)
             return null
         }
-        val packageName = intent.getPackage() ?: return null
+        val packageName = intent.getPackage() ?: intent.component?.packageName ?: return null
         return vmPackageRepo.getApplicationInfo(packageName, flags)
     }
 
@@ -248,7 +259,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             logger.e("解析ActivityInfo 失败，用户 %s 不存在", userId)
             return null
         }
-        val packageName = intent.getPackage()
+        val packageName = intent.getPackage() ?: intent.component?.packageName
         val componentName = intent.component
         if (packageName.isNullOrEmpty()){
             logger.e("解析ActivityInfo 失败，包名不能为空")

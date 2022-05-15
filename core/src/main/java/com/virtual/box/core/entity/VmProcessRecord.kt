@@ -4,6 +4,7 @@ import android.content.pm.ApplicationInfo
 import android.os.*
 import androidx.versionedparcelable.ParcelField
 import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.core.server.am.IVmActivityThread
 
 
 class VmProcessRecord : Binder, Parcelable {
@@ -55,10 +56,10 @@ class VmProcessRecord : Binder, Parcelable {
     var initLock = ConditionVariable()
 
     /**
-     * 虚拟进程的 IApplicationThread 代理对象
+     * 虚拟进程的 IVmActivityThread 代理对象
      */
     @JvmField
-    var appThread: IInterface? = null
+    var vmAppThread: IVmActivityThread? = null
 
 
     constructor(info: ApplicationInfo, vmUid: Int, vmPid: Int): super() {
@@ -109,8 +110,6 @@ class VmProcessRecord : Binder, Parcelable {
         override fun newArray(size: Int): Array<VmProcessRecord?> {
             return arrayOfNulls(size)
         }
-
-        const val SERVER_2_CLIENT_PROCESS_RECORD_KEY = "SERVER_2_CLIENT_PROCESS_RECORD_KEY"
     }
 
 

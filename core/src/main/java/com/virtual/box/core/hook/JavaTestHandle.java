@@ -7,7 +7,6 @@ import com.virtual.box.core.hook.core.MethodHandle;
 import com.virtual.box.core.hook.core.MethodHookInfo;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
@@ -52,7 +51,7 @@ public class JavaTestHandle implements InvocationHandler {
             return method.invoke(target, args);
         }
         MethodHookInfo methodHookInfo = proxyTargetMethodCache.get(key);
-        return methodHookInfo.invoke1(this, target,method, args);
+        return methodHookInfo.invoke(this, target,method, args);
     }
 
     private void test(MethodHandle methodHandle) throws Exception {

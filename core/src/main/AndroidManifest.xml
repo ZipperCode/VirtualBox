@@ -335,6 +335,11 @@
             android:process="@string/server_process_name" />
 
         <service
+            android:name="com.virtual.box.core.service.BindDaemonService"
+            android:exported="false"
+            android:process="@string/server_process_name" />
+
+        <service
             android:name="com.virtual.box.core.service.DaemonService"
             android:exported="false"
             android:process="@string/server_process_name" />

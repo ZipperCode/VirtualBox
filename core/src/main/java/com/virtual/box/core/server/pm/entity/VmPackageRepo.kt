@@ -2,6 +2,7 @@ package com.virtual.box.core.server.pm.entity
 
 import android.content.ComponentName
 import android.content.pm.*
+import android.os.Debug
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.storage.IParcelDataHandle
 import com.virtual.box.base.storage.MapParcelDataHandle
@@ -26,7 +27,11 @@ class VmPackageRepo {
         MapParcelDataHandle(VmFileSystem.mInstallPackageInfoConfig.name
             .replace(".conf", ""), VmPackageSettings::class.java)
 
-    private val vmPackageConfig: VmPackageSettings = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
+    private val vmPackageConfig: VmPackageSettings
+
+    init {
+        vmPackageConfig = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
+    }
 
     fun checkNeedInstalledOrUpdated(packageName: String, versionCode: Long): Boolean{
         return !checkPackageInstalled(packageName) || (checkPackageInstalled(packageName) && checkPackageVersion(packageName,versionCode))

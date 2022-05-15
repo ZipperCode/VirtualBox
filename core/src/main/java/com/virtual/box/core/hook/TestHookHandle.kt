@@ -1,8 +1,6 @@
 package com.virtual.box.core.hook
 
 import com.virtual.box.core.hook.core.MethodHookInfo
-import com.virtual.box.core.hook.core.VmCore
-import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -86,7 +84,7 @@ class TestHookHandle: InvocationHandler {
             }
         }
         val methodHookInfo = proxyTargetMethodCache[key]!!
-        return methodHookInfo.invoke1(this, obj, method, args)
+        return methodHookInfo.invoke(this, obj, method, args)
 
     }
 

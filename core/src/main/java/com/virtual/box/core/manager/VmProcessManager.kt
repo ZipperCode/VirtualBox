@@ -9,12 +9,14 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.entity.VmAppProcess
 import com.virtual.box.core.entity.VmProcessRecord
 import com.virtual.box.core.helper.ProcessHelper
 import com.virtual.box.core.helper.ProviderCallHelper
 import com.virtual.box.core.proxy.ProxyContentProvider
 import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.core.server.am.IVmActivityThread
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
 
@@ -31,7 +33,6 @@ object VmProcessManager {
 
     private val userProcessMapLock = Any()
 
-
     fun findVmAppProcess(packageName: String, userId: Int): VmAppProcess?{
         if (processMap.containsKey(userId)){
             val userVmAppProcessList = processMap[userId]!!
@@ -43,6 +44,29 @@ object VmProcessManager {
         }
         return null
     }
+
+    fun findAppProcess(packageName: String): List<VmAppProcess>{
+        val result = mutableListOf<VmAppProcess>()
+        for (appProcessList in processMap.values) {
+            for (vmAppProcess in appProcessList) {
+                if (packageName == vmAppProcess.vmPackageName){
+                    result.add(vmAppProcess)
+                }
+            }
+        }
+        return result
+    }
+
+    fun findProcess(packageName: String): List<VmProcessRecord>{
+        val result = mutableListOf<VmProcessRecord>()
+        for (vmProcessRecord in allProcessList) {
+            if (packageName == vmProcessRecord.packageName){
+                result.add(vmProcessRecord)
+            }
+        }
+        return result
+    }
+
     /**
      * 准备启动一个新的应用进程，启动一个新应用进程时调用
      *
@@ -79,13 +103,13 @@ object VmProcessManager {
     /**
      * 启动子进程
      */
-    fun startVmSubProcess(vmApplicationInfo: ApplicationInfo, vmAppProcess: VmAppProcess){
+    fun startVmSubProcess(vmApplicationInfo: ApplicationInfo, vmAppProcess: VmAppProcess) : Int{
         if (!vmAppProcess.checkMainProcess()){
             throw RuntimeException("主进程不存在，不允许创建${vmApplicationInfo.processName}进程")
         }
         if (vmApplicationInfo.processName == vmAppProcess.processName){
             logger.e("创建子进程失败，子进程进程名与主进程相同 %s", vmAppProcess.processName)
-            return
+            return -1
         }
         val vmPid = ProcessHelper.findAvailableVmPid()
         synchronized(vmAppProcess.appProcessHandleLock){
@@ -97,15 +121,28 @@ object VmProcessManager {
                 vmAppProcess.checkAndSetProcess(prepareVmProcessRecord)
                 // 进程启动成功，将进程信息添加到列表中
                 allProcessList.add(prepareVmProcessRecord)
+                return vmPid
             }else{
                 logger.e("启动子进程 ${vmApplicationInfo.processName} 失败")
+                return -1
             }
         }
     }
 
     private fun startVmProxyProcess(vmProcessRecord: VmProcessRecord): Boolean {
         val bundle = Bundle()
-        bundle.putBinder(VmProcessRecord.SERVER_2_CLIENT_PROCESS_RECORD_KEY, vmProcessRecord)
+        val mainProcess = checkAndGetAppMainProcessWithLock(vmProcessRecord.packageName)
+        val vmAppConfig = VmAppConfig().apply {
+            processName = vmProcessRecord.processName ?: ""
+            packageName = vmProcessRecord.packageName ?: ""
+            userId = mainProcess?.userId ?: -1
+            this.vmProcessRecord = vmProcessRecord
+            this.isMainProcess = mainProcess != null
+            this.mainProcessVmPid = mainProcess?.vmPid ?: -1
+            this.mainProcessSystemPid = mainProcess?.mainProcessRecord?.systemPid ?: -1
+            this.mainProcessSystemUid = mainProcess?.mainProcessRecord?.systemUid ?: -1
+        }
+        bundle.putParcelable(VmAppConfig.IPC_BUNDLE_KEY,vmAppConfig)
         val resultBundle = ProviderCallHelper.callSafely(
             vmProcessRecord.getProxyAuthority(),
             ProxyContentProvider.IPC_VM_INIT_METHOD_NAME, null, bundle
@@ -122,8 +159,28 @@ object VmProcessManager {
             systemPid = stubPid
             systemUid = stubUid
             systemProcessName = stubProcessName
+            vmAppThread = IVmActivityThread.Stub.asInterface(vmActivityThreadHandle)
         }
         return true
+    }
+
+    /**
+     * 根据包名获取虚拟应用主进程信息
+     */
+    private fun checkAndGetAppMainProcessWithLock(packageName: String?): VmAppProcess?{
+        if (packageName == null){
+            return null
+        }
+        synchronized(userProcessMapLock){
+            for (appProcessList in processMap.values) {
+                for (vmAppProcess in appProcessList) {
+                    if (packageName == vmAppProcess.processName){
+                        return vmAppProcess
+                    }
+                }
+            }
+            return null
+        }
     }
 
     private fun getUserProcessWithLock(userId: Int, vmApplicationInfo: ApplicationInfo): VmAppProcess{

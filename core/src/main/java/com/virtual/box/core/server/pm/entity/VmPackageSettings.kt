@@ -27,8 +27,8 @@ class VmPackageSettings(): Parcelable {
     var packageUserSpaceSetting: HashMap<Int, VmPackageUserSpaceConfigInfo> = HashMap(5)
 
     constructor(parcel: Parcel) : this() {
-        parcel.readMap(packageSetting, HashMap::class.java.classLoader)
-        parcel.readMap(packageUserSpaceSetting, HashMap::class.java.classLoader)
+        parcel.readMap(packageSetting, VmPackageConfigInfo::class.java.classLoader)
+        parcel.readMap(packageUserSpaceSetting, VmPackageUserSpaceConfigInfo::class.java.classLoader)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
