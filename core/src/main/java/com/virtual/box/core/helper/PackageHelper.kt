@@ -4,13 +4,16 @@ import android.content.Context
 import android.content.pm.*
 import android.os.Build
 import android.os.Parcel
-import android.util.AtomicFile
 import androidx.annotation.WorkerThread
-import androidx.core.util.readBytes
+import androidx.core.content.PackageManagerCompat
 import com.virtual.box.base.ext.checkAndCreate
+import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
+import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.manager.VmFileSystem
+import com.virtual.box.core.server.pm.VmPackageManagerService
+import com.virtual.box.core.server.pm.resolve.VmPackage
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.content.pm.HPackageInfo
 import java.io.File
@@ -19,7 +22,6 @@ import java.io.FileOutputStream
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import kotlin.collections.ArrayList
 
 object PackageHelper {
 
@@ -228,6 +230,9 @@ object PackageHelper {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vmApplicationInfo.storageUuid = UUID.randomUUID()
             }
+            if (processName.isNullOrEmpty()){
+                processName = packageName
+            }
         }
     }
 
@@ -334,4 +339,90 @@ object PackageHelper {
                 or PackageManager.GET_URI_PERMISSION_PATTERNS or PackageManager.GET_DISABLED_COMPONENTS
                 or PackageManager.GET_DISABLED_UNTIL_USED_COMPONENTS or PackageManager.GET_UNINSTALLED_PACKAGES)
     }
+    @JvmStatic
+    fun generateActivityInfo(a: VmPackage.Activity, flags: Int, userId: Int): ActivityInfo? {
+
+        // Make shallow copies so we can store the metadata safely
+        val ai = ActivityInfo(a.info)
+        ai.metaData = a.metaData
+        if (ai.processName.isNullOrEmpty()){
+            ai.processName = ai.packageName
+        }
+        ai.applicationInfo = generateApplicationInfo(a.owner, flags, userId)
+        return ai
+    }
+    @JvmStatic
+    fun generateServiceInfo(s: VmPackage.Service, flags: Int, userId: Int): ServiceInfo? {
+        // Make shallow copies so we can store the metadata safely
+        val si = ServiceInfo(s.info)
+        si.metaData = s.metaData
+        if (si.processName.isNullOrEmpty()){
+            si.processName = si.packageName
+        }
+        si.applicationInfo = generateApplicationInfo(s.owner, flags, userId)
+        return si
+    }
+
+    @JvmStatic
+    fun generateProviderInfo(p: VmPackage.Provider, flags: Int, userId: Int): ProviderInfo? {
+        // Make shallow copies so we can store the metadata safely
+        val pi = ProviderInfo(p.info)
+        if (pi.authority == null) return null
+        pi.metaData = p.metaData
+        if (pi.processName.isNullOrEmpty()){
+            pi.processName = pi.packageName
+        }
+        if (flags and PackageManager.GET_URI_PERMISSION_PATTERNS == 0) {
+            pi.uriPermissionPatterns = null
+        }
+        pi.applicationInfo = generateApplicationInfo(p.owner, flags, userId)
+        return pi
+    }
+    @JvmStatic
+    fun generatePermissionInfo(p: VmPackage.Permission?, flags: Int): PermissionInfo? {
+        if (p == null) return null
+        if (flags and PackageManager.GET_META_DATA == 0) {
+            return p.info
+        }
+        val pi = PermissionInfo(p.info)
+        pi.metaData = p.metaData
+        return pi
+    }
+    @JvmStatic
+    fun generateInstrumentationInfo(i: VmPackage.Instrumentation?, flags: Int): InstrumentationInfo? {
+        if (i == null) return null
+        if (flags and PackageManager.GET_META_DATA == 0) {
+            return i.info
+        }
+        val ii = InstrumentationInfo(i.info)
+        ii.metaData = i.metaData
+        return ii
+    }
+    @JvmStatic
+    fun generateApplicationInfo(p: VmPackage, flags: Int, userId: Int): ApplicationInfo? {
+        val baseApplication: ApplicationInfo = try {
+            VirtualBox.get().hostPm.getApplicationInfo(VirtualBox.get().hostPkg, flags)
+        } catch (e: java.lang.Exception) {
+            return null
+        }
+        val vmInstallApplicationInfo = VmPackageManagerService.getApplication(p.packageName, flags, userId)
+        vmInstallApplicationInfo?.uid = baseApplication.uid
+        if (vmInstallApplicationInfo != null){
+            // 找到ApplicationInfo，修复关键部分返回
+            fixRunApplicationInfo(vmInstallApplicationInfo, userId)
+            return vmInstallApplicationInfo
+        }
+        // 未找到重新构建，并修复返回
+        if (p.applicationInfo == null) {
+            p.applicationInfo = VirtualBox.get().hostPm.getPackageArchiveInfo(p.baseCodePath, 0)?.applicationInfo
+        }
+        val ai = ApplicationInfo(p.applicationInfo)
+        if (flags and PackageManager.GET_META_DATA != 0) {
+            ai.metaData = p.mAppMetaData
+        }
+        fixInstallApplicationInfo(ai)
+        fixRunApplicationInfo(ai, userId)
+        return ai
+    }
+
 }
