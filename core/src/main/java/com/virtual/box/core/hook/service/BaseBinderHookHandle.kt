@@ -3,11 +3,15 @@ package com.virtual.box.core.hook.service
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
+import com.virtual.box.core.VirtualBox.Companion.get
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.reflect.android.os.HServiceManager
 import java.io.FileDescriptor
 
 abstract class BaseBinderHookHandle : BaseHookHandle, IBinder {
+
+    @JvmField
+    protected val hostPkg: String = get().hostPkg
 
     protected var originBinder: IBinder? = null
         private set
@@ -22,6 +26,10 @@ abstract class BaseBinderHookHandle : BaseHookHandle, IBinder {
     constructor(serviceName: String, originBinder: IBinder){
         this.serviceName = serviceName
         this.originBinder = originBinder
+    }
+
+    override fun isHooked(): Boolean {
+        return getOriginObject() != proxyInvocation
     }
 
     override fun hookInject(target: Any, proxy: Any) {
