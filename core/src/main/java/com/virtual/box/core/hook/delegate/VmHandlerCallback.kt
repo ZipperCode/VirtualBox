@@ -18,7 +18,6 @@ class VmHandlerCallback : Handler.Callback, IInjectHook {
     private val handleMessageLock = AtomicBoolean(false)
 
     override fun handleMessage(msg: Message): Boolean {
-        Debug.waitForDebugger()
         if (!handleMessageLock.getAndSet(true)) {
             try {
                 when (msg.what) {

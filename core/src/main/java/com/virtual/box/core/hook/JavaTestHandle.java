@@ -10,7 +10,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
-
+@Deprecated
 public class JavaTestHandle implements InvocationHandler {
 
     private Object target = new TestImpl();

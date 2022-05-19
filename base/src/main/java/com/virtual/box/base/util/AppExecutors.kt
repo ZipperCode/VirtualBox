@@ -77,7 +77,7 @@ class AppExecutors private constructor() {
         }
     }
 
-    fun execute(runnable: Runnable){
+    fun execute(runnable: () -> Unit){
         defaultExecutor.execute(runnable)
     }
 
@@ -127,6 +127,33 @@ class AppExecutors private constructor() {
                 priority = Thread.MIN_PRIORITY
             }
         }
+    }
+
+
+    private class IpcHandlerExecutor : Executor{
+
+        private val ipcHandlerThread = HandlerThread("IpcHandlerThread")
+        private val handler: Handler
+
+        init {
+            ipcHandlerThread.start()
+            handler = Handler(ipcHandlerThread.looper)
+        }
+
+        override fun execute(command: Runnable?) {
+            if (command == null){
+                return
+            }
+            handler.post(command)
+        }
+
+        fun executeDelay(runnable: Runnable?, delayMillis: Long){
+            if (runnable == null){
+                return
+            }
+            handler.postDelayed(runnable, delayMillis)
+        }
+
     }
 
     private class MonitorExecutor() {

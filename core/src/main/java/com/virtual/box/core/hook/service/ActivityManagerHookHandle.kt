@@ -167,10 +167,14 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle.invokeOriginMethod()
     }
 
+    /**
+     * @return ContentProviderHolder
+     */
     fun getContentProvider(
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
         name: String?, userId: Int, stable: Boolean
     ): Any? {
+
         return methodHandle.invokeOriginMethod()
     }
 

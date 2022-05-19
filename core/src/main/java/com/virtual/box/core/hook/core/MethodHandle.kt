@@ -1,6 +1,8 @@
 package com.virtual.box.core.hook.core
 
+import com.virtual.box.base.util.log.L
 import java.lang.reflect.Method
+import java.util.*
 
 /**
  *
@@ -23,6 +25,11 @@ class MethodHandle(
    }
 
     fun invokeOriginMethod(args: Array<out Any?>?): Any?{
+        if (args == null){
+            L.hdParam("invokeMethod >> ${targetMethod.name} ")
+        }else{
+            L.hdParam("invokeMethod >> ${targetMethod.name} \n args => %s", Arrays.toString(args))
+        }
         if (nativeHolderPtr != 0L){
             VmCore.restoreMethod(nativeHolderPtr, targetNativeHolderPtr)
             hasRestoreMethod = true

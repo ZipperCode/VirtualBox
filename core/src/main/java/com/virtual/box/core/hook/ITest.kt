@@ -1,5 +1,5 @@
 package com.virtual.box.core.hook
-
+@Deprecated("")
 interface ITest {
     fun test();
 

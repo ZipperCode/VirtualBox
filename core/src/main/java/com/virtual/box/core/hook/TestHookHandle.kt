@@ -7,6 +7,7 @@ import java.lang.reflect.Proxy
 import java.util.*
 import kotlin.collections.HashMap
 
+@Deprecated("")
 class TestHookHandle: InvocationHandler {
 
     private val obj: Any = TestImpl()
