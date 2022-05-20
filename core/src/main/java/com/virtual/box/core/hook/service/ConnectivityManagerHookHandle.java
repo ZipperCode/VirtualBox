@@ -24,7 +24,9 @@ import com.virtual.box.core.hook.core.MethodHandle;
 import com.virtual.box.core.manager.ServiceManager;
 import com.virtual.box.reflect.android.net.HIConnectivityManager;
 import com.virtual.box.reflect.android.os.HServiceManager;
-
+/**
+ * @author zipper
+ */
 public class ConnectivityManagerHookHandle extends BaseBinderHookHandle {
 
     public ConnectivityManagerHookHandle() {

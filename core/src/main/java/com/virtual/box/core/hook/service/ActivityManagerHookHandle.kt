@@ -58,10 +58,6 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle.invokeOriginMethod()
     }
 
-    fun unregisterUidObserver(methodHandle: MethodHandle, observer: Any?) {
-        methodHandle.invokeOriginMethod()
-    }
-
     fun isUidActive(methodHandle: MethodHandle, uid: Int, callingPackage: String): Boolean {
         return methodHandle.invokeOriginMethod() as Boolean
     }

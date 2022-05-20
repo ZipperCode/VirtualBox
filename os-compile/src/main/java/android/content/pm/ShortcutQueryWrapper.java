@@ -16,20 +16,12 @@
 
 package android.content.pm;
 
-import android.annotation.NonNull;
-import android.annotation.Nullable;
-import android.content.ComponentName;
-import android.content.LocusId;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.RequiresApi;
 
-import com.android.internal.util.DataClass;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @hide

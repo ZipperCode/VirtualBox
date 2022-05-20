@@ -27,7 +27,9 @@ import com.virtual.box.reflect.android.os.HIDeviceIdentifiersPolicyService;
 import com.virtual.box.reflect.android.os.HServiceManager;
 
 import java.util.List;
-
+/**
+ * @author zipper
+ */
 public class LauncherAppsHookHandle extends BaseBinderHookHandle{
 
     public LauncherAppsHookHandle() {
