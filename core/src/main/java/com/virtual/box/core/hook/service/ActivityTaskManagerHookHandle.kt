@@ -5,10 +5,19 @@ import android.os.Build
 import com.virtual.box.reflect.android.app.HIActivityTaskManager
 import com.virtual.box.reflect.android.os.HServiceManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.IBinder
 import android.os.Bundle
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.core.MethodHandle
+import com.virtual.box.core.manager.VmActivityManager
+import com.virtual.box.core.manager.VmActivityThread
+import com.virtual.box.core.manager.VmPackageManager
 
 /**
  * @author zipper
@@ -16,6 +25,9 @@ import com.virtual.box.core.hook.core.MethodHandle
 @TargetApi(Build.VERSION_CODES.P)
 @Suppress("UNUSED")
 class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
+
+    private val logger: Logger = Logger.getLogger(L.HOOK_TAG, "ActivityTaskManagerHookHandle")
+
     override fun getOriginObject(): Any? {
         return HIActivityTaskManager.Stub.asInterface.call(originBinder)
     }
@@ -30,7 +42,10 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         resultTo: IBinder?, resultWho: String?, requestCode: Int,
         flags: Int, profilerInfo: Any?, options: Bundle?
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, intent, resolvedType, resultTo, resultWho,
+            requestCode, flags, profilerInfo, options
+        )) as Int
     }
 
     fun startActivities(
@@ -38,7 +53,9 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         callingFeatureId: String?, intents: Array<Intent?>?, resolvedTypes: Array<String?>?,
         resultTo: IBinder?, options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, intents, resolvedTypes, resultTo, options, userId
+        )) as Int
     }
 
     fun startActivityAsUser(
@@ -47,7 +64,11 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
         profilerInfo: Any?, options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, intent, resolvedType,
+            resultTo, resultWho, requestCode, flags,
+            profilerInfo, options, userId
+        )) as Int
     }
 
     fun startNextMatchingActivity(
@@ -86,7 +107,11 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
         profilerInfo: Any?, options: Bundle?, userId: Int
     ): Any? {
-        return methodHandle.invokeOriginMethod()
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, intent, resolvedType,
+            resultTo, resultWho, requestCode, flags,
+            profilerInfo, options, userId
+        ))
     }
 
     fun startActivityWithConfig(
@@ -95,7 +120,11 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         resultTo: IBinder?, resultWho: String?, requestCode: Int, startFlags: Int,
         newConfig: Configuration?, options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, intent, resolvedType,
+            resultTo, resultWho, requestCode, startFlags,
+            newConfig, options, userId
+        )) as Int
     }
 
     /**
@@ -109,14 +138,20 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         session: Any?, interactor: Any?, flags: Int,
         profilerInfo: Any?, options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg, callingFeatureId, callingPid, callingUid, intent, resolvedType,
+            session, interactor, flags,
+            profilerInfo, options, userId
+        )) as Int
     }
 
     fun startAssistantActivity(
         methodHandle: MethodHandle, callingPackage: String?, callingFeatureId: String?, callingPid: Int,
         callingUid: Int, intent: Intent?, resolvedType: String?, options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg, callingFeatureId, callingPid, callingUid, intent, resolvedType, options, userId
+        )) as Int
     }
 
     /**
@@ -140,7 +175,11 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?,
         permissionToken: IBinder?, ignoreTargetSecurity: Boolean, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, intent, resolvedType, resultTo, resultWho,
+            requestCode, flags, profilerInfo, options,
+            permissionToken, ignoreTargetSecurity, userId
+        )) as Int
     }
 
     fun isActivityStartAllowedOnDisplay(
@@ -158,14 +197,16 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         methodHandle: MethodHandle, app: Any?, callingPackage: String?, task: Int,
         flags: Int, options: Bundle?
     ) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            app, hostPkg, task, flags, options
+        ))
     }
 
     /**
      * @return List<IBinder>
     </IBinder> */
     fun getAppTasks(methodHandle: MethodHandle, callingPackage: String?): Any? {
-        return methodHandle.invokeOriginMethod()
+        return methodHandle.invokeOriginMethod(arrayOf(hostPkg))
     }
 
     /**
@@ -175,7 +216,9 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
         methodHandle: MethodHandle, receiver: Any?, taskId: Int,
         callingPackageName: String?
     ): Boolean {
-        return methodHandle.invokeOriginMethod() as Boolean
+        return methodHandle.invokeOriginMethod(arrayOf(
+            receiver, taskId, hostPkg
+        )) as Boolean
     }
 
     /**

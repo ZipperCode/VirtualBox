@@ -1,21 +1,22 @@
 package com.virtual.box.core.helper
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.*
 import android.os.Build
 import android.os.Parcel
 import androidx.annotation.WorkerThread
-import androidx.core.content.PackageManagerCompat
 import com.virtual.box.base.ext.checkAndCreate
-import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.compat.PackageParserCompat
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.server.pm.VmPackageManagerService
 import com.virtual.box.core.server.pm.resolve.VmPackage
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.content.pm.HPackageInfo
+import com.virtual.box.reflect.android.content.pm.HPackageParser
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -27,6 +28,23 @@ object PackageHelper {
 
     private const val TAG = "LibraryHelper"
 
+    /**
+     * 解析apk包
+     * @param file
+     * @return
+     */
+    @JvmStatic
+    fun parserApk(file: String): PackageParser.Package? {
+        try {
+            val parser = HPackageParser.constructor.newInstance()
+            val aPackage = parser.parsePackage(File(file), 0)
+            PackageParserCompat.collectCertificates(parser, aPackage, 0)
+            return aPackage
+        } catch (t: Throwable) {
+            L.printStackTrace(t)
+        }
+        return null
+    }
     @JvmStatic
     @WorkerThread
     @Throws(Exception::class)
@@ -236,7 +254,8 @@ object PackageHelper {
         }
     }
 
-    fun fixRunApplicationInfo(vmApplicationInfo: ApplicationInfo, userId: Int) {
+    fun fixRunApplicationInfo(vmApplicationInfo: ApplicationInfo?, userId: Int) {
+        vmApplicationInfo ?: return
         val packageName = vmApplicationInfo.packageName
         // TODO 后续这边改成获取配置的目录
         val dataFileDir = VmFileSystem.getUserDataDir(packageName, userId)
@@ -339,6 +358,30 @@ object PackageHelper {
                 or PackageManager.GET_URI_PERMISSION_PATTERNS or PackageManager.GET_DISABLED_COMPONENTS
                 or PackageManager.GET_DISABLED_UNTIL_USED_COMPONENTS or PackageManager.GET_UNINSTALLED_PACKAGES)
     }
+
+    fun chooseBestActivity(
+        intent: Intent, resolvedType: String?,
+        flags: Int, query: List<ResolveInfo>?
+    ): ResolveInfo? {
+        if (query != null) {
+            val N = query.size
+            if (N == 1) {
+                return query[0]
+            } else if (N > 1) {
+                // If there is more than one activity with the same priority,
+                // then let the user decide between them.
+                val r0 = query[0]
+                val r1 = query[1]
+                // If the first activity has a higher priority, or a different
+                // default, then it is always desirable to pick it.
+                if (r0.priority != r1.priority || r0.preferredOrder != r1.preferredOrder || r0.isDefault != r1.isDefault) {
+                    return query[0]
+                }
+            }
+        }
+        return null
+    }
+
     @JvmStatic
     fun generateActivityInfo(a: VmPackage.Activity, flags: Int, userId: Int): ActivityInfo? {
 
@@ -405,7 +448,7 @@ object PackageHelper {
         } catch (e: java.lang.Exception) {
             return null
         }
-        val vmInstallApplicationInfo = VmPackageManagerService.getApplication(p.packageName, flags, userId)
+        val vmInstallApplicationInfo = VmPackageManagerService.getApplicationInfo(p.packageName, flags, userId)
         vmInstallApplicationInfo?.uid = baseApplication.uid
         if (vmInstallApplicationInfo != null){
             // 找到ApplicationInfo，修复关键部分返回

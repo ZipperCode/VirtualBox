@@ -57,6 +57,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
     /**
      * 当前运行程序的包名
      */
+    @JvmField
     var mVmPackageName: String = ""
 
     /**

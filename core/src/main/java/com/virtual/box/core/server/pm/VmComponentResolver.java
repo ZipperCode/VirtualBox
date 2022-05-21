@@ -1,4 +1,4 @@
-package com.virtual.box.core.server.pm.resolve;
+package com.virtual.box.core.server.pm;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -14,6 +14,8 @@ import android.util.Log;
 import androidx.core.content.PackageManagerCompat;
 
 import com.virtual.box.core.helper.PackageHelper;
+import com.virtual.box.core.server.pm.resolve.IntentResolver;
+import com.virtual.box.core.server.pm.resolve.VmPackage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,13 +53,13 @@ public class VmComponentResolver {
      */
     private final ArrayMap<String, VmPackage.Provider> mProvidersByAuthority = new ArrayMap<>();
 
-    VmComponentResolver() { }
+    public VmComponentResolver() { }
 
     /**
      * 添加包内的所有组件
      * @param vmPackage 自实现包信息
      */
-    void addAllComponents(VmPackage vmPackage) {
+    public void addAllComponents(VmPackage vmPackage) {
         final ArrayList<VmPackage.ActivityIntentInfo> newIntents = new ArrayList<>();
         synchronized (mLock) {
             addActivitiesLocked(vmPackage, newIntents);
@@ -71,7 +73,7 @@ public class VmComponentResolver {
      * 通过包移除组件
      * @param vmPackage 自实现包信息
      */
-    void removeAllComponents(VmPackage vmPackage) {
+    public void removeAllComponents(VmPackage vmPackage) {
         synchronized (mLock) {
             removeAllComponentsLocked(vmPackage);
         }

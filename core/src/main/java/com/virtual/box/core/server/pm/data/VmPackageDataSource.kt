@@ -1,58 +1,28 @@
-package com.virtual.box.core.server.pm.entity
+package com.virtual.box.core.server.pm.data
 
-import android.content.ComponentName
-import android.content.pm.*
-import android.os.Debug
-import com.virtual.box.base.ext.isNotNullOrEmpty
+import com.virtual.box.base.storage.IDataStorage
 import com.virtual.box.base.storage.IParcelDataHandle
 import com.virtual.box.base.storage.MapParcelDataHandle
+import com.virtual.box.base.storage.ParcelDataHelper
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.manager.VmPackageInstallManager
+import com.virtual.box.core.server.pm.entity.*
 import com.virtual.box.core.server.user.VmUserManagerService
 import java.io.File
 
-/**
- *
- * @author zhangzhipeng
- * @date   2022/4/27
- **/
-class VmPackageRepo {
-
-    private val logger = Logger.getLogger(L.VM_TAG,"VmPackageRepo")
+class VmPackageDataSource {
+    private val logger = Logger.getLogger(L.VM_TAG,"VmPackageDataStore")
 
     private val configStorageHandle: IParcelDataHandle<VmPackageSettings> =
-        MapParcelDataHandle(VmFileSystem.mInstallPackageInfoConfig.name
+        MapParcelDataHandle(
+            VmFileSystem.mInstallPackageInfoConfig.name
             .replace(".conf", ""), VmPackageSettings::class.java)
 
-    private val vmPackageConfig: VmPackageSettings
+    val vmPackageConfig: VmPackageSettings = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
 
-    init {
-        vmPackageConfig = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
-    }
-
-    fun checkNeedInstalledOrUpdated(packageName: String, versionCode: Long): Boolean{
-        return !checkPackageInstalled(packageName) || (checkPackageInstalled(packageName) && checkPackageVersion(packageName,versionCode))
-    }
-    /**
-     * 检查包是否安装
-     */
-    fun checkPackageInstalled(packageName: String): Boolean{
-        return vmPackageConfig.packageSetting.containsKey(packageName)
-    }
-
-    /**
-     * 应用版本检查
-     */
-    fun checkPackageVersion(packageName: String, versionCode: Long): Boolean{
-        if (!checkPackageInstalled(packageName)){
-            return false
-        }
-        return vmPackageConfig.packageSetting[packageName]!!.installPackageInfoVersionCode < versionCode
-    }
-
+    val packageSettings: HashMap<String, VmPackageConfigInfo> get() = vmPackageConfig.packageSetting
     /**
      * 添加安装包配置信息
      * 调用前需要保证安装包已经安装到指定的位置中
@@ -88,13 +58,9 @@ class VmPackageRepo {
         }
     }
 
-
     @Synchronized
     fun updateInstallPackageInfoWithLock(vmPackageConfigInfo: VmPackageConfigInfo): Boolean{
         val packageName = vmPackageConfigInfo.packageName
-        if (!checkPackageInstalled(packageName)){
-            return false
-        }
         try {
             val packageConf = vmPackageConfig.packageSetting[packageName] ?: return false
             // 更新信息
@@ -191,63 +157,11 @@ class VmPackageRepo {
     }
 
     @Synchronized
-    fun getPackageInfoList(flag: Int): List<PackageInfo>{
-        val result = ArrayList<PackageInfo>(vmPackageConfig.packageSetting.size)
-        for (vmInstallPackageEntry in vmPackageConfig.packageSetting) {
-            val vmPackageConf = vmInstallPackageEntry.value
-            val confFile = File(vmPackageConf.installPackageInfoFilePath)
-            if (confFile.exists()){
-                val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
-                if (flag.and(PackageManager.GET_ACTIVITIES) == 0){
-                    packageInfo.activities = emptyArray()
-                }
-
-                if (packageInfo.packageName.isNotNullOrEmpty()){
-                    result.add(packageInfo)
-                }
-            }
-        }
-        return result
-    }
-
-    fun getVmPackageInfo(packageName: String, flags: Int): PackageInfo?{
-        val vmPackageConf = vmPackageConfig.packageSetting[packageName] ?: return null
-        val file = File(vmPackageConf.installPackageApkFilePath)
-        val confFile = File(vmPackageConf.installPackageInfoFilePath)
-        if (!file.exists() || !confFile.exists()){
-            // 文件不存在，删除此记录
-            removeInstallPackageInfoWithLock(vmPackageConf.packageName)
-            return null
-        }
-        // TODO 暂时不考虑flags标志，直接全家内容返回
-        val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
-//        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
-//            packageInfo.activities = emptyArray()
-//        }
-        return packageInfo
-    }
-
-    fun getApplicationInfo(packageName: String, flags: Int): ApplicationInfo?{
-        val vmPackageInfo = getVmPackageInfo(packageName, flags) ?: return null
-        return vmPackageInfo.applicationInfo
-    }
-
-    fun getActivityInfo(componentName: ComponentName, flags: Int): ActivityInfo?{
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
-        val findActivityInfo = vmPackageInfo.activities.find { it.name == componentName.className } ?: return null
-        return ActivityInfo(findActivityInfo)
-    }
-
-    fun resolveActivities(): List<ResolveInfo>{
-        return emptyList()
-    }
-
-    @Synchronized
     fun syncData(){
         configStorageHandle.save(MAP_PACKAGE_INFO_KEY, vmPackageConfig)
     }
 
-    companion object {
-        private const val MAP_PACKAGE_INFO_KEY = "MAP_PACKAGE_INFO_KEY"
+    companion object{
+        const val MAP_PACKAGE_INFO_KEY = "MAP_PACKAGE_INFO_KEY"
     }
 }

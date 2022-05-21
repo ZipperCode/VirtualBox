@@ -13,8 +13,8 @@ class MapParcelDataHandle<T: Parcelable>(val fileName: String, private val clazz
 
     private val mmkv: MMKV = MMKV.mmkvWithID(fileName, MMKV.SINGLE_PROCESS_MODE)
 
-    override fun save(key: String, parcelable: Parcelable) {
-        mmkv.encode(key, parcelable)
+    override fun save(key: String, data: T?) {
+        mmkv.encode(key, data)
     }
 
     override fun load(key: String): T? {

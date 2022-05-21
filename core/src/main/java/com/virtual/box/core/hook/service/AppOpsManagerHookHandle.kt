@@ -19,7 +19,6 @@ import com.virtual.box.core.hook.core.MethodHandle
  */
 @Suppress("UNUSED")
 class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
-    private val hostPkg: String = VirtualBox.get().hostPkg
 
     override fun getOriginObject(): Any? {
         val call = HServiceManager.getService.call(Context.APP_OPS_SERVICE)

@@ -4,6 +4,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.os.UserHandle
@@ -12,9 +14,12 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.ComponentFixCompat
+import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.IInjectHook
 import com.virtual.box.core.manager.HookManager
 import com.virtual.box.core.manager.VmActivityManager
+import com.virtual.box.core.manager.VmActivityThread
+import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HLoadedApk
 import java.lang.ref.WeakReference
@@ -131,14 +136,32 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
     ): ActivityResult {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s",
             context, contextThread, token, activity, intent, requestCode)
-        var realIntent: Intent? = intent
-        if (VirtualBox.get().isVirtualProcess) {
-            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
-            if (shadowIntent != null){
-                realIntent = shadowIntent
-            }
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
-        return super.execStartActivity(context, contextThread, token, activity, realIntent, requestCode)
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, contextThread, token, activity, intent, requestCode)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
+        return super.execStartActivity(context, contextThread, token, activity, intent, requestCode)
     }
 
     @Throws(Throwable::class)
@@ -151,14 +174,32 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         requestCode: Int
     ): ActivityResult {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s", context, contextThread, token, fragment, intent, requestCode)
-        var realIntent: Intent? = intent
-        if (VirtualBox.get().isVirtualProcess) {
-            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
-            if (shadowIntent != null){
-                realIntent = shadowIntent
-            }
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
-        return super.execStartActivity(context, contextThread, token, fragment, realIntent, requestCode)
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
+        return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode)
     }
 
     @Throws(Throwable::class)
@@ -174,14 +215,32 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, str = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, str, intent, requestCode, bundle)
-        var realIntent: Intent? = intent
-        if (VirtualBox.get().isVirtualProcess) {
-            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
-            if (shadowIntent != null){
-                realIntent = shadowIntent
-            }
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
-        return super.execStartActivity(context, contextThread, token, str, realIntent, requestCode, bundle)
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, contextThread, token, str, intent, requestCode,bundle)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, contextThread, token, str, shadowIntent, requestCode,bundle)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
+        return super.execStartActivity(context, contextThread, token, str, intent, requestCode, bundle)
     }
 
     @Throws(Throwable::class)
@@ -198,11 +257,31 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, activity, intent, requestCode, bundle)
-//                Debug.waitForDebugger();
-        if (VirtualBox.get().isVirtualProcess) {
-//            BActivityManager.get().startActivity(intent, BUserHandle.myUserId())
-            return ActivityResult(requestCode, Intent())
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, bundle)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, bundle)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
         return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, bundle)
     }
 
@@ -219,14 +298,32 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, fragment, intent, requestCode, bundle)
-        var realIntent: Intent? = intent
-        if (VirtualBox.get().isVirtualProcess) {
-            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
-            if (shadowIntent != null){
-                realIntent = shadowIntent
-            }
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
-        return super.execStartActivity(context, contextThread, token, fragment, realIntent, requestCode, bundle)
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode, bundle)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode, bundle)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
+        return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode, bundle)
     }
 
     @Throws(Throwable::class)
@@ -245,14 +342,32 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             "context = %s, iBinder = %s, iBinder2 = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s, userHandle = %s",
             context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle
         )
-        var realIntent: Intent? = intent
-        if (VirtualBox.get().isVirtualProcess) {
-            val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
-            if (shadowIntent != null){
-                realIntent = shadowIntent
-            }
+        if (IntentHelper.isSystemInstallIntentType(intent)){
+            // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
+            logger.e("解析intent为安装指定系统包，拦截不进行处理")
+            return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
-        return super.execStartActivity(context, iBinder, iBinder2, activity, realIntent, requestCode, bundle, userHandle)
+        val dataString = intent.dataString
+        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+            intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
+        }
+
+        val resolveInfo = VmPackageManager.resolveActivity(
+            intent, PackageManager.GET_META_DATA,
+            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+        )
+
+        if (resolveInfo == null){
+            logger.d("解析安装的程序包组件为空，调用源方法处理")
+            return super.execStartActivity(context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle)
+        }
+
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        if (shadowIntent != null){
+            return super.execStartActivity(context, iBinder, iBinder2, activity, shadowIntent, requestCode, bundle, userHandle)
+        }
+        logger.d("获取插桩的Intent为空，调用源方法处理")
+        return super.execStartActivity(context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle)
     }
 
     companion object {

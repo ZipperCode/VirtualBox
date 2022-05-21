@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * {@hide}
  */
-abstract class IntentResolver<F extends VmPackage.IntentInfo, R extends Object> {
+public abstract class IntentResolver<F extends VmPackage.IntentInfo, R extends Object> {
     final private static String TAG = "IntentResolver";
     final private static boolean DEBUG = false;
     final private static boolean localLOGV = DEBUG || false;

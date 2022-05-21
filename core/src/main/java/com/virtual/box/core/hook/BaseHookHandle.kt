@@ -1,6 +1,7 @@
 package com.virtual.box.core.hook
 
 import com.virtual.box.base.util.log.L
+import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.core.MethodHookInfo
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -8,7 +9,12 @@ import java.lang.reflect.Proxy
 import java.util.*
 
 abstract class BaseHookHandle : InvocationHandler, IInjectHook {
+
+    @JvmField
+    protected val hostPkg: String = VirtualBox.get().hostPkg
+
     protected open var target: Any? = null
+
     protected var proxyInvocation: Any? = null
         private set
 

@@ -49,6 +49,10 @@ class VmHandlerCallback : Handler.Callback, IInjectHook {
         return originHandler != null && HHandler.mCallback.get(originHandler) == this
     }
 
+
+
+
+
     companion object {
         const val LAUNCH_ACTIVITY = 100
         const val PAUSE_ACTIVITY = 101

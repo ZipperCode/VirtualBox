@@ -3,19 +3,24 @@ package com.virtual.box.core.hook.service
 import android.app.IServiceConnection
 import android.app.Notification
 import android.app.PendingIntent
-import android.app.Service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import com.virtual.box.base.util.compat.BuildCompat
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
+import com.virtual.box.core.manager.*
 import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
 import com.virtual.box.reflect.android.util.HSingleton
@@ -28,6 +33,9 @@ import com.virtual.box.reflect.android.util.HSingleton
  **/
 @Suppress("UNUSED")
 class ActivityManagerHookHandle : BaseHookHandle() {
+
+    private val logger: Logger = Logger.getLogger(L.HOOK_TAG, "ActivityManagerHookHandle")
+
     override fun getOriginObject(): Any? {
         val iActivityManager: Any? = if (BuildCompat.isAtLeastOreo) {
             HActivityManager.IActivityManagerSingleton.get()
@@ -55,15 +63,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun registerUidObserver(methodHandle: MethodHandle, observer: Any?, watch: Int, cutPoint: Int, callingPackage: String) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            observer, watch, cutPoint, hostPkg
+        ))
     }
 
     fun isUidActive(methodHandle: MethodHandle, uid: Int, callingPackage: String): Boolean {
-        return methodHandle.invokeOriginMethod() as Boolean
+        return methodHandle.invokeOriginMethod(arrayOf(
+            uid, hostPkg
+        )) as Boolean
     }
 
     fun getUidProcessState(methodHandle: MethodHandle, uid: Int, callingPackage: String): Int {
-        return methodHandle.invokeOriginMethod(arrayOf(uid, callingPackage)) as Int
+        return methodHandle.invokeOriginMethod(arrayOf(uid, hostPkg)) as Int
     }
 
     @Deprecated("maxTargetSdk=29", ReplaceWith("android.content.Context#startActivity(android.content.Intent) as Int"))
@@ -73,7 +85,10 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultTo: IBinder, resultWho: String,
         requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, intent, resolvedType, resultTo, resultWho,
+            requestCode, flags, profilerInfo, options
+        )) as Int
     }
 
     fun startActivityWithFeature(
@@ -82,10 +97,17 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
         profilerInfo: Any?, options: Bundle?
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, callingFeatureId, intent, resolvedType, resultTo,
+                resultWho, requestCode, flags, profilerInfo, options
+            )
+        ) as Int
     }
 
     fun finishActivity(methodHandle: MethodHandle, token: IBinder, code: Int, data: Intent, finishTask: Int): Boolean {
+        // TODO 关闭窗口时
+
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
@@ -102,7 +124,9 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         receiver: Any?, filter: IntentFilter,
         requiredPermission: String, userId: Int, flags: Int
     ): Intent {
-        return methodHandle.invokeOriginMethod() as Intent
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, receiver, filter, requiredPermission, userId, flags
+        )) as Intent
     }
 
     /**
@@ -114,7 +138,10 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         callingFeatureId: String, receiverId: String?, receiver: Any,
         filter: IntentFilter, requiredPermission: String?, userId: Int, flags: Int
     ): Intent {
-        return methodHandle.invokeOriginMethod() as Intent
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, receiverId, receiver, filter,
+            requiredPermission, userId, flags
+        )) as Intent
     }
 
     /**
@@ -132,6 +159,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultData: String?, map: Bundle?, requiredPermissions: Array<String>?,
         appOp: Int, options: Bundle?, serialized: Boolean, sticky: Boolean, userId: Int
     ): Int {
+        // TODO
         return methodHandle.invokeOriginMethod() as Int
     }
 
@@ -146,13 +174,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultData: String?, map: Bundle?, requiredPermissions: Array<String>?, excludePermissions: Array<String>?,
         appOp: Int, options: Bundle?, serialized: Boolean, sticky: Boolean, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        // TODO
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, callingFeatureId, intent, resolvedType, resultTo, resultCode,
+            resultData, map, requiredPermissions, excludePermissions,
+            appOp, options, serialized, sticky, userId
+        )) as Int
     }
 
     fun unbroadcastIntent(
         methodHandle: MethodHandle,
         caller: Any?, intent: Intent?, userId: Int
     ) {
+        // TODO intent
         methodHandle.invokeOriginMethod()
     }
 
@@ -160,7 +194,9 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?, task: Int,
         flags: Int, options: Bundle?
     ) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, task, flags, options
+        ))
     }
 
     /**
@@ -170,11 +206,13 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
         name: String?, userId: Int, stable: Boolean
     ): Any? {
-
-        return methodHandle.invokeOriginMethod()
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, name, userId, stable
+        ))
     }
 
     fun getRunningServiceControlPanel(methodHandle: MethodHandle, service: ComponentName?): PendingIntent? {
+        // TODO replace proxyService
         return methodHandle.invokeOriginMethod() as? PendingIntent
     }
 
@@ -183,13 +221,18 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
         callingFeatureId: String?, userId: Int
     ): ComponentName? {
-        return methodHandle.invokeOriginMethod() as? ComponentName
+        // TODO intent
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, service, resolvedType, requireForeground, hostPkg,
+            callingFeatureId, userId
+        )) as? ComponentName
     }
 
     fun stopService(
         methodHandle: MethodHandle, caller: Any?, service: Intent?,
         resolvedType: String?, userId: Int
     ): Int {
+        // TODO intent
         return methodHandle.invokeOriginMethod() as Int
     }
 
@@ -198,7 +241,10 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         callingPackage: String?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, token, service, resolvedType, connection, flags,
+            hostPkg, userId
+        )) as Int
     }
 
     fun bindIsolatedService(
@@ -206,11 +252,15 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         instanceName: String?, callingPackage: String?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, token, service, resolvedType, connection, flags,
+            instanceName, hostPkg, userId
+        )) as Int
     }
 
     @Deprecated("maxTargetSdk 30")
-    fun setDebugApp(methodHandle: MethodHandle, packageName: String?, waitForDebugger: Boolean, persistent: Boolean) {
+    fun setDebugApp(methodHandle: MethodHandle, packageName: String?,
+                    waitForDebugger: Boolean, persistent: Boolean) {
         methodHandle.invokeOriginMethod()
     }
 
@@ -228,6 +278,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         connection: Any?, userId: Int,
         abiOverride: String?
     ): Boolean {
+        // TODO className
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
@@ -272,13 +323,16 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, sender: Any?, workSource: Any?, sourceUid: Int,
         sourcePkg: String?, tag: String?
     ) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            sender, workSource, sourceUid, hostPkg, tag
+        ))
     }
 
     fun setServiceForeground(
         methodHandle: MethodHandle, className: ComponentName?, token: IBinder?,
         id: Int, notification: Notification?, flags: Int, foregroundServiceType: Int
     ) {
+        // TODO className
         methodHandle.invokeOriginMethod()
     }
 
@@ -293,6 +347,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, packageName: String?, keepState: Boolean,
         observer: Any?, userId: Int
     ): Boolean {
+        // TODO
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
@@ -304,8 +359,11 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    fun peekService(methodHandle: MethodHandle, service: Intent?, resolvedType: String?, callingPackage: String?): IBinder? {
-        return methodHandle.invokeOriginMethod() as? IBinder
+    fun peekService(methodHandle: MethodHandle, service: Intent?, resolvedType: String?,
+                    callingPackage: String?): IBinder? {
+        return methodHandle.invokeOriginMethod(arrayOf(
+            service, resolvedType, hostPkg
+        )) as? IBinder
     }
 
     /**
@@ -372,7 +430,10 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         requestCode: Int, flags: Int, profilerInfo: Any?,
         options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, intent, resolvedType, resultTo, resultWho,
+            requestCode, flags, profilerInfo, options, userId
+        )) as Int
     }
 
     fun startActivityAsUserWithFeature(

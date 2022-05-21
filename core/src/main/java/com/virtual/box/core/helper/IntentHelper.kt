@@ -3,8 +3,6 @@ package com.virtual.box.core.helper
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import com.virtual.box.core.entity.VmProxyActivityRecord
-import com.virtual.box.core.manager.VmProcessManager
-import com.virtual.box.core.proxy.ProxyManifest
 
 object IntentHelper {
     /**
@@ -48,5 +46,9 @@ object IntentHelper {
         val activityInfo: ActivityInfo? = shadowIntent.getParcelableExtra(IPC_ACTIVITY_INFO_INTENT_KEY)
         val originIntent: Intent? = shadowIntent.getParcelableExtra<Intent>(IPC_ORIGIN_INTENT_INTENT_KEY)
         return VmProxyActivityRecord(userId, originIntent, activityInfo)
+    }
+
+    fun isSystemInstallIntentType(intent: Intent): Boolean {
+        return "application/vnd.android.package-archive" == intent.type
     }
 }

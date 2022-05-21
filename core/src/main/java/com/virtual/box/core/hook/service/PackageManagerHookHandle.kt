@@ -4,8 +4,12 @@ import android.app.ActivityThread
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.*
+import android.os.Build
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
 import com.virtual.box.core.hook.core.MethodHandle
+import com.virtual.box.core.manager.VmActivityThread
+import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HContextImpl
@@ -46,39 +50,59 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         return methodHandle.invokeOriginMethod(arrayOf(replacePackageName, userId)) as Boolean
     }
 
-    fun getPackageInfo(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): PackageInfo? {
-        val replacePackageName = packageName
-        return methodHandle.invokeOriginMethod(arrayOf(replacePackageName, flags, userId)) as? PackageInfo
+    fun getPackageInfo(methodHandle: MethodHandle, packageName: String, flags: Int, userId: Int): PackageInfo? {
+        val packageInfo = VmPackageManager.getPackageInfo(packageName, flags, userId)
+        if (packageInfo != null){
+            return packageInfo
+        }
+        return methodHandle.invokeOriginMethod() as? PackageInfo
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun getPackageInfoVersioned(
         methodHandle: MethodHandle,
         versionedPackage: VersionedPackage?,
         flags: Int, userId: Int
     ): PackageInfo? {
+        val packageInfo = VmPackageManager.getPackageInfo(versionedPackage!!.packageName, flags, userId)
+        if (packageInfo != null){
+            return packageInfo
+        }
         return methodHandle.invokeOriginMethod() as? PackageInfo
     }
 
     fun getPackageUid(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(hostPkg, flags, userId)) as Int
     }
 
     fun getPackageGids(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): IntArray? {
         return methodHandle.invokeOriginMethod() as IntArray
     }
 
-    fun getApplicationInfo(methodHandle: MethodHandle,packageName: String?, flags: Int, userId: Int): ApplicationInfo? {
+    fun getApplicationInfo(methodHandle: MethodHandle,packageName: String, flags: Int, userId: Int): ApplicationInfo? {
+        val applicationInfo = VmPackageManager.getApplicationInfo(packageName, flags, userId)
+        if (applicationInfo != null){
+            return applicationInfo
+        }
         return methodHandle.invokeOriginMethod() as? ApplicationInfo
     }
 
     /**
      * @return the target SDK for the given package name, or -1 if it cannot be retrieved
      */
-    fun getTargetSdkVersion(methodHandle: MethodHandle, packageName: String?): Int {
+    fun getTargetSdkVersion(methodHandle: MethodHandle, packageName: String): Int {
+        val applicationInfo = VmPackageManager.getApplicationInfo(packageName, 0, VmActivityThread.currentProcessVmUserId)
+        if (applicationInfo != null){
+            return applicationInfo.targetSdkVersion
+        }
         return methodHandle.invokeOriginMethod() as Int
     }
 
-    fun getActivityInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ActivityInfo? {
+    fun getActivityInfo(methodHandle: MethodHandle, className: ComponentName, flags: Int, userId: Int): ActivityInfo? {
+        val activityInfo = VmPackageManager.getActivityInfo(className, flags, userId)
+        if (activityInfo != null){
+            return activityInfo
+        }
         return methodHandle.invokeOriginMethod() as? ActivityInfo
     }
 
@@ -170,6 +194,8 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     ): InstrumentationInfo? {
         return methodHandle.invokeOriginMethod() as? InstrumentationInfo
     }
+
+    @Deprecated("maxTargetSdk = 30")
     fun queryInstrumentation(methodHandle: MethodHandle,
         targetPackage: String?, flags: Int
     ): ParceledListSlice<Parcelable>? {

@@ -9,7 +9,7 @@ import android.os.Parcelable
  **/
 interface IParcelDataHandle<T> {
 
-    fun save(key: String, parcelable: Parcelable)
+    fun save(key: String, data: T?)
 
     fun load(key: String): T?
 }

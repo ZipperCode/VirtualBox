@@ -10,9 +10,6 @@ import java.io.FileDescriptor
 
 abstract class BaseBinderHookHandle : BaseHookHandle, IBinder {
 
-    @JvmField
-    protected val hostPkg: String = get().hostPkg
-
     protected var originBinder: IBinder? = null
         private set
 

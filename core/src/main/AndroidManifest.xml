@@ -362,5 +362,10 @@
             android:exported="false"
             android:process=":p0" />
 
+
+        <service
+            android:name=".proxy.ProxyService$P0"
+            android:exported="true"
+            android:process=":p0" />
     </application>
 </manifest>

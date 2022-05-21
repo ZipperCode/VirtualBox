@@ -12,8 +12,7 @@ import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.delegate.AppInstrumentation
 import com.virtual.box.core.hook.delegate.VmHandlerCallback
 import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
-import com.virtual.box.core.hook.service.ActivityManagerHookHandle
-import com.virtual.box.core.hook.service.ActivityTaskManagerHookHandle
+import com.virtual.box.core.hook.service.*
 import com.virtual.test.NativeLib
 
 /**
@@ -31,6 +30,13 @@ internal object HookManager {
             VmHandlerCallback(),
             AppInstrumentation(),
             ActivityManagerHookHandle(),
+            AppOpsManagerHookHandle(),
+            AppWidgetServiceHookHandle(),
+            DeviceIdentifiersPolicyServiceHookHandle(),
+            DisplayManagerHookHandle(),
+            LauncherAppsHookHandle(),
+            MediaProjectionManagerHookHandle(),
+            PackageManagerHookHandle()
         )
         if (BuildCompat.isAtLeastPie) {
             list.add(ActivityTaskManagerHookHandle())

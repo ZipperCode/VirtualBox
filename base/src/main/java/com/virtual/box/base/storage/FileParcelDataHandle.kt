@@ -30,13 +30,13 @@ class FileParcelDataHandle<T: Parcelable>(private val filePath: String, private 
         parcelConstructor = clazz.getConstructor(Parcel::class.java)
     }
 
-    override fun save(key: String, parcelable: Parcelable) {
+    override fun save(key: String, parcelable: T?) {
         val parcel = Parcel.obtain()
         try {
             val atomicFile = AtomicFile(fd)
             var fos: FileOutputStream? = null
             parcel.setDataPosition(0)
-            parcelable.writeToParcel(parcel, 0)
+            parcelable?.writeToParcel(parcel, 0)
             val byte = parcel.marshall()
             try {
                 fos = atomicFile.startWrite()
