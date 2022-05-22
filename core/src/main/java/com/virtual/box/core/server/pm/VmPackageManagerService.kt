@@ -3,6 +3,7 @@ package com.virtual.box.core.server.pm
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.*
+import android.os.Debug
 import android.os.Parcelable
 import android.os.Process
 import com.virtual.box.base.ext.isNotNullOrEmpty
@@ -39,9 +40,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
      */
     private val mInstallLock = Any()
 
-    private val vmPackageDataSource: VmPackageDataSource = VmPackageDataSource()
-
-    private val vmPackageRepo: VmPackageRepo by lazy { VmPackageRepo(vmPackageDataSource, VmPackageResolverDataSource(), VmPackageInfoDataSource()) }
+    private val vmPackageRepo: VmPackageRepo = VmPackageRepo()
 
     override fun registerPackageObserver(observer: IVmPackageObserver?) {
         if (observer == null || packageObservers.contains(observer) || observer.asBinder()?.isBinderAlive == false) {
@@ -350,11 +349,6 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         }
         val queryIntentActivities = vmPackageRepo.queryIntentActivities(intent, resolvedType, flags, userId)
         val chooseBestActivity = PackageHelper.chooseBestActivity(intent, resolvedType, flags, queryIntentActivities)
-        if (chooseBestActivity != null){
-            return chooseBestActivity.activityInfo
-        }
-
-        // 最后兜底使用系统解析
-        return VirtualBox.get().hostPm.resolveActivity(intent, flags)?.activityInfo
+        return chooseBestActivity?.activityInfo
     }
 }

@@ -42,7 +42,7 @@ object ParcelDataHelper {
 
     fun getDataStorageLock(storageName: String): IDataStorage{
         synchronized(dataStorageMap){
-            return if (dataStorageMap.containsKey(storageName)){
+            return if (!dataStorageMap.containsKey(storageName)){
                 MapDataStorageImpl(storageName).apply {
                     dataStorageMap[storageName] = this
                 }

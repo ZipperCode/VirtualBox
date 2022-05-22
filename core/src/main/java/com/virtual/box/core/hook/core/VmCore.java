@@ -2,6 +2,7 @@ package com.virtual.box.core.hook.core;
 
 import com.virtual.box.core.hook.method.ArtMethod;
 
+import java.io.File;
 import java.lang.reflect.Method;
 
 /**
@@ -11,6 +12,8 @@ import java.lang.reflect.Method;
 public class VmCore {
 
     static {
+        // 避免hook文件系统时还为注册native函数
+        new File("");
         System.loadLibrary("virtual");
     }
 

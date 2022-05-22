@@ -96,4 +96,16 @@ public class HActivityThread {
 
         public static MirrorReflection.FieldWrapper<Intent> args = REF.field("args");
     }
+
+
+    public static class ProviderClientRecord{
+        public static final MirrorReflection REF = MirrorReflection.on("android.app.ActivityThread$ProviderClientRecord");
+
+        public static final MirrorReflection.FieldWrapper<String[]> mNames = REF.field("mNames");
+        public static final MirrorReflection.FieldWrapper<IInterface> mProvider = REF.field("mProvider");
+    }
+
+
+
+
 }

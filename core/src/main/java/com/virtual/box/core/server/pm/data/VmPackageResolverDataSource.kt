@@ -4,12 +4,13 @@ import android.content.pm.PackageParser
 import androidx.annotation.WorkerThread
 import com.virtual.box.base.storage.IDataStorage
 import com.virtual.box.base.storage.ParcelDataHelper
+import com.virtual.box.core.constant.StorageConstant
 import com.virtual.box.core.server.pm.resolve.VmPackage
 
 class VmPackageResolverDataSource {
 
     private val installVmPackageResolverStorage: IDataStorage
-        = ParcelDataHelper.getDataStorageLock(PackageResolverInfoStorageName)
+        = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_PK_RESOLVER_INFO)
 
     private val lock = Any()
 

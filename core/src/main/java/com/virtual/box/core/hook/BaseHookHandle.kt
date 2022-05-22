@@ -11,7 +11,7 @@ import java.util.*
 abstract class BaseHookHandle : InvocationHandler, IInjectHook {
 
     @JvmField
-    protected val hostPkg: String = VirtualBox.get().hostPkg
+    protected var hostPkg: String = VirtualBox.get().hostPkg
 
     protected open var target: Any? = null
 

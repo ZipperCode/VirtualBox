@@ -6,6 +6,7 @@ import com.virtual.box.base.storage.MapParcelDataHandle
 import com.virtual.box.base.storage.ParcelDataHelper
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.constant.StorageConstant
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.manager.VmPackageInstallManager
 import com.virtual.box.core.server.pm.entity.*
@@ -15,12 +16,9 @@ import java.io.File
 class VmPackageDataSource {
     private val logger = Logger.getLogger(L.VM_TAG,"VmPackageDataStore")
 
-    private val configStorageHandle: IParcelDataHandle<VmPackageSettings> =
-        MapParcelDataHandle(
-            VmFileSystem.mInstallPackageInfoConfig.name
-            .replace(".conf", ""), VmPackageSettings::class.java)
+    private val iDataStorage: IDataStorage = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_PK_CONFIG_INFO)
 
-    val vmPackageConfig: VmPackageSettings = configStorageHandle.load(MAP_PACKAGE_INFO_KEY) ?: VmPackageSettings()
+    val vmPackageConfig: VmPackageSettings = iDataStorage.load(MAP_PACKAGE_INFO_KEY,VmPackageSettings())
 
     val packageSettings: HashMap<String, VmPackageConfigInfo> get() = vmPackageConfig.packageSetting
     /**
@@ -158,7 +156,7 @@ class VmPackageDataSource {
 
     @Synchronized
     fun syncData(){
-        configStorageHandle.save(MAP_PACKAGE_INFO_KEY, vmPackageConfig)
+        iDataStorage.save(MAP_PACKAGE_INFO_KEY, vmPackageConfig)
     }
 
     companion object{

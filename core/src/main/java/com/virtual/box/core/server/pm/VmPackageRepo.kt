@@ -3,6 +3,7 @@ package com.virtual.box.core.server.pm
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.*
+import android.os.Debug
 import android.os.Parcelable
 import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.isNotNullOrEmpty
@@ -22,10 +23,11 @@ import java.io.File
  * @date   2022/4/27
  **/
 class VmPackageRepo(
-    private val vmPackageDataSource: VmPackageDataSource,
-    private val vmPackageResolverDataSource: VmPackageResolverDataSource,
-    private val vmPackageInfoDataSource: VmPackageInfoDataSource
+
 ) {
+    private val vmPackageDataSource: VmPackageDataSource = VmPackageDataSource()
+    private val vmPackageResolverDataSource: VmPackageResolverDataSource = VmPackageResolverDataSource()
+    private val vmPackageInfoDataSource: VmPackageInfoDataSource = VmPackageInfoDataSource()
 
     private val logger = Logger.getLogger(L.VM_TAG, "VmPackageRepo")
 
@@ -286,6 +288,7 @@ class VmPackageRepo(
     @Synchronized
     fun getPackageInfoList(flag: Int): List<PackageInfo> {
         val result = ArrayList<PackageInfo>(vmPackageDataSource.packageSettings.size)
+        Debug.waitForDebugger()
         for (vmInstallPackageEntry in vmPackageDataSource.packageSettings) {
             val vmPackageConf = vmInstallPackageEntry.value
             val confFile = File(vmPackageConf.installPackageInfoFilePath)
