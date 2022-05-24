@@ -181,7 +181,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         HActivityThread.AppBindData.appInfo[originBoundApplication] = applicationInfo
         HActivityThread.AppBindData.info[originBoundApplication] = loadedApk
         HActivityThread.AppBindData.processName[originBoundApplication] = processName
-        HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers,to
+        HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers.toList()
 
         var application: Application? = null
         try {

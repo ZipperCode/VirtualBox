@@ -31,7 +31,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
 
     fun query(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, url: Uri?,
+        attributionSource: Any?, url: Uri?,
         projection: Array<String?>?,
         queryArgs: Bundle?, cancellationSignal: Any?
     ): Cursor? {
@@ -48,7 +48,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun insert(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, url: Uri?,
+        attributionSource: Any?, url: Uri?,
         initialValues: ContentValues?, extras: Bundle?
     ): Uri? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -68,7 +68,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun bulkInsert(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, url: Uri?,
+        attributionSource: Any?, url: Uri?,
         initialValues: Array<ContentValues?>?
     ): Int {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -82,7 +82,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     }
 
     @Throws(RemoteException::class)
-    fun delete(methodHandle: MethodHandle, attributionSource: AttributionSource, url: Uri?, extras: Bundle?): Int {
+    fun delete(methodHandle: MethodHandle, attributionSource: Any?, url: Uri?, extras: Bundle?): Int {
         Helper.fixAttributionSource(attributionSource, hostPkg)
         return methodHandle.invokeOriginMethod() as Int
     }
@@ -105,7 +105,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun update(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, url: Uri?, values: ContentValues?,
+        attributionSource: Any?, url: Uri?, values: ContentValues?,
         extras: Bundle?
     ): Int {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -115,7 +115,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class, FileNotFoundException::class)
     fun openFile(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource,
+        attributionSource: Any?,
         url: Uri?, mode: String?, signal: Any?
     ): ParcelFileDescriptor? {
 
@@ -127,7 +127,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class, FileNotFoundException::class)
     fun openAssetFile(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource,
+        attributionSource: Any?,
         url: Uri?, mode: String?, signal: Any?
     ): AssetFileDescriptor? {
 
@@ -138,7 +138,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class, OperationApplicationException::class)
     fun applyBatch(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource,
+        attributionSource: Any?,
         authority: String?, operations: ArrayList<ContentProviderOperation?>?
     ): Array<ContentProviderResult?>? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -162,7 +162,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun call(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, authority: String?,
+        attributionSource: Any?, authority: String?,
         method: String?, arg: String?, extras: Bundle?
     ): Bundle? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -173,7 +173,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun checkUriPermission(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, uri: Uri?,
+        attributionSource: Any?, uri: Uri?,
         uid: Int, modeFlags: Int
     ): Int {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -182,7 +182,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
 
 
     @Throws(RemoteException::class)
-    fun canonicalize(methodHandle: MethodHandle, attributionSource: AttributionSource, uri: Uri?): Uri? {
+    fun canonicalize(methodHandle: MethodHandle, attributionSource: Any?, uri: Uri?): Uri? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
         return methodHandle.invokeOriginMethod() as Uri?
     }
@@ -195,7 +195,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun canonicalizeAsync(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, uri: Uri?,
+        attributionSource: Any?, uri: Uri?,
         callback: RemoteCallback?
     ) {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -203,7 +203,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     }
 
     @Throws(RemoteException::class)
-    fun uncanonicalize(methodHandle: MethodHandle, attributionSource: AttributionSource, uri: Uri?): Uri? {
+    fun uncanonicalize(methodHandle: MethodHandle, attributionSource: Any?, uri: Uri?): Uri? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
         return methodHandle.invokeOriginMethod() as Uri?
 
@@ -217,7 +217,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun uncanonicalizeAsync(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, uri: Uri?,
+        attributionSource: Any?, uri: Uri?,
         callback: RemoteCallback?
     ) {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -227,7 +227,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class)
     fun refresh(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource, url: Uri?,
+        attributionSource: Any?, url: Uri?,
         extras: Bundle?, cancellationSignal: Any?
     ): Boolean {
         Helper.fixAttributionSource(attributionSource, hostPkg)
@@ -237,7 +237,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
     @Throws(RemoteException::class, FileNotFoundException::class)
     fun openTypedAssetFile(
         methodHandle: MethodHandle,
-        attributionSource: AttributionSource,
+        attributionSource: Any?,
         url: Uri?, mimeType: String?, opts: Bundle?, signal: Any?
     ): AssetFileDescriptor? {
         Helper.fixAttributionSource(attributionSource, hostPkg)
