@@ -288,7 +288,6 @@ class VmPackageRepo(
     @Synchronized
     fun getPackageInfoList(flag: Int): List<PackageInfo> {
         val result = ArrayList<PackageInfo>(vmPackageDataSource.packageSettings.size)
-        Debug.waitForDebugger()
         for (vmInstallPackageEntry in vmPackageDataSource.packageSettings) {
             val vmPackageConf = vmInstallPackageEntry.value
             val confFile = File(vmPackageConf.installPackageInfoFilePath)

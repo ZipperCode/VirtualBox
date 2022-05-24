@@ -3,6 +3,8 @@ package com.virtual.box.core.helper
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import com.virtual.box.base.ext.checkAndCreate
+import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.core.VmCore
@@ -41,6 +43,8 @@ object IoHelper {
         for (key in rule.keys) {
             originPaths.add(key)
             targetPaths.add(rule[key]!!)
+            // 如果映射文件不存在，这边需要创建文件夹
+            File(rule[key]!!).checkAndMkdirs()
         }
         VmCore.addIoRules(originPaths.toTypedArray(), targetPaths.toTypedArray())
     }

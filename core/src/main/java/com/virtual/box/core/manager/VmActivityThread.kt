@@ -31,6 +31,7 @@ import com.virtual.box.reflect.android.provider.HFontsContract
 import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
 import java.lang.reflect.Proxy
+import java.util.*
 
 /**
  * 虚拟进程的ActivityThread模拟实现
@@ -165,7 +166,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         VMRuntime.getRuntime().targetSdkVersion = loadedApk.targetSdkVersion
         // Supply the targetSdkVersion to the UI rendering module, which may
         // need it in cases where it does not have access to the appInfo.
-        if (BuildCompat.isAtLeastR) {
+        if (BuildCompat.isAtLeastS) {
             Compatibility.setTargetSdkVersion(loadedApk.targetSdkVersion);
         }
 
@@ -180,7 +181,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         HActivityThread.AppBindData.appInfo[originBoundApplication] = applicationInfo
         HActivityThread.AppBindData.info[originBoundApplication] = loadedApk
         HActivityThread.AppBindData.processName[originBoundApplication] = processName
-        HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers
+        HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers,to
 
         var application: Application? = null
         try {

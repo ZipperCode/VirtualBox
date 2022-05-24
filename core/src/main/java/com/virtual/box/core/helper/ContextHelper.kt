@@ -25,8 +25,8 @@ object ContextHelper {
                     curContext = curContext.baseContext
                 }
             }while (curContext != null && preContext != curContext)
-            HContextImpl.mBasePackageName.set(packageName)
-            HContextImpl.mOpPackageName.set(packageName)
+            HContextImpl.mBasePackageName.set(curContext, packageName)
+            HContextImpl.mOpPackageName.set(curContext, packageName)
 
         }catch (e: Exception){
             L.printStackTrace(e)
