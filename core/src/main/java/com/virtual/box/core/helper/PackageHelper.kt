@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Parcel
 import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.checkAndCreate
+import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
@@ -251,6 +252,20 @@ object PackageHelper {
             if (processName.isNullOrEmpty()){
                 processName = packageName
             }
+        }
+    }
+
+    fun fixInstallDir(vmApplicationInfo: ApplicationInfo){
+        vmApplicationInfo.run {
+            // /data/app/{pks}/lib/[arm/x86]
+            File(nativeLibraryDir).checkAndMkdirs()
+            // /data/app/{pks}/lib
+            File(HApplicationInfo.nativeLibraryRootDir.get(this)).checkAndMkdirs()
+            // /data/app/{pks}
+            File(publicSourceDir).checkAndMkdirs()
+            // /data/app/{pks}
+            File(sourceDir).checkAndMkdirs()
+            File(HApplicationInfo.scanSourceDir.get(this)).checkAndMkdirs()
         }
     }
 

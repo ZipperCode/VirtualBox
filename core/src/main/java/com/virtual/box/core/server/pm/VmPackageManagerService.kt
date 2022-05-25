@@ -13,6 +13,7 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
+import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.manager.VmPackageInstallManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.server.pm.data.VmPackageDataSource
@@ -190,7 +191,11 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
     }
 
     override fun getPackageInfo(packageName: String, flags: Int, userId: Int): PackageInfo? {
-        return vmPackageRepo.getVmPackageInfo(packageName,flags)
+        val vmPackageInfo = vmPackageRepo.getVmPackageInfo(packageName, flags)
+        vmPackageInfo?.apply {
+            ComponentFixCompat.fixApplicationInfo(applicationInfo, userId)
+        }
+        return vmPackageInfo
     }
 
     override fun getApplicationInfo(packageName: String, flags: Int, userId: Int): ApplicationInfo? {

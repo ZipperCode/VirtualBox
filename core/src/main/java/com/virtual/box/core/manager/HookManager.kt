@@ -26,7 +26,6 @@ internal object HookManager {
         VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
         L.vd("[%s] >> 初始化hook", TAG)
         val list = mutableListOf<IInjectHook>(
-            LibCoreOsHookHandle(),
             VmHandlerCallback(),
             AppInstrumentation(),
             ActivityManagerHookHandle(),
@@ -81,6 +80,11 @@ internal object HookManager {
 //        injectAll()
     }
 
+    fun onBindApplicationHook(){
+        LibCoreOsHookHandle().initHook()
+    }
+
+    @Deprecated("test")
     fun nativeHook() {
         logger.e(">> 第一次Hook之后加载So库Native方法")
         NativeLib.kotlinDynamicRegister()

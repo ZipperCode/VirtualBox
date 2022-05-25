@@ -8,6 +8,7 @@ import android.content.res.Resources
 import android.os.Build
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
+import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
@@ -111,20 +112,25 @@ object ComponentFixCompat {
         try {
             ai.uid = Process.myUid()
             // 修复数据区域 /data/data/{pks}/
-            ai.dataDir = VmFileSystem.getDataDir(ai.packageName, userId).absolutePath
+            val dataDir = VmFileSystem.getDataDir(ai.packageName, userId)
+            ai.dataDir = dataDir.absolutePath
+            dataDir.checkAndMkdirs()
             // 修复lib目录 /data/app/{pkg}/lib
+            val installAppLibDir = VmFileSystem.getInstallAppLibDir(ai.packageName)
             HApplicationInfo.nativeLibraryRootDir.set(ai,
-                VmFileSystem.getInstallAppLibDir(ai.packageName).absolutePath
+                installAppLibDir.absolutePath
             )
+            installAppLibDir.checkAndMkdirs()
+            val deDataDir = VmFileSystem.getDeDataDir(ai.packageName, userId)
             if (BuildCompat.isAtLeastN){
-                ai.deviceProtectedDataDir = VmFileSystem.getDeDataDir(ai.packageName, userId).absolutePath
-                if (!BuildCompat.isAtLeastN){
-                    HApplicationInfo.deviceEncryptedDataDir.set(ai, ai.deviceProtectedDataDir)
-                    HApplicationInfo.credentialEncryptedDataDir.set(ai, ai.dataDir)
-                }
-                HApplicationInfo.deviceProtectedDataDir.set(ai, ai.deviceProtectedDataDir)
+                ai.deviceProtectedDataDir = deDataDir.absolutePath
                 HApplicationInfo.credentialProtectedDataDir.set(ai, ai.dataDir)
+            }else{
+                HApplicationInfo.deviceEncryptedDataDir.set(ai, deDataDir.absolutePath)
+                HApplicationInfo.credentialEncryptedDataDir.set(ai, ai.dataDir)
             }
+            deDataDir.checkAndMkdirs()
+            VmFileSystem.mkdirAppData(ai.packageName, userId)
         }catch (e: Exception){
             L.printStackTrace(e)
         }

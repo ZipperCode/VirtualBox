@@ -28,9 +28,11 @@ import com.virtual.box.core.hook.delegate.ContentProviderHookHandle
 import com.virtual.box.core.server.am.IVmActivityThread
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.*
+import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.provider.HFontsContract
 import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
+import java.io.File
 import java.lang.reflect.Proxy
 import java.util.*
 
@@ -154,6 +156,12 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         // 替换掉当前进程的宿主的信息
         HLoadedApk.mSecurityViolation[loadedApk] = false
         HLoadedApk.mApplicationInfo[loadedApk] = applicationInfo
+        HLoadedApk.mDataDir[loadedApk] = applicationInfo.dataDir
+        HLoadedApk.mDataDirFile[loadedApk] = File(applicationInfo.dataDir)
+        if (BuildCompat.isAtLeastN){
+            HLoadedApk.mDeviceProtectedDataDirFile[loadedApk] = File(HApplicationInfo.deviceProtectedDataDir.get(applicationInfo))
+            HLoadedApk.mCredentialProtectedDataDirFile[loadedApk] = File(HApplicationInfo.credentialProtectedDataDir.get(applicationInfo))
+        }
 
         if (BuildCompat.isAtLeastPie) {
             // 多进程webView
@@ -191,12 +199,12 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
             logger.e(e)
         }
         this.vmApplication = application
-
+        HookManager.onBindApplicationHook()
         // application生成后，需要处理插件应用中的ContentProvider，并且调用Application的onCreate方法
         if (this.vmApplication != null) {
             logger.d("插件Application初始化完成，获取插件ContentProvider进行安装")
             installProviders(providers, processName)
-
+            packageContext.filesDir
             application!!.onCreate()
             if (BuildCompat.isAtLeastOreo) {
                 HFontsContract.sContext.set(null, application.applicationContext)

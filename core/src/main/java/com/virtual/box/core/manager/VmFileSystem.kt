@@ -110,12 +110,21 @@ internal object VmFileSystem {
     }
 
     fun mkdirAppData(packageName: String, userId: Int){
-        val appDataDir = getUserDataDir(packageName, userId)
-        if (!appDataDir.exists()){
-            appDataDir.checkAndMkdirs()
-        }
+//        val userAppDataDir = getUserDataDir(packageName, userId)
+//        if (!userAppDataDir.exists()){
+//            userAppDataDir.checkAndMkdirs()
+//        }
+//        mkdirAppData(userAppDataDir)
+
+        val dataDir = getDataDir(packageName, userId)
+        dataDir.checkAndMkdirs()
+        mkdirAppData(dataDir)
+    }
+
+    private fun mkdirAppData(appDataDir: File){
         File(appDataDir, "files").checkAndMkdirs()
         File(appDataDir, "cache").checkAndMkdirs()
+        File(appDataDir, "code_cache").checkAndMkdirs()
         File(appDataDir, "lib").checkAndMkdirs()
         File(appDataDir, "databases").checkAndMkdirs()
         File(appDataDir, "shared_prefs").checkAndMkdirs()

@@ -322,7 +322,6 @@ class VmPackageRepo(
 //        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
 //            packageInfo.activities = emptyArray()
 //        }
-        ComponentFixCompat.fixApplicationInfo(packageInfo.applicationInfo, VmActivityThread.currentProcessVmUserId)
         return packageInfo
     }
 

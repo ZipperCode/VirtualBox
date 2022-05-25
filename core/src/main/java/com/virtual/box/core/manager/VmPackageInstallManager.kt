@@ -4,6 +4,7 @@ import android.content.pm.PackageInfo
 import com.virtual.box.base.ext.deleteDir
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
 import java.io.File
 
@@ -37,15 +38,6 @@ internal object VmPackageInstallManager {
         // 创建数据目录
         VmFileSystem.mkdirAppData(packageName, userId)
     }
-
-    fun installVmPackageAsUser(vmPackageInfo: PackageInfo, filePath: String, userId: Int) {
-        createVmPackageEnv(vmPackageInfo, filePath, userId)
-        PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo)
-        val packageInfoFile = VmFileSystem.getInstallAppPackageInfoFile(vmPackageInfo.packageName)
-        PackageHelper.saveInstallPackageInfo(vmPackageInfo, packageInfoFile)
-    }
-
-
 
     fun checkPackageInstalled(packageName: String): Boolean {
         return VmFileSystem.getInstallAppPackageInfoFile(packageName).exists()

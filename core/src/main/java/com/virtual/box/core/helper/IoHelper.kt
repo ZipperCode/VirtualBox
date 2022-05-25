@@ -8,6 +8,8 @@ import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.core.VmCore
+import com.virtual.box.reflect.android.content.pm.HApplicationInfo
+import com.virtual.box.reflect.android.content.pm.HPackageInfo
 import java.io.File
 import java.lang.Exception
 import java.util.HashMap
@@ -18,11 +20,30 @@ object IoHelper {
         val packageName = context.packageName
         val rule: MutableMap<String, String> = HashMap()
         try {
-            rule["/data/data/$packageName"] = File(packageInfo.nativeLibraryDir).parent!!
-            rule["/data/data/$packageName/lib"] = packageInfo.nativeLibraryDir
-            rule["/data/user/0/$packageName/lib"] = packageInfo.nativeLibraryDir
+            val installAppDir = HApplicationInfo.scanPublicSourceDir.get(packageInfo)
+//            val appOatDir = File(installAppDir,"oat").absolutePath
+//            when {
+//                packageInfo.nativeLibraryDir.contains("arm64") -> {
+//                    rule["/data/app/${packageName}/lib/arm64"] = packageInfo.nativeLibraryDir
+//                    rule["/data/app/${packageName}/oat/arm64"] = File(appOatDir,"arm64").absolutePath
+//                }
+//                packageInfo.nativeLibraryDir.contains("arm") -> {
+//                    rule["/data/app/${packageName}/lib/arm"] = packageInfo.nativeLibraryDir
+//                    rule["/data/app/${packageName}/oat/arm"] = File(appOatDir,"arm").absolutePath
+//                }
+//                packageInfo.nativeLibraryDir.contains("x86") -> {
+//                    rule["/data/app/${packageName}/lib/x86"] = packageInfo.nativeLibraryDir
+//                    rule["/data/app/${packageName}/oat/x86"] = File(appOatDir,"x86").absolutePath
+//                }
+//            }
+//            rule["/data/app/$packageName/oat"] = appOatDir
+//            rule["/data/app/$packageName/lib"] = HApplicationInfo.nativeLibraryRootDir.get(packageInfo)
+            rule["/data/app/$packageName"] = installAppDir
+
+            // /data/data
             rule["/data/data/$packageName"] = packageInfo.dataDir
             rule["/data/user/0/$packageName"] = packageInfo.dataDir
+
             if (VirtualBox.get().hostContext.externalCacheDir != null && context.externalCacheDir != null) {
                 val external = context.externalCacheDir!!.parentFile!!
                 // sdcard
@@ -30,10 +51,10 @@ object IoHelper {
                 rule["/sdcard/android/data/$packageName"] = external.absolutePath
                 rule["/storage/emulated/0/android/data/$packageName"] = external.absolutePath
                 rule["/storage/emulated/0/Android/data/$packageName"] = external.absolutePath
-                rule["/storage/emulated/0/Android/data/$packageName/files"] =
-                    File(external.absolutePath, "files").absolutePath
-                rule["/storage/emulated/0/Android/data/$packageName/cache"] =
-                    File(external.absolutePath, "cache").absolutePath
+//                rule["/storage/emulated/0/Android/data/$packageName/files"] =
+//                    File(external.absolutePath, "files").absolutePath
+//                rule["/storage/emulated/0/Android/data/$packageName/cache"] =
+//                    File(external.absolutePath, "cache").absolutePath
             }
         }catch (e: Exception){
             L.printStackTrace(e)
