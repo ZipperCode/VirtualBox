@@ -19,6 +19,7 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.helper.IoHelper
@@ -190,6 +191,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
             logger.e(e)
         }
         this.vmApplication = application
+
         // application生成后，需要处理插件应用中的ContentProvider，并且调用Application的onCreate方法
         if (this.vmApplication != null) {
             logger.d("插件Application初始化完成，获取插件ContentProvider进行安装")

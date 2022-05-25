@@ -108,19 +108,25 @@ object ComponentFixCompat {
     }
 
     fun fixApplicationInfo(ai: ApplicationInfo, userId: Int){
-        ai.uid = Process.myUid()
-        // 修复数据区域 /data/data/{pks}/
-        ai.dataDir = VmFileSystem.getDataDir(ai.packageName, userId).absolutePath
-        // 修复lib目录 /data/app/{pkg}/lib
-        HApplicationInfo.nativeLibraryRootDir.set(ai,
-            VmFileSystem.getInstallAppLibDir(ai.packageName).absolutePath
-        )
-        if (BuildCompat.isAtLeastN){
-            ai.deviceProtectedDataDir = VmFileSystem.getDeDataDir(ai.packageName, userId).getAbsolutePath()
-            HApplicationInfo.deviceEncryptedDataDir.set(ai, ai.deviceProtectedDataDir);
-            HApplicationInfo.credentialEncryptedDataDir.set(ai, ai.dataDir)
-            HApplicationInfo.deviceProtectedDataDir.set(ai, ai.deviceProtectedDataDir)
-            HApplicationInfo.credentialProtectedDataDir.set(ai, ai.dataDir)
+        try {
+            ai.uid = Process.myUid()
+            // 修复数据区域 /data/data/{pks}/
+            ai.dataDir = VmFileSystem.getDataDir(ai.packageName, userId).absolutePath
+            // 修复lib目录 /data/app/{pkg}/lib
+            HApplicationInfo.nativeLibraryRootDir.set(ai,
+                VmFileSystem.getInstallAppLibDir(ai.packageName).absolutePath
+            )
+            if (BuildCompat.isAtLeastN){
+                ai.deviceProtectedDataDir = VmFileSystem.getDeDataDir(ai.packageName, userId).absolutePath
+                if (!BuildCompat.isAtLeastN){
+                    HApplicationInfo.deviceEncryptedDataDir.set(ai, ai.deviceProtectedDataDir)
+                    HApplicationInfo.credentialEncryptedDataDir.set(ai, ai.dataDir)
+                }
+                HApplicationInfo.deviceProtectedDataDir.set(ai, ai.deviceProtectedDataDir)
+                HApplicationInfo.credentialProtectedDataDir.set(ai, ai.dataDir)
+            }
+        }catch (e: Exception){
+            L.printStackTrace(e)
         }
     }
 }

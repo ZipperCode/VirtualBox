@@ -9,6 +9,7 @@ import android.os.Build;
 
 import com.virtual.box.reflect.MirrorReflection;
 
+import java.io.File;
 import java.lang.annotation.Target;
 
 public class HLoadedApk {
@@ -27,6 +28,10 @@ public class HLoadedApk {
     @TargetApi(Build.VERSION_CODES.P)
     public static MirrorReflection.FieldWrapper<String> mLibDir = REF.field("mLibDir");
     public static MirrorReflection.FieldWrapper<Resources> mResources = REF.field("mResources");
+    public static MirrorReflection.FieldWrapper<File> mCredentialProtectedDataDirFile = REF.field("mCredentialProtectedDataDirFile");
+    public static MirrorReflection.FieldWrapper<String> mDataDir = REF.field("mDataDir");
+    public static MirrorReflection.FieldWrapper<File> mDataDirFile = REF.field("mDataDirFile");
+    public static MirrorReflection.FieldWrapper<File> mDeviceProtectedDataDirFile = REF.field("mDeviceProtectedDataDirFile");
 
 
 }

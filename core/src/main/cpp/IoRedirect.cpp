@@ -24,11 +24,11 @@ bool IoRedirect::initRedirectRule(JNIEnv *env, jobjectArray originPaths, jobject
         auto targetJString = reinterpret_cast<jstring>(env->GetObjectArrayElement(targetPaths, i));
         const char* originPathChar = env->GetStringUTFChars(originJString, &isCopy);
         const char* targetPathChar = env->GetStringUTFChars(targetJString, &isCopy);
-        if (strstr(originPathChar, targetPathChar) && !strstr(originPathChar, "/virtual/")) {
+        if (strcmp(originPathChar, targetPathChar) != 0 && !strstr(originPathChar, "/virtual/")) {
             sRedirectMap.insert(pair<const char*,const char*>(originPathChar, originPathChar));
             ALOGD("===============================================================================================================")
             ALOGD(">> initRedirectRule >> 添加重定向规则 origin = %s", originPathChar)
-            ALOGD(">> initRedirectRule >> 添加重定向规则 target = %s", originPathChar)
+            ALOGD(">> initRedirectRule >> 添加重定向规则 target = %s", targetPathChar)
             ALOGD("===============================================================================================================")
         }else{
             ALOGE(">> initRedirectRule >> 不处理重定向 origin = %s， target = %s", originPathChar, targetPathChar)

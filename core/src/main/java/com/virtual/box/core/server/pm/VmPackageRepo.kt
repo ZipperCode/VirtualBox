@@ -9,12 +9,15 @@ import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
+import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.server.pm.data.VmPackageDataSource
 import com.virtual.box.core.server.pm.data.VmPackageInfoDataSource
 import com.virtual.box.core.server.pm.data.VmPackageResolverDataSource
 import com.virtual.box.core.server.pm.entity.VmPackageConfigInfo
 import com.virtual.box.core.server.pm.resolve.VmPackage
+import com.virtual.box.reflect.android.content.pm.HActivityInfo.applicationInfo
 import java.io.File
 
 /**
@@ -319,6 +322,7 @@ class VmPackageRepo(
 //        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
 //            packageInfo.activities = emptyArray()
 //        }
+        ComponentFixCompat.fixApplicationInfo(packageInfo.applicationInfo, VmActivityThread.currentProcessVmUserId)
         return packageInfo
     }
 
