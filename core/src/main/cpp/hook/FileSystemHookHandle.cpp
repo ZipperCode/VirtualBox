@@ -25,6 +25,7 @@ HOOK_JNI(jboolean, createFileExclusively0, JNIEnv *env, jobject obj, jstring pat
  * Signature: (Ljava/io/File;)[Ljava/lang/String;
  */
 HOOK_JNI(jobjectArray, list0, JNIEnv *env, jobject obj, jobject file) {
+    ALOGE(">> UnixFileSystem#list0 > obj = %s, file = %s", obj, file)
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_list0(env, obj, redirect);
 }
@@ -128,32 +129,32 @@ HOOK_JNI(jboolean, checkAccess, JNIEnv *env, jobject obj, jboolean access) {
 }
 
 void FileSystemHookHandle::nativeHook(JNIEnv *env) {
-    handleHook(env, "canonicalize0", "(Ljava/lang/String;)Ljava/lang/String;",
-               (void *) new_canonicalize0, (void **) (&orig_canonicalize0), false);
-    handleHook(env, "getLastModifiedTime0", "(Ljava/io/File;)J",
-               (void *) new_getLastModifiedTime0, (void **) (&orig_getLastModifiedTime0),
-               false);
-    handleHook(env, "setPermission0", "(Ljava/io/File;IZZ)Z",
-               (void *) new_setPermission0, (void **) (&orig_setPermission0), false);
-    handleHook(env, "createFileExclusively0", "(Ljava/lang/String;)Z",
-               (void *) new_createFileExclusively0,
-               (void **) (&orig_createFileExclusively0), false);
-    handleHook(env, "list0", "(Ljava/io/File;)[Ljava/lang/String;",
-               (void *) new_list0, (void **) (&orig_list0), false);
-    handleHook(env, "createDirectory0", "(Ljava/io/File;)Z",
-               (void *) new_createDirectory0, (void **) (&orig_createDirectory0), false);
-    // 设置最后修改时间
-    handleHook(env, "setLastModifiedTime0", "(Ljava/io/File;J)Z",
-               (void *) new_setLastModifiedTime0, (void **) (&orig_setLastModifiedTime0),
-               false);
-    // 设置只读
-    handleHook(env, "setReadOnly0", "(Ljava/io/File;)Z",
-               (void *) new_setReadOnly0, (void **) (&orig_setReadOnly0), false);
-    // 获取文件空间大小
-    handleHook(env, "getSpace0", "(Ljava/io/File;I)J",
-               (void *) new_getSpace0, (void **) (&orig_getSpace0), false);
-    // 检查文件是否存在，
-    handleHook(env, "checkAccess", "(Ljava/io/File;I)Z",
-               (void *) new_checkAccess, (void **) (&orig_checkAccess), false);
+//    handleHook(env, "canonicalize0", "(Ljava/lang/String;)Ljava/lang/String;",
+//               (void *) new_canonicalize0, (void **) (&orig_canonicalize0), false);
+//    handleHook(env, "getLastModifiedTime0", "(Ljava/io/File;)J",
+//               (void *) new_getLastModifiedTime0, (void **) (&orig_getLastModifiedTime0),
+//               false);
+//    handleHook(env, "setPermission0", "(Ljava/io/File;IZZ)Z",
+//               (void *) new_setPermission0, (void **) (&orig_setPermission0), false);
+//    handleHook(env, "createFileExclusively0", "(Ljava/lang/String;)Z",
+//               (void *) new_createFileExclusively0,
+//               (void **) (&orig_createFileExclusively0), false);
+//    handleHook(env, "list0", "(Ljava/io/File;)[Ljava/lang/String;",
+//               (void *) new_list0, (void **) (&orig_list0), false);
+//    handleHook(env, "createDirectory0", "(Ljava/io/File;)Z",
+//               (void *) new_createDirectory0, (void **) (&orig_createDirectory0), false);
+//    // 设置最后修改时间
+//    handleHook(env, "setLastModifiedTime0", "(Ljava/io/File;J)Z",
+//               (void *) new_setLastModifiedTime0, (void **) (&orig_setLastModifiedTime0),
+//               false);
+//    // 设置只读
+//    handleHook(env, "setReadOnly0", "(Ljava/io/File;)Z",
+//               (void *) new_setReadOnly0, (void **) (&orig_setReadOnly0), false);
+//    // 获取文件空间大小
+//    handleHook(env, "getSpace0", "(Ljava/io/File;I)J",
+//               (void *) new_getSpace0, (void **) (&orig_getSpace0), false);
+//    // 检查文件是否存在，
+//    handleHook(env, "checkAccess", "(Ljava/io/File;I)Z",
+//               (void *) new_checkAccess, (void **) (&orig_checkAccess), false);
 }
 

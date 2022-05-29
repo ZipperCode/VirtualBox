@@ -1,8 +1,12 @@
 package com.virtual.box.core.hook.core
 
+import android.util.Log
 import com.virtual.box.base.util.log.L
+import com.virtual.box.core.exception.CalledOriginMethodException
+import java.lang.Exception
 import java.lang.reflect.Method
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  *
@@ -17,27 +21,27 @@ class MethodHandle(
     private val targetNativeHolderPtr: Long
 ) {
 
-   var hasRestoreMethod: Boolean = false
-        private set
+   val hasRestoreMethod: AtomicBoolean = AtomicBoolean(false)
 
    fun invokeOriginMethod(): Any?{
        return invokeOriginMethod(args)
    }
 
     fun invokeOriginMethod(args: Array<out Any?>?): Any?{
-        if (args == null){
-            L.hdParam("invokeMethod >> ${targetMethod.name} ")
-        }else{
-            L.hdParam("invokeMethod >> ${targetMethod.name} \n args => %s", Arrays.toString(args))
-        }
-        if (nativeHolderPtr != 0L){
-            VmCore.restoreMethod(nativeHolderPtr, targetNativeHolderPtr)
-            hasRestoreMethod = true
-        }
-        return if (args == null){
-            targetMethod.invoke(originObj)
-        }else{
-            targetMethod.invoke(originObj, *args)
+        try {
+            if (nativeHolderPtr != 0L){
+                VmCore.restoreMethod(nativeHolderPtr, targetNativeHolderPtr)
+                hasRestoreMethod.set(true)
+            }
+            val result =  if (args == null){
+                targetMethod.invoke(originObj)
+            }else{
+                targetMethod.invoke(originObj, *args)
+            }
+            return result
+        }catch (e: Throwable){
+            L.printStackTrace(e)
+            throw CalledOriginMethodException(e.cause)
         }
     }
 }

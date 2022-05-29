@@ -14,8 +14,8 @@ object ProxyManifest {
      */
     const val FREE_COUNT = 100
     @JvmStatic
-    fun isProxy(msg: String): Boolean {
-        return serviceProvider == msg || msg.contains("virtualbox.proxy_content_provider_")
+    fun isProxy(msg: String?): Boolean {
+        return serviceProvider == msg || msg?.contains("virtualbox.proxy_content_provider_") == true
     }
 
     /**

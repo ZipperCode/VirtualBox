@@ -18,7 +18,7 @@ class VmPackageDataSource {
 
     private val iDataStorage: IDataStorage = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_PK_CONFIG_INFO)
 
-    val vmPackageConfig: VmPackageSettings = iDataStorage.load(MAP_PACKAGE_INFO_KEY,VmPackageSettings())
+    val vmPackageConfig: VmPackageSettings = iDataStorage.load(MAP_PACKAGE_INFO_KEY, VmPackageSettings())
 
     val packageSettings: HashMap<String, VmPackageConfigInfo> get() = vmPackageConfig.packageSetting
     /**
@@ -114,7 +114,7 @@ class VmPackageDataSource {
             // 如果需要删除用户
             for (needRemoveUser in needRemoveUsers) {
                 vmPackageConfig.packageUserSpaceSetting.remove(needRemoveUser)
-                VmUserManagerService.deleteUser(needRemoveUser)
+                VmUserManagerService.deleteUserIfExists(needRemoveUser)
             }
             // 删除安装包数据
             vmPackageConfig.packageSetting.remove(packageName)

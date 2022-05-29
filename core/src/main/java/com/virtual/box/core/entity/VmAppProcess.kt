@@ -15,7 +15,7 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
      * 应用运行的进程
      * 代理应用进程名称：进程信息
      */
-    private val currentAppProcessRecord: MutableMap<String, VmProcessRecord> = HashMap(5)
+    val currentAppProcessRecord: MutableMap<String, VmProcessRecord> = HashMap(5)
 
     /**
      * 虚拟进程对应的系统进程
@@ -117,9 +117,28 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
         }
     }
 
-    fun getVmProcessAppConfig(): VmAppConfig{
+    fun getVmAppProcessAppConfig(): VmAppConfig{
+        return getVmProcessAppConfig(mainProcessRecord!!)
+    }
+
+    fun getVmProcessAppConfig(processName: String): VmAppConfig?{
+        if (packageName == processName){
+            return getVmProcessAppConfig(mainProcessRecord!!)
+        }
+        val processRecord = currentAppProcessRecord[processName] ?: return null
+        return getVmProcessAppConfig(processRecord)
+    }
+
+    fun getVmProcessAppConfig(vmProcessRecord: VmProcessRecord): VmAppConfig{
         return VmAppConfig().apply {
-            this.packageName = this@VmAppProcess.packageName
+            this.processName = vmProcessRecord.processName ?: ""
+            this.packageName = vmProcessRecord.packageName ?: ""
+            this.userId = this@VmAppProcess.userId ?: -1
+            this.vmProcessRecord = vmProcessRecord
+            this.isMainProcess = mainProcessRecord?.processName != vmProcessRecord.processName
+            this.mainProcessVmPid = mainProcessRecord?.vmPid ?: -1
+            this.mainProcessSystemPid = mainProcessRecord?.systemPid ?: -1
+            this.mainProcessSystemUid = mainProcessRecord?.systemUid ?: -1
         }
     }
 }

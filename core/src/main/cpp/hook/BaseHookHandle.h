@@ -88,7 +88,7 @@ protected:
         ArtMethodHandle::clearFastNativeFlag(pArtMethod);
         auto pNativeOffset = pArtMethod + ArtMethodHandle::getArtMethodNativeOffset();
         ALOGD(">> pNativeOffset Address     = %p", pNativeOffset)
-        ALOGD(">> pNativeOffset Value       = %x", (size_t)(*pNativeOffset))
+        ALOGD(">> pNativeOffset Value       = %x", (unsigned int)(*pNativeOffset))
         // 如果JNI方法没有注册，这边拿到的地址将会是art_jni_dlsym_lookup_stub
         *orig_fun = reinterpret_cast<void*>(*pNativeOffset);
         // 拿到art函数指针 赋值到 orig_fun中，完成native方法的hook

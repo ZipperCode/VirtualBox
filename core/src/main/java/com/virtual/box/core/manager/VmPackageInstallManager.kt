@@ -1,6 +1,7 @@
 package com.virtual.box.core.manager
 
 import android.content.pm.PackageInfo
+import android.os.Debug
 import com.virtual.box.base.ext.deleteDir
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -30,6 +31,11 @@ internal object VmPackageInstallManager {
         PackageHelper.saveInstallPackageInfo(vmPackageInfo, packageInfoFile)
     }
 
+    fun unInstallBasePackage(packageName: String){
+        // 删除安装目录
+        VmFileSystem.getAppInstall(packageName).deleteDir()
+    }
+
     fun installVmPackageAsUserData(vmPackageInfo: PackageInfo, userId: Int){
         val packageName = vmPackageInfo.packageName
         // 删除数据目录
@@ -37,6 +43,12 @@ internal object VmPackageInstallManager {
         VmFileSystem.getDeDataDir(packageName, userId).deleteDir()
         // 创建数据目录
         VmFileSystem.mkdirAppData(packageName, userId)
+    }
+
+    fun uninstallVmPackageAsUserData(packageName: String, userId: Int){
+        // 删除数据目录
+        VmFileSystem.getUserDataDir(packageName, userId).deleteDir()
+        VmFileSystem.getDeDataDir(packageName, userId).deleteDir()
     }
 
     fun checkPackageInstalled(packageName: String): Boolean {

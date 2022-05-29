@@ -54,7 +54,7 @@ android {
 
 dependencies {
     api project(':base')
-    api project(':free-reflect')
+//    api project(':free-reflect')
     implementation project(':os-reflect')
     compileOnly project(':os-compile')
     // implementation project(':hook-annotator')

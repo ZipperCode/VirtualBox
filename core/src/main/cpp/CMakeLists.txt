@@ -14,6 +14,7 @@ add_library(
         ${SRC_NATIVE_HOOK}
         ${SRC_UTIL}
         ${SRC_ROOT}
+        art.cpp
         VirtualCore.cpp
 )
 

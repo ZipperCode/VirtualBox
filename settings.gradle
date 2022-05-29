@@ -15,7 +15,7 @@ dependencyResolutionManagement {
 rootProject.name = "VirtualBox"
 include ':app'
 include ':base'
-include ':free-reflect'
+//include ':free-reflect'
 include ':os-compile'
 include ':core'
 include ':os-reflect'

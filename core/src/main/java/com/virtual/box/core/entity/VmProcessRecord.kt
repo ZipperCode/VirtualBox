@@ -3,6 +3,8 @@ package com.virtual.box.core.entity
 import android.content.pm.ApplicationInfo
 import android.os.*
 import androidx.versionedparcelable.ParcelField
+import com.virtual.box.base.util.log.L
+import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.am.IVmActivityThread
 
@@ -96,6 +98,20 @@ class VmProcessRecord : Binder, Parcelable {
 
     fun getProxyAuthority(): String{
         return ProxyManifest.getProxyAuthorities(vmPid)
+    }
+
+    fun linkToDeath(){
+        vmAppThread?.asBinder()?.linkToDeath(object : IBinder.DeathRecipient{
+            override fun binderDied() {
+                VmProcessManager.killProcess(packageName, vmUid)
+                try {
+                    vmAppThread?.asBinder()?.unlinkToDeath(this, 0)
+                    vmAppThread = null
+                }catch (e: RemoteException){
+                    L.printStackTrace(e)
+                }
+            }
+        }, 0)
     }
 
     override fun describeContents(): Int {

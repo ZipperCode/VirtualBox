@@ -5,10 +5,14 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import android.os.Debug
 import android.os.Process
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.reflect.android.app.HActivityThread
+import dalvik.system.VMRuntime
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 object SystemHelper {
     /**
@@ -16,23 +20,69 @@ object SystemHelper {
      */
     private lateinit var sCurrentProcessName: String
 
+    var sCurrentCpuAbi: String
+        private set
+
+    var sCurrentSimpleCpuAbi: String
+        private set
+
+    init {
+        try {
+            Runtime.getRuntime().exec("getprop ro.product.cpu.abi").inputStream.use {
+                val cpuAbiLine = readLine()
+                when {
+                    cpuAbiLine?.contains("x86") == true -> {
+                        sCurrentCpuAbi = "x86"
+                        sCurrentSimpleCpuAbi = "x86"
+                    }
+                    cpuAbiLine?.contains("x86_64") == true -> {
+                        sCurrentCpuAbi = "x86_64"
+                        sCurrentSimpleCpuAbi = "x86_64"
+                    }
+                    cpuAbiLine?.contains("armeabi-v7a") == true -> {
+                        sCurrentCpuAbi = "armeabi-v7a"
+                        sCurrentSimpleCpuAbi = "armeabi"
+                    }
+                    cpuAbiLine?.contains("arm64-v8a") == true -> {
+                        sCurrentCpuAbi = "arm64-v8a"
+                        sCurrentSimpleCpuAbi = "arm64"
+                    }
+                    else -> {
+                        val index = Build.CPU_ABI.indexOf("-")
+                        sCurrentSimpleCpuAbi = if (index == -1){
+                            Build.CPU_ABI
+                        }else{
+                            Build.CPU_ABI.substring(0, index)
+                        }
+                        sCurrentCpuAbi = Build.CPU_ABI
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            L.printStackTrace(e)
+            sCurrentCpuAbi = Build.CPU_ABI
+            sCurrentSimpleCpuAbi = Build.CPU_ABI
+        }
+    }
+
     @JvmStatic
-    fun isMainProcess(): Boolean{
+    fun isMainProcess(): Boolean {
         return try {
             getCurrentProcessName() == getPackageName()
-        }catch (e: Exception){
+        } catch (e: Exception) {
             false
         }
     }
+
     /**
      * 反色获取进程名，使用任务栈获取耗性能
      */
     @JvmStatic
-    fun getCurrentProcessName(): String{
-        synchronized(this){
-            if (!SystemHelper::sCurrentProcessName.isInitialized){
+    fun getCurrentProcessName(): String {
+        synchronized(this) {
+            if (!SystemHelper::sCurrentProcessName.isInitialized) {
                 val curName = getProcessNameCompat()
-                if (curName.isNullOrBlank()){
+                if (curName.isNullOrBlank()) {
                     return ""
                 }
                 sCurrentProcessName = curName
@@ -41,26 +91,26 @@ object SystemHelper {
         }
     }
 
-    fun getCurrentProcessNameExcludePackage(): String{
-        return getCurrentProcessName().replace(getPackageName(),"")
+    fun getCurrentProcessNameExcludePackage(): String {
+        return getCurrentProcessName().replace(getPackageName(), "")
     }
 
     @SuppressLint("NewApi")
-    private fun getProcessNameCompat(): String?{
-        return if (BuildCompat.isAtLeastPie){
+    private fun getProcessNameCompat(): String? {
+        return if (BuildCompat.isAtLeastPie) {
             Application.getProcessName()
-        }else{
+        } else {
             HActivityThread.currentProcessName.call() as String?
         }
     }
 
-    fun getPackageName(): String{
+    fun getPackageName(): String {
         return HActivityThread.currentPackageName.call() as String? ?: ""
     }
 
     @JvmStatic
     fun is64Bit(): Boolean {
-        val is64 =  if (BuildCompat.isAtLeastM) {
+        val is64 = if (BuildCompat.isAtLeastM) {
             Process.is64Bit()
         } else {
             Build.CPU_ABI == "arm64-v8a"
@@ -70,7 +120,7 @@ object SystemHelper {
     }
 
     @JvmStatic
-    fun getPrimaryCpuAbiName(): String{
+    fun getPrimaryCpuAbiName(): String {
         return if (is64Bit()) "arm64-v8a" else "armeabi-v7a"
     }
 

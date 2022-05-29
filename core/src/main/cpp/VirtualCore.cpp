@@ -197,3 +197,10 @@ Java_com_virtual_box_core_hook_core_VmCore_restoreMethod(
     return 1;
 }
 
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_me_weishu_reflection_Reflection_unsealNative(JNIEnv *env, jclass type, jint targetSdkVersion) {
+    return unseal(env, targetSdkVersion);
+//    return  0;
+}

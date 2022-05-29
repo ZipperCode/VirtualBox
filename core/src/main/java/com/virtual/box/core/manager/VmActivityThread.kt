@@ -1,5 +1,6 @@
 package com.virtual.box.core.manager
 
+import android.annotation.SuppressLint
 import android.app.ActivityThread
 import android.app.Application
 import android.app.Instrumentation
@@ -19,27 +20,28 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
 import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.helper.IoHelper
+import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.delegate.ContentProviderHookHandle
 import com.virtual.box.core.server.am.IVmActivityThread
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.*
+import com.virtual.box.reflect.android.content.HContentProviderClient
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.provider.HFontsContract
 import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
 import java.io.File
-import java.lang.reflect.Proxy
 import java.util.*
 
 /**
  * 虚拟进程的ActivityThread模拟实现
  *
  */
+@SuppressLint("StaticFieldLeak")
 internal object VmActivityThread : IVmActivityThread.Stub() {
 
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmApplicationManager")
@@ -72,7 +74,12 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
 
     val isInit: Boolean get() = vmAppConfig != null && vmApplication != null
 
+    val currentProcessVmPid: Int get() = vmAppConfig?.mainProcessVmPid ?: 0
+
     private val initProcessLock = Any()
+
+
+    private lateinit var mContext: Context
 
     fun initProcessAppConfig(vmAppConfig: VmAppConfig) {
         synchronized(initProcessLock) {
@@ -83,6 +90,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
                 )
             }
         }
+        mContext = VirtualBox.get().hostContext
         this.vmAppConfig = vmAppConfig
         val binder = asBinder()
         try {
@@ -96,6 +104,19 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
 
     override fun getVmActivityThread(): IBinder {
         TODO("Not yet implemented")
+    }
+
+    override fun acquireContentProviderClient(providerInfo: ProviderInfo): IBinder? {
+        if (!isInit){
+            handleBindApplication(providerInfo.packageName, providerInfo.processName, currentProcessVmUserId)
+        }
+        val split = providerInfo.authority.split(";").toTypedArray()
+        for (auth in split) {
+            val contentProviderClient = mContext.contentResolver.acquireContentProviderClient(auth)
+            val iInterface: IInterface = HContentProviderClient.mContentProvider.get(contentProviderClient) ?: continue
+            return iInterface.asBinder()
+        }
+        return null
     }
 
 
@@ -182,7 +203,6 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         // 计算函数偏移并hook native函数
         VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
         IoHelper.enableRedirect(packageContext, applicationInfo)
-
         // 替换掉ActivityThread.AppBindData的信息为插件的信息
 
         HActivityThread.AppBindData.instrumentationName[originBoundApplication] =
@@ -218,6 +238,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
     }
 
     private fun installProviders(providers: Array<ProviderInfo>, processName: String) {
+        ProviderHelper.cleanAndInitProvider()
         if (providers.isNotEmpty()) {
             ActivityThread.currentActivityThread().installSystemProviders(
                 providers.filter { it.processName == processName }.toMutableList()

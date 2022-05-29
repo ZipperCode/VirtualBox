@@ -3,13 +3,14 @@ package com.virtual.box.core.server.am
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Debug
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmActivityStackManager
+import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.pm.VmPackageManagerService
@@ -25,7 +26,7 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
         // Debug.waitForDebugger()
         val packageName = intent.getPackage() ?: intent.component!!.packageName
         // 检查启动程序是否存在
-        val findVmAppProcess = VmProcessManager.findVmAppProcess(packageName, userId)
+        val findVmAppProcess = VmProcessManager.findAppProcessWithId(packageName, userId)
         if (findVmAppProcess != null){
             logger.i("启动应用程序, 进程已经存在，讲进程移动至前台")
             // 进程已经存在,
@@ -74,7 +75,7 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
                 // 启动来源窗口包名如果和下一个要启动的包名相同
                 if (needStartActivityProcessName != vmProcessName){
                     // 如果某个进程与当前需要启动Activity的进程不一样，那么要启动的进程作为子进程
-                    val vmAppProcess = VmProcessManager.findVmAppProcess(needStartActivityPackage, userId)!!
+                    val vmAppProcess = VmProcessManager.findAppProcessWithId(needStartActivityPackage, userId)!!
                     // 启动一个子进程
                     val vmSubPid = VmProcessManager.startVmSubProcess(resolveActivityInfo.applicationInfo, vmAppProcess)
                     if (vmSubPid == -1){
@@ -132,6 +133,28 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
         val shadowIntent = prepareStartActivity(intent, userId)
         VirtualBox.get().hostContext.startActivity(shadowIntent)
         return  1
+    }
+
+    override fun initNewProcess(packageName: String, processName: String, userId: Int): VmAppConfig {
+        val findAppProcess = VmProcessManager.findAppProcessWithId(packageName, userId)
+        if (findAppProcess != null){
+            val vmAppConfig = findAppProcess.getVmProcessAppConfig(processName)
+            if (vmAppConfig != null){
+                return vmAppConfig
+            }
+            // 主进程存在，要启动的进程名称不存在
+            val applicationInfo = VmPackageManagerService.getApplicationInfo(packageName, PackageManager.GET_META_DATA, userId)
+                ?: throw RuntimeException("启动进程失败，解析到的ApplicationInfo == null, packageName = $packageName")
+            val vmSubPid = VmProcessManager.startVmSubProcess(applicationInfo, findAppProcess)
+            if (vmSubPid == -1){
+                throw RuntimeException("启动子进程失败，processName = $processName")
+            }
+            return findAppProcess.getVmProcessAppConfig(processName)!!
+        }
+        val applicationInfo = VmPackageManagerService.getApplicationInfo(packageName, PackageManager.GET_META_DATA, userId)
+            ?: throw RuntimeException("启动进程失败，解析到的ApplicationInfo == null, packageName = $packageName")
+        val appProcess = VmProcessManager.startVmAppProcess(applicationInfo, userId)
+        return appProcess.getVmAppProcessAppConfig()
     }
 
     override fun startService(intent: Intent?, userId: Int): ComponentName {

@@ -82,6 +82,7 @@ internal object HookManager {
 
     fun onBindApplicationHook(){
         LibCoreOsHookHandle().initHook()
+        VmCore.nativeHook()
     }
 
     @Deprecated("test")

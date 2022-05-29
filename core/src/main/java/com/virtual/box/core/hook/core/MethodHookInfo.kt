@@ -1,8 +1,12 @@
 package com.virtual.box.core.hook.core
 
+import android.os.Debug
+import android.util.Log
+import com.virtual.box.base.util.log.L
+import com.virtual.box.core.exception.CalledOriginMethodException
 import com.virtual.box.reflect.java.lang.reflect.HExecutable
-import java.lang.Exception
 import java.lang.reflect.Method
+import kotlin.Exception
 
 
 /**
@@ -19,12 +23,13 @@ class MethodHookInfo(
         var result: Any? = null
         val curProxyMethod1Ptr = originArtMethod
         val curTargetMethodPtr = HExecutable.artMethod.get(method)
-        synchronized(targetStubMethod){
+        synchronized(this){
             var hookResult: Boolean = false
             val holderPtr = VmCore.replaceMethod(curProxyMethod1Ptr, curTargetMethodPtr)
             val methodHandle = MethodHandle(
                 originObj, method, args, holderPtr, curTargetMethodPtr
             )
+            var throwable: Throwable? = null
             try {
                 result = if (args == null){
                     targetStubMethod.invoke(proxyObj, methodHandle)
@@ -33,11 +38,20 @@ class MethodHookInfo(
                 }
                 hookResult = true
             }catch (t: Throwable){
-                t.printStackTrace()
+                Debug.waitForDebugger()
+                if (t.cause is CalledOriginMethodException){
+                    Log.e("HOOK", Log.getStackTraceString(t.cause!!.cause!!))
+                    throw t.cause!!.cause!!
+                }
+                throwable = t
                 hookResult = false
             }finally {
-                if (!methodHandle.hasRestoreMethod){
+                if (!methodHandle.hasRestoreMethod.get()){
                     VmCore.restoreMethod(holderPtr, curTargetMethodPtr)
+                }else{
+                    if (throwable != null){
+                        throw throwable
+                    }
                 }
             }
             if (hookResult){

@@ -6,7 +6,7 @@
 #define VIRTUALBOX_VIRTUALCORE_H
 #include <jni.h>
 #include <sys/syscall.h>
-
+#include "art.h"
 #include "utils/log.h"
 #include "utils/JnIEnvRef.h"
 #include "hook/JniHook.h"

@@ -1,4 +1,4 @@
-package com.virtual.box.reflect.android.content;
+package com.virtual.box.reflect.android.app;
 
 import android.content.pm.ProviderInfo;
 import android.os.IInterface;

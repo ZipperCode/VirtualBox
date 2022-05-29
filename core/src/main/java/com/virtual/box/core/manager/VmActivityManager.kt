@@ -9,6 +9,7 @@ import android.os.RemoteException
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.server.am.IVmActivityManagrService
 import com.virtual.box.reflect.android.app.HActivityThread
@@ -106,6 +107,16 @@ object VmActivityManager {
             }
         }
         return null
+    }
+
+
+    fun initNewProcess(packageName: String, processName: String, userId: Int): VmAppConfig?{
+        return try {
+            requireService().initNewProcess(packageName, processName, userId)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
+            null
+        }
     }
 
     @Synchronized

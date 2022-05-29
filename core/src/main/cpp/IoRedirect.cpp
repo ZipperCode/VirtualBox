@@ -104,6 +104,7 @@ jstring IoRedirect::handleRedirectPath(JNIEnv *env, jstring filePath) {
 
 jobject IoRedirect::handleRedirectPath(JNIEnv *env, jobject fileObj) {
     if (!sHasInit){
+        ALOGD(">> handleRedirectPath >> ")
         return fileObj;
     }
     auto filePath = reinterpret_cast<jstring>(env->CallObjectMethod(fileObj, sFileGetAbsolutePathMethod));

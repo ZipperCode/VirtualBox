@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.*
 import android.os.Build
+import android.os.Debug
 import android.os.Parcel
 import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.checkAndCreate
 import com.virtual.box.base.ext.checkAndMkdirs
+import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
@@ -225,20 +227,14 @@ object PackageHelper {
 
     fun fixInstallApplicationInfo(vmApplicationInfo: ApplicationInfo) {
         val packageName = vmApplicationInfo.packageName
-        val is64 = VmFileSystem.checkArm64(packageName)
-        val abiName = if (is64) {
-            // 64
-            "arm64-v8a"
-        } else {
-            "armeabi"
+        if (!VmFileSystem.checkPackageAbi(packageName, SystemHelper.sCurrentSimpleCpuAbi)){
+            throw IllegalStateException("未匹配到合适的cpu架构 ${SystemHelper.sCurrentCpuAbi}")
         }
         vmApplicationInfo.apply {
-            nativeLibraryDir = if (is64) {
-                VmFileSystem.getInstallAppArm64LibDir(packageName).absolutePath
-            } else {
-                VmFileSystem.getInstallAppArmLibDir(packageName).absolutePath
-            }
-            HApplicationInfo.primaryCpuAbi.set(this, abiName)
+            val installAppLibAbiDir = VmFileSystem.getInstallAppLibAbiDir(packageName, SystemHelper.sCurrentSimpleCpuAbi)
+            nativeLibraryDir = installAppLibAbiDir.absolutePath
+            HApplicationInfo.primaryCpuAbi.set(this, SystemHelper.sCurrentCpuAbi)
+            HApplicationInfo.secondaryCpuAbi.set(this, "armeabi-v7a")
             HApplicationInfo.nativeLibraryRootDir.set(this, VmFileSystem.getInstallAppLibDir(packageName).absolutePath)
             val installFile = VmFileSystem.getInstallBaseApkFile(packageName)
             publicSourceDir = installFile.absolutePath
@@ -297,6 +293,7 @@ object PackageHelper {
     private fun findAndCopyLibrary(zipFile: ZipFile, targetLibRootDir: File) {
         L.sd("LibraryHelper >> 查找并拷贝so库")
         val prefix = "lib/"
+        var hasSoFile = false
         val entries = zipFile.entries()
         while (entries.hasMoreElements()) {
             val entry = entries.nextElement() as ZipEntry
@@ -322,6 +319,7 @@ object PackageHelper {
                     continue
                 }
             }
+            hasSoFile = true
             val buffer = ByteArray(1024 * 512)
             L.sd("LibraryHelper >> 开始拷贝 $entryName 到 ${soFile.absolutePath}")
             FileOutputStream(soFile).use { output ->
@@ -333,6 +331,10 @@ object PackageHelper {
                     }
                 }
             }
+        }
+        if (!hasSoFile){
+            // 不存在so文件的应用，创建一个目录文件
+            File(targetLibRootDir, SystemHelper.sCurrentSimpleCpuAbi).checkAndMkdirs()
         }
 
     }

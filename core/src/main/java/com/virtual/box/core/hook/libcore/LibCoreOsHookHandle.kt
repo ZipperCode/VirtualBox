@@ -34,9 +34,14 @@ class LibCoreOsHookHandle: BaseHookHandle() {
     }
 
     fun access(methodHandle: MethodHandle, path: String?, mode: Int): Boolean {
-        logger.e(">> Libcore.os#access path = %s", path)
         val newPath = VmCore.redirectPath(path)
-        return methodHandle.invokeOriginMethod(arrayOf(newPath, mode)) as Boolean
+        logger.e(">> Libcore.os#access \n path = %s\n newPath = %s", path, newPath)
+        try {
+            return methodHandle.invokeOriginMethod(arrayOf(newPath, mode)) as Boolean
+        }catch (e: Exception){
+            logger.e(e)
+            return false
+        }
     }
 
     fun chmod(methodHandle: MethodHandle, path: String?, mode: Int) {
@@ -89,21 +94,26 @@ class LibCoreOsHookHandle: BaseHookHandle() {
     }
 
     fun readlink(methodHandle: MethodHandle, path: String?): String? {
+        logger.e(">> Libcore.os#readlink path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath)) as? String
     }
 
     fun realpath(methodHandle: MethodHandle, path: String?): String? {
+        logger.e(">> Libcore.os#realpath path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath)) as? String
     }
 
     fun remove(methodHandle: MethodHandle,path: String?) {
+        logger.e(">> Libcore.os#remove path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath))
     }
 
     fun rename(methodHandle: MethodHandle,oldPath: String?, newPath: String?) {
+        logger.e(">> Libcore.os#remove oldPath = %s", oldPath)
+        logger.e(">> Libcore.os#remove newPath = %s", newPath)
         val oldRedirectPath = VmCore.redirectPath(oldPath)
         val newRedirectPath = VmCore.redirectPath(newPath)
         methodHandle.invokeOriginMethod(arrayOf(oldRedirectPath, newRedirectPath))
@@ -111,15 +121,19 @@ class LibCoreOsHookHandle: BaseHookHandle() {
 
     fun stat(methodHandle: MethodHandle, path: String?): StructStat? {
         val newPath = VmCore.redirectPath(path)
+        logger.e(">> Libcore.os#stat \n path = %s\n newPath = %s", path, newPath)
         return methodHandle.invokeOriginMethod(arrayOf(newPath)) as? StructStat
     }
 
     fun statvfs(methodHandle: MethodHandle, path: String?): StructStatVfs? {
+        logger.e(">> Libcore.os#statvfs path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath)) as? StructStatVfs
     }
 
     fun symlink(methodHandle: MethodHandle,oldPath: String?, newPath: String?) {
+        logger.e(">> Libcore.os#symlink oldPath = %s", oldPath)
+        logger.e(">> Libcore.os#symlink newPath = %s", newPath)
         val oldRedirectPath = VmCore.redirectPath(oldPath)
         val newRedirectPath = VmCore.redirectPath(newPath)
         methodHandle.invokeOriginMethod(arrayOf(oldRedirectPath, newRedirectPath))
@@ -140,21 +154,25 @@ class LibCoreOsHookHandle: BaseHookHandle() {
     }
 
     fun getxattr(methodHandle: MethodHandle,path: String?, name: String?): ByteArray? {
+        logger.e(">> Libcore.os#getxattr path = %s", path)
         val newPath = VmCore.redirectPath(path)
         return methodHandle.invokeOriginMethod(arrayOf(newPath, name)) as? ByteArray
     }
 
     fun removexattr(methodHandle: MethodHandle,path: String?, name: String?) {
+        logger.e(">> Libcore.os#removexattr path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, name))
     }
 
     fun setxattr(methodHandle: MethodHandle,path: String?, name: String?, value: ByteArray?, flags: Int) {
+        logger.e(">> Libcore.os#setxattr path = %s", path)
         val newPath = VmCore.redirectPath(path)
         methodHandle.invokeOriginMethod(arrayOf(newPath, name, value, flags))
     }
 
     fun unlink(methodHandle: MethodHandle,pathname: String?) {
+        logger.e(">> Libcore.os#unlink pathname = %s", pathname)
         val newPath = VmCore.redirectPath(pathname)
         methodHandle.invokeOriginMethod(arrayOf(newPath))
     }

@@ -1,10 +1,7 @@
 package com.virtual.box.core.server.user
 
-import com.virtual.box.base.storage.IParcelDataHandle
-import com.virtual.box.base.storage.MapParcelDataHandle
-import com.virtual.box.core.manager.VmFileSystem
-import com.virtual.box.core.server.user.entity.VmUserInfo
-import com.virtual.box.core.server.user.entity.VmUserInfoRepo
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
 
 /**
  *
@@ -12,52 +9,25 @@ import com.virtual.box.core.server.user.entity.VmUserInfoRepo
  * @date   2022/4/26
  **/
 object VmUserManagerService : IVmUserManagerService.Stub() {
+    private val logger = Logger.getLogger(L.VM_TAG,"VmUserManagerService")
 
-    private const val MAP_USER_INFO_KEY = "MAP_USER_INFO_KEY"
-
-    private val configStorageHandle: IParcelDataHandle<VmUserInfoRepo> =
-        MapParcelDataHandle(VmFileSystem.mUserInfoConfig.name.replace(".conf", ""), VmUserInfoRepo::class.java)
-
-    private var userConfig: VmUserInfoRepo
-
-    /**
-     * 线程锁
-     */
-    private val lock = Any()
-
-
-    init {
-        userConfig = configStorageHandle.load(MAP_USER_INFO_KEY) ?: VmUserInfoRepo()
-    }
-
+    private val userInfoRepo: VmUserInfoRepo = VmUserInfoRepo()
 
     fun exists(userId: Int): Boolean{
-        return userConfig[userId] != null
+        return userInfoRepo.exists(userId)
     }
 
     override fun checkOrCreateUser(userId: Int) {
-        if (userConfig.containsKey(userId)){
+        if (userInfoRepo.exists(userId)){
             return
         }
-        val userInfo = VmUserInfo().apply {
-            this.userId = userId
-            this.createTime = System.currentTimeMillis()
-        }
-        synchronized(lock){
-            userConfig[userId] = userInfo
-            syncData()
-        }
+        userInfoRepo.createUser(userId)
     }
 
-    fun deleteUser(userId: Int){
-        // TODO
-
-    }
-
-    private fun syncData(){
-        synchronized(lock){
-            configStorageHandle.save(MAP_USER_INFO_KEY, userConfig)
-        }
+    fun deleteUserIfExists(userId: Int){
+      if (userInfoRepo.exists(userId)){
+          userInfoRepo.deleteUser(userId)
+      }
     }
 
 

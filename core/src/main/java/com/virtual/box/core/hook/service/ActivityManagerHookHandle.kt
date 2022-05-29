@@ -16,11 +16,13 @@ import android.os.ParcelFileDescriptor
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.helper.IntentHelper
+import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
+import com.virtual.box.core.hook.delegate.ContentProviderHookHandle
 import com.virtual.box.core.manager.*
+import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
 import com.virtual.box.reflect.android.util.HSingleton
@@ -206,9 +208,47 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
         name: String?, userId: Int, stable: Boolean
     ): Any? {
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, name, userId, stable
-        ))
+        if (ProxyManifest.isProxy(name)){
+            return methodHandle.invokeOriginMethod()
+        }
+        if (name == "settings" || name == "media" || name == "telephony") {
+            val result = methodHandle.invokeOriginMethod(arrayOf(
+                caller, hostPkg, name, userId, stable
+            ))
+            ProviderHelper.replaceNewProvider(result)
+            return result
+        }else{
+            val providerInfo = VmPackageManager.resolveContentProvider(
+                name, PackageManager.GET_PROVIDERS,
+                VmActivityThread.currentProcessVmUserId
+            ) ?: return null
+
+            val packageName = providerInfo.packageName
+            val processName = providerInfo.processName
+            val initNewProcess = VmActivityManager.initNewProcess(packageName, processName, VmActivityThread.currentProcessVmUserId)
+                ?: return methodHandle.invokeOriginMethod()
+
+            var stubAuth = name
+            var iContentProvider: IBinder? = null
+            if (initNewProcess.mainProcessVmPid != VmActivityThread.currentProcessVmPid){
+                iContentProvider = VmActivityThread.acquireContentProviderClient(providerInfo)
+                stubAuth = ProxyManifest.getProxyAuthorities(initNewProcess.vmProcessRecord!!.vmPid)
+            }
+
+            if (iContentProvider == null){
+                return methodHandle.invokeOriginMethod(arrayOf(
+                    caller, hostPkg, name, userId, stable
+                ))
+            }
+
+            val result = methodHandle.invokeOriginMethod(arrayOf(
+                caller, hostPkg, stubAuth, userId, stable
+            )) ?: return null
+
+            ProviderHelper.replaceProviderAndInfo(result, providerInfo, VmActivityThread.mVmPackageName)
+
+            return result
+        }
     }
 
     fun getRunningServiceControlPanel(methodHandle: MethodHandle, service: ComponentName?): PendingIntent? {

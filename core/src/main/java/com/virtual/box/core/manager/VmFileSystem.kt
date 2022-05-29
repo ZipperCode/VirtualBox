@@ -2,7 +2,9 @@ package com.virtual.box.core.manager
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Debug
 import com.virtual.box.base.ext.checkAndMkdirs
+import com.virtual.box.base.helper.SystemHelper
 import java.io.File
 import java.util.*
 @SuppressLint("StaticFieldLeak")
@@ -53,6 +55,10 @@ internal object VmFileSystem {
         return File(getAppInstall(packageName), "lib")
     }
 
+    fun getInstallAppLibAbiDir(packageName: String, abi: String): File{
+        return File(getAppInstall(packageName), "lib/$abi")
+    }
+
     fun getInstallAppArmLibDir(packageName: String): File {
         return File(getAppInstall(packageName), "lib/arm")
     }
@@ -100,6 +106,20 @@ internal object VmFileSystem {
         return installAppArm64LibDir.exists() && installAppArm64LibDir.listFiles()?.isNotEmpty() == true
     }
 
+    fun getPackageAbi(packageName: String): String? {
+        val currentAbi = SystemHelper.sCurrentSimpleCpuAbi
+        val installAppLibAbiDir = getInstallAppLibAbiDir(packageName, currentAbi)
+        if (installAppLibAbiDir.exists() && installAppLibAbiDir.listFiles()?.isNotEmpty() == true){
+            return currentAbi
+        }
+        return null
+    }
+
+    fun checkPackageAbi(packageName: String, abi: String): Boolean {
+        val installAppLibAbiDir = getInstallAppLibAbiDir(packageName, abi)
+        return installAppLibAbiDir.exists()
+    }
+
     fun mkdirAppInstall(packageName: String){
         val installDir = getAppInstall(packageName)
         if (!installDir.exists()){
@@ -115,7 +135,6 @@ internal object VmFileSystem {
 //            userAppDataDir.checkAndMkdirs()
 //        }
 //        mkdirAppData(userAppDataDir)
-
         val dataDir = getDataDir(packageName, userId)
         dataDir.checkAndMkdirs()
         mkdirAppData(dataDir)

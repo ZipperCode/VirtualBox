@@ -19,6 +19,7 @@ import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.am.IVmActivityThread
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
+import java.util.concurrent.CopyOnWriteArrayList
 
 object VmProcessManager {
 
@@ -29,11 +30,11 @@ object VmProcessManager {
      */
     private val processMap: MutableMap<Int, MutableList<VmAppProcess>> = HashMap(10)
 
-    private val allProcessList: MutableList<VmProcessRecord> = ArrayList(50)
+    private val allProcessList: CopyOnWriteArrayList<VmProcessRecord> = CopyOnWriteArrayList()
 
     private val userProcessMapLock = Any()
 
-    fun findVmAppProcess(packageName: String, userId: Int): VmAppProcess?{
+    fun findAppProcessWithId(packageName: String, userId: Int): VmAppProcess?{
         if (processMap.containsKey(userId)){
             val userVmAppProcessList = processMap[userId]!!
             for (vmAppProcess in userVmAppProcessList) {
@@ -160,6 +161,7 @@ object VmProcessManager {
             systemUid = stubUid
             systemProcessName = stubProcessName
             vmAppThread = IVmActivityThread.Stub.asInterface(vmActivityThreadHandle)
+            linkToDeath()
         }
         return true
     }
@@ -208,12 +210,21 @@ object VmProcessManager {
         }
     }
 
-    fun initVmProcess() {
-
-    }
-
-    fun killProcess(packageName: String, vmUid: Int) {
-        processMap[vmUid]?.find { it.packageName == packageName }?.killAppProcess()
+    fun killProcess(packageName: String?, vmUid: Int) {
+        synchronized(userProcessMapLock){
+            val userRunAppProcessList = processMap[vmUid]
+            userRunAppProcessList?.run {
+                val appProcess = find { it.packageName == packageName } ?: return@run
+                // 移除主进程
+                allProcessList.remove(appProcess.mainProcessRecord!!)
+                appProcess.currentAppProcessRecord.forEach { (_, record) ->
+                    allProcessList.remove(record)
+                }
+                appProcess.killAppProcess()
+                // 移除app进程
+                remove(appProcess)
+            }
+        }
     }
 
 

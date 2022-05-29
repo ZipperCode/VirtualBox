@@ -16,8 +16,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         AppExecutors.get().executeMultiThreadWithLock{
-            val file = File(filesDir,"test1.apk")
-            assets.open("test1.apk").use { input ->
+            val file = File(filesDir,"test.apk")
+            assets.open("test.apk").use { input ->
                 FileOutputStream(file).use { output ->
                     output.write(input.readBytes())
                     output.flush()
@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
 
             findViewById<Button>(R.id.btn_launch).setOnClickListener {
                 val intent = Intent()
-                intent.component = ComponentName("com.sinyee.babybus.world","com.sinyee.babybus.SplashAct")
+//                intent.component = ComponentName("com.sinyee.babybus.world","com.sinyee.babybus.SplashAct")
+                intent.component = ComponentName("com.car.exam.app","com.car.exam.app.activity.SplashActivity")
                 VirtualBox.get().launchApp(intent)
             }
         }

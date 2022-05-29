@@ -44,9 +44,9 @@ class VirtualBox {
         hostContext = context
         hostPkg = hostContext.packageName
         hostPm = context.packageManager
-        mainAThread = ActivityThread.currentActivityThread()
         // 去除反射限制
         Reflection.unseal(context)
+        mainAThread = ActivityThread.currentActivityThread()
         logger.method("context = %s", context)
         val processName = SystemHelper.getProcessName(context)
 
