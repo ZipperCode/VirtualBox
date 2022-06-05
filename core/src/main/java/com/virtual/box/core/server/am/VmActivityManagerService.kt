@@ -14,6 +14,7 @@ import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.pm.VmPackageManagerService
+import java.lang.IllegalStateException
 import java.lang.RuntimeException
 
 internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
@@ -69,11 +70,17 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
             shadowIntent.component = ComponentName(VirtualBox.get().hostContext, ProxyManifest.getProxyActivity(vmPid))
         }else{
             // 虚拟程序启动，获取上一个窗口的进程名称
-            val needStartActivityProcessName = resolveActivityInfo.processName
+            val needStartActivityProcessName = resolveActivityInfo.processName ?: resolveActivityInfo.packageName
             val needStartActivityPackage = resolveActivityInfo.packageName
             if (needStartActivityPackage == intentPackageName){
+                var appProcess = VmProcessManager.findAppProcessWithId(intentPackageName, userId)
+                if (appProcess == null){
+                    appProcess = VmProcessManager.startVmAppProcess(resolveActivityInfo.applicationInfo, userId)
+                }
+                val originProcessName = appProcess.processName
+                val originVmPid = appProcess.vmPid
                 // 启动来源窗口包名如果和下一个要启动的包名相同
-                if (needStartActivityProcessName != vmProcessName){
+                if (needStartActivityProcessName != originProcessName){
                     // 如果某个进程与当前需要启动Activity的进程不一样，那么要启动的进程作为子进程
                     val vmAppProcess = VmProcessManager.findAppProcessWithId(needStartActivityPackage, userId)!!
                     // 启动一个子进程
@@ -82,8 +89,8 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
                         throw RuntimeException("创建子进程失败, 启动子进程vmPid == -1")
                     }
                     shadowIntent.component = ComponentName(VirtualBox.get().hostContext, ProxyManifest.getProxyActivity(vmSubPid))
-                }else{
-                    shadowIntent.component = ComponentName(VirtualBox.get().hostContext, ProxyManifest.getProxyActivity(vmPid))
+                } else{
+                    shadowIntent.component = ComponentName(VirtualBox.get().hostContext, ProxyManifest.getProxyActivity(originVmPid))
                 }
             }else{
                 // 要启动的包名不同
@@ -105,9 +112,9 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
             }
         }
         IntentHelper.saveStubInfo(shadowIntent, intent, resolveActivityInfo, userId)
-        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+//        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+//        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         shadowIntent.addFlags(realLaunchMode)
         return shadowIntent
     }
@@ -131,6 +138,7 @@ internal object VmActivityManagerService: IVmActivityManagrService.Stub() {
             return -1
         }
         val shadowIntent = prepareStartActivity(intent, userId)
+        shadowIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         VirtualBox.get().hostContext.startActivity(shadowIntent)
         return  1
     }

@@ -27,7 +27,7 @@ class VmHandlerCallback : Handler.Callback, IInjectHook {
                     EXECUTE_TRANSACTION -> {
                         if (VmActivityManager.restoreOriginAdnHandleActivity(msg.obj)) {
                             originHandler?.sendMessageAtFrontOfQueue(Message.obtain(msg))
-                            return false
+                            return true
                         }
                     }
                 }

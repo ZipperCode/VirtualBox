@@ -1,6 +1,8 @@
 @file:JvmName("ObjectUtils")
 package com.virtual.box.base.ext
 
+import java.lang.reflect.Method
+
 fun Any.asInt(): Int{
     try {
         if (this is Number){
@@ -25,4 +27,12 @@ fun Any.asDouble(): Double{
         e.printStackTrace()
     }
     return 0.0
+}
+
+fun Method.kotlinInvokeOrigin(proxy: Any?, args: Array<out Any?>?): Any?{
+    return if (args == null){
+        invoke(proxy)
+    }else{
+        invoke(proxy, *args)
+    }
 }

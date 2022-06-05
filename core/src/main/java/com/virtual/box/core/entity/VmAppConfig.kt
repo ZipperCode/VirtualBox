@@ -1,6 +1,6 @@
 package com.virtual.box.core.entity
 
-import android.app.LoadedApk
+import android.content.pm.PackageInfo
 import android.os.Parcel
 import android.os.Parcelable
 
@@ -55,7 +55,7 @@ class VmAppConfig() : Parcelable {
         mainProcessVmPid = parcel.readInt()
         mainProcessSystemPid = parcel.readInt()
         mainProcessSystemUid = parcel.readInt()
-        vmProcessRecord = parcel.readStrongBinder() as? VmProcessRecord
+        vmProcessRecord = parcel.readParcelable(VmProcessRecord::class.java.classLoader) as? VmProcessRecord
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -66,11 +66,15 @@ class VmAppConfig() : Parcelable {
         parcel.writeInt(mainProcessVmPid)
         parcel.writeInt(mainProcessSystemPid)
         parcel.writeInt(mainProcessSystemUid)
-        parcel.writeStrongBinder(vmProcessRecord)
+        parcel.writeParcelable(vmProcessRecord, flags)
     }
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    override fun toString(): String {
+        return "VmAppConfig(packageName='$packageName', processName='$processName', userId=$userId, isMainProcess=$isMainProcess, mainProcessVmPid=$mainProcessVmPid, mainProcessSystemPid=$mainProcessSystemPid, mainProcessSystemUid=$mainProcessSystemUid, vmProcessRecord=$vmProcessRecord)"
     }
 
     companion object CREATOR : Parcelable.Creator<VmAppConfig> {

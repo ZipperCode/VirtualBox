@@ -25,17 +25,19 @@ import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.helper.IoHelper
 import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.core.VmCore
-import com.virtual.box.core.hook.delegate.ContentProviderHookHandle
+import com.virtual.box.core.hook.delegate.ContentProviderStub
 import com.virtual.box.core.server.am.IVmActivityThread
 import com.virtual.box.reflect.MirrorReflection
-import com.virtual.box.reflect.android.app.*
+import com.virtual.box.reflect.android.app.HActivityThread
+import com.virtual.box.reflect.android.app.HContextImpl
+import com.virtual.box.reflect.android.app.HLoadedApk
+import com.virtual.box.reflect.android.app.HResourcesManager
 import com.virtual.box.reflect.android.content.HContentProviderClient
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.provider.HFontsContract
 import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
 import java.io.File
-import java.util.*
 
 /**
  * 虚拟进程的ActivityThread模拟实现
@@ -78,10 +80,10 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
 
     private val initProcessLock = Any()
 
-
     private lateinit var mContext: Context
 
     fun initProcessAppConfig(vmAppConfig: VmAppConfig) {
+        logger.d("initProcessAppConfig#vmAppConfig = %s", vmAppConfig)
         synchronized(initProcessLock) {
             if (this.vmAppConfig != null && this.vmAppConfig!!.packageName != vmAppConfig.packageName) {
                 throw java.lang.RuntimeException(
@@ -145,6 +147,8 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
 
     @MainThread
     internal fun handleBindApplication(packageName: String, processName: String, userId: Int) {
+        logger.i("handleBindApplication > packageName = %s, processName = %s", packageName, processName)
+
         currentProcessVmUserId = vmAppConfig!!.userId
         val packageInfo = VmPackageManager.getPackageInfo(
             packageName, PackageManager.GET_ACTIVITIES
@@ -155,7 +159,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         ) ?: return
         val applicationInfo = packageInfo.applicationInfo
         val providers = packageInfo.providers
-        Debug.waitForDebugger()
+        // Debug.waitForDebugger()
         val originBoundApplication = HActivityThread.mBoundApplication[ActivityThread.currentActivityThread()]
         // 创建虚拟应用包的Context
         val packageContext = createPackageContext(applicationInfo) ?: throw RuntimeException("创建虚拟程序包失败")
@@ -256,7 +260,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
                 }
                 HActivityThread.ProviderClientRecord.mProvider.set(
                     value,
-                    ContentProviderHookHandle().wrapper(iProvider, VirtualBox.get().hostPkg)
+                    ContentProviderStub().wrapper(iProvider, VirtualBox.get().hostPkg)
                 )
             }
         }

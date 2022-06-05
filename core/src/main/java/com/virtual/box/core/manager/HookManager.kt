@@ -1,6 +1,7 @@
 package com.virtual.box.core.manager
 
 import android.os.Build
+import android.os.Debug
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -13,6 +14,8 @@ import com.virtual.box.core.hook.delegate.AppInstrumentation
 import com.virtual.box.core.hook.delegate.VmHandlerCallback
 import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
 import com.virtual.box.core.hook.service.*
+import com.virtual.box.reflect.android.app.HIActivityTaskManager
+import com.virtual.box.reflect.android.os.HServiceManager
 import com.virtual.test.NativeLib
 
 /**
@@ -24,11 +27,11 @@ internal object HookManager {
 
     fun initHook() {
         VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
-        L.vd("[%s] >> 初始化hook", TAG)
+        logger.d("初始化Hook")
         val list = mutableListOf<IInjectHook>(
             VmHandlerCallback(),
-            AppInstrumentation(),
             ActivityManagerHookHandle(),
+            AppInstrumentation(),
             AppOpsManagerHookHandle(),
             AppWidgetServiceHookHandle(),
             DeviceIdentifiersPolicyServiceHookHandle(),
@@ -40,6 +43,8 @@ internal object HookManager {
         if (BuildCompat.isAtLeastPie) {
             list.add(ActivityTaskManagerHookHandle())
         }
+
+        logger.d("actTask = %s", HIActivityTaskManager.Stub.asInterface.call(HServiceManager.getService.call("activity_task")))
         list.forEach {
             it.initHook()
         }

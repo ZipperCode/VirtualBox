@@ -3,10 +3,10 @@ package com.virtual.box.core.hook.delegate
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Debug
 import android.os.IBinder
 import android.os.UserHandle
 import com.virtual.box.base.util.compat.BuildCompat
@@ -16,7 +16,6 @@ import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.manager.HookManager
 import com.virtual.box.core.manager.VmActivityManager
 import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.manager.VmPackageManager
@@ -73,10 +72,6 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         return false
     }
 
-    override fun finish(resultCode: Int, results: Bundle?) {
-        super.finish(resultCode, results)
-    }
-
     @Throws(InstantiationException::class, IllegalAccessException::class, ClassNotFoundException::class)
     override fun newApplication(cl: ClassLoader, className: String, context: Context): Application {
 //        ContextCompat.fix(context)
@@ -89,11 +84,6 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             ComponentFixCompat.fixActivityWithOnCreate(activity)
         }
         super.callActivityOnCreate(activity, icicle)
-    }
-
-    override fun callApplicationOnCreate(app: Application) {
-        L.hdParamTag(TAG, "app = %s",app.javaClass.name)
-        super.callApplicationOnCreate(app)
     }
 
     @Throws(InstantiationException::class, IllegalAccessException::class, ClassNotFoundException::class)
@@ -113,27 +103,19 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
                     targetClassLoader = HLoadedApk.mClassLoader[loadApkRef.get()]
                 }
             }
-            return mBaseInstrumentation.newActivity(targetClassLoader ?: cl, className, intent)
+            return mBaseInstrumentation!!.newActivity(targetClassLoader ?: cl, className, intent)
         }
-    }
-
-    override fun startActivitySync(intent: Intent): Activity {
-        return super.startActivitySync(intent)
-    }
-
-    override fun callActivityOnNewIntent(activity: Activity?, intent: Intent?) {
-        super.callActivityOnNewIntent(activity, intent)
     }
 
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
         contextThread: IBinder,
-        token: IBinder,
-        activity: Activity,
+        token: IBinder?,
+        activity: Activity?,
         intent: Intent,
         requestCode: Int
-    ): ActivityResult {
+    ): ActivityResult? {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s",
             context, contextThread, token, activity, intent, requestCode)
         if (IntentHelper.isSystemInstallIntentType(intent)){
@@ -167,12 +149,12 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
-        contextThread: IBinder?,
+        contextThread: IBinder,
         token: IBinder?,
         fragment: Fragment?,
         intent: Intent,
         requestCode: Int
-    ): ActivityResult {
+    ): ActivityResult? {
         L.hdParamTag(TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s", context, contextThread, token, fragment, intent, requestCode)
         if (IntentHelper.isSystemInstallIntentType(intent)){
             // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
@@ -205,16 +187,16 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
-        contextThread: IBinder?,
+        contextThread: IBinder,
         token: IBinder?,
         str: String?,
         intent: Intent,
         requestCode: Int,
-        bundle: Bundle?
-    ): ActivityResult {
+        options: Bundle?
+    ): ActivityResult? {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, str = %s, intent = %s, requestCode = %s, bundle = %s",
-            context, contextThread, token, str, intent, requestCode, bundle)
+            context, contextThread, token, str, intent, requestCode, options)
         if (IntentHelper.isSystemInstallIntentType(intent)){
             // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
             logger.e("解析intent为安装指定系统包，拦截不进行处理")
@@ -232,31 +214,31 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
 
         if (resolveInfo == null){
             logger.d("解析安装的程序包组件为空，调用源方法处理")
-            return super.execStartActivity(context, contextThread, token, str, intent, requestCode,bundle)
+            return super.execStartActivity(context, contextThread, token, str, intent, requestCode,options)
         }
 
         val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
-            return super.execStartActivity(context, contextThread, token, str, shadowIntent, requestCode,bundle)
+            return super.execStartActivity(context, contextThread, token, str, shadowIntent, requestCode,options)
         }
         logger.d("获取插桩的Intent为空，调用源方法处理")
-        return super.execStartActivity(context, contextThread, token, str, intent, requestCode, bundle)
+        return super.execStartActivity(context, contextThread, token, str, intent, requestCode, options)
     }
 
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
-        contextThread: IBinder?,
+        contextThread: IBinder,
         token: IBinder?,
         activity: Activity?,
         intent: Intent,
         requestCode: Int,
-        bundle: Bundle?
-    ): ActivityResult {
+        options: Bundle?
+    ): ActivityResult? {
         // 正常的启动走这边
-        L.hdParamTag(
-            TAG, "context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s",
-            context, contextThread, token, activity, intent, requestCode, bundle)
+        logger.d("execStartActivity#context = %s, contextThread = %s, token = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s",
+            context, contextThread, token, activity, intent, requestCode, options)
+
         if (IntentHelper.isSystemInstallIntentType(intent)){
             // 调用系统包安装 TODO 虚拟程序调用系统的安装器，会安装到系统中，这边不处理
             logger.e("解析intent为安装指定系统包，拦截不进行处理")
@@ -266,35 +248,34 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
-
         val resolveInfo = VmPackageManager.resolveActivity(
-            intent, PackageManager.GET_META_DATA,
+            intent, PackageManager.GET_ACTIVITIES,
             intent.resolveType(context), VmActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
             logger.d("解析安装的程序包组件为空，调用源方法处理")
-            return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, bundle)
+            return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, options)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmActivityManager.prepareStartActivity(intent, VmActivityThread.currentProcessVmUserId)
         if (shadowIntent != null){
-            return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, bundle)
+            return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, options)
         }
         logger.d("获取插桩的Intent为空，调用源方法处理")
-        return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, bundle)
+        return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, options)
     }
 
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
-        contextThread: IBinder?,
+        contextThread: IBinder,
         token: IBinder?,
         fragment: Fragment?,
         intent: Intent,
         requestCode: Int,
         bundle: Bundle?
-    ): ActivityResult {
+    ): ActivityResult? {
         L.hdParamTag(
             TAG, "context = %s, contextThread = %s, token = %s, fragment = %s, intent = %s, requestCode = %s, bundle = %s",
             context, contextThread, token, fragment, intent, requestCode, bundle)
@@ -329,14 +310,14 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
     @Throws(Throwable::class)
     override fun execStartActivity(
         context: Context,
-        iBinder: IBinder?,
+        iBinder: IBinder,
         iBinder2: IBinder?,
         activity: Activity?,
         intent: Intent,
         requestCode: Int,
         bundle: Bundle?,
         userHandle: UserHandle?
-    ): ActivityResult {
+    ): ActivityResult? {
         L.hdParamTag(
             TAG,
             "context = %s, iBinder = %s, iBinder2 = %s, activity = %s, intent = %s, requestCode = %s, bundle = %s, userHandle = %s",

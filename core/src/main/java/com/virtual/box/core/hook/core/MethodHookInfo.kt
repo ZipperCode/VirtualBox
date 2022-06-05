@@ -2,10 +2,13 @@ package com.virtual.box.core.hook.core
 
 import android.os.Debug
 import android.util.Log
+import com.virtual.box.base.ext.kotlinInvokeOrigin
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.exception.CalledOriginMethodException
 import com.virtual.box.reflect.java.lang.reflect.HExecutable
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util.*
 import kotlin.Exception
 
 
@@ -37,8 +40,7 @@ class MethodHookInfo(
                     targetStubMethod.invoke(proxyObj, methodHandle, *args)
                 }
                 hookResult = true
-            }catch (t: Throwable){
-                Debug.waitForDebugger()
+            } catch (t: Throwable){
                 if (t.cause is CalledOriginMethodException){
                     Log.e("HOOK", Log.getStackTraceString(t.cause!!.cause!!))
                     throw t.cause!!.cause!!
@@ -48,20 +50,18 @@ class MethodHookInfo(
             }finally {
                 if (!methodHandle.hasRestoreMethod.get()){
                     VmCore.restoreMethod(holderPtr, curTargetMethodPtr)
+                    HExecutable.artMethod.set(targetStubMethod, curTargetMethodPtr)
                 }else{
                     if (throwable != null){
                         throw throwable
                     }
                 }
+                L.printStackTrace(throwable)
             }
             if (hookResult){
                 return result
             }
-            HExecutable.artMethod.set(targetStubMethod, curTargetMethodPtr)
-            if (args == null){
-                return targetStubMethod.invoke(originObj)
-            }
-            return targetStubMethod.invoke(originObj, *args)
+            return targetStubMethod.kotlinInvokeOrigin(originObj, args)
         }
     }
 

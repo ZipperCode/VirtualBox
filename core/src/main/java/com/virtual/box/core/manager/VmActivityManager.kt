@@ -3,9 +3,9 @@ package com.virtual.box.core.manager
 import android.app.ActivityThread
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.os.Debug
+import android.os.IBinder
 import android.os.RemoteException
+import com.virtual.box.base.ext.asInt
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -61,37 +61,60 @@ object VmActivityManager {
             client
         } ?: return false
 
-        val intent: Intent  = if (BuildCompat.isAtLeastPie) {
-            HLaunchActivityItem.mIntent.get(r)
+        var intent: Intent? = null
+        var token: IBinder? = null
+        if (BuildCompat.isAtLeastPie) {
+            intent = HLaunchActivityItem.mIntent.get(r)
+            token = HClientTransaction.mActivityToken.get(client)
         } else {
-            HActivityThread.ActivityClientRecord.intent.get(r)
-        } ?: return false
+            intent = HActivityThread.ActivityClientRecord.intent.get(r)
+            token = HActivityThread.ActivityClientRecord.token.get(r)
+        }
+
+        if (intent == null){
+            return false
+        }
 
         // 创建代理的ActivityRecord对象
         val parseOriginRecord = IntentHelper.parseIntent(intent)
-        val activityInfo = parseOriginRecord.activityInfo ?: return false
-        // bind
-        if (!VmActivityThread.isInit) {
-            VmActivityThread.handleBindApplication(
-                activityInfo.packageName,
-                activityInfo.processName ?: activityInfo.packageName,
-                parseOriginRecord.userId
-            )
-        }
-        if (BuildCompat.isAtLeastPie) {
-            HLaunchActivityItem.mInfo.set(r, activityInfo)
-        } else {
-            val resources: Map<String, Any>? = HActivityThread.mPackages.get(ActivityThread.currentActivityThread())
-            if (resources != null) {
-                val loadApkRef = resources[activityInfo.packageName] as WeakReference<*>?
-                if (loadApkRef?.get() != null) {
-                    HActivityThread.ActivityClientRecord.packageInfo.set(r, loadApkRef.get())
+        val activityInfo = parseOriginRecord.activityInfo
+        if(activityInfo != null){
+            // bind
+            if (!VmActivityThread.isInit) {
+                VmActivityThread.handleBindApplication(
+                    activityInfo.packageName,
+                    activityInfo.processName ?: activityInfo.packageName,
+                    parseOriginRecord.userId
+                )
+                return true
+            }
+//            if (BuildCompat.isAtLeastS){
+//                val launchingActivityRecord = ActivityThread.currentActivityThread().getLaunchingActivity(token)
+//                HActivityThread.ActivityClientRecord.intent.set(launchingActivityRecord, parseOriginRecord.originIntent)
+//                HActivityThread.ActivityClientRecord.activityInfo.set(launchingActivityRecord, activityInfo)
+//                VmActivityThread.vmAppConfig?.vmPackageInfo?.apply {
+//                    HActivityThread.ActivityClientRecord.packageInfo.set(launchingActivityRecord, this)
+//                }
+//            }
+
+            if (BuildCompat.isAtLeastPie) {
+                HLaunchActivityItem.mIntent.set(r, parseOriginRecord.originIntent)
+                HLaunchActivityItem.mInfo.set(r, activityInfo)
+            } else {
+                val resources: Map<String, Any>? = HActivityThread.mPackages.get(ActivityThread.currentActivityThread())
+                if (resources != null) {
+                    val loadApkRef = resources[activityInfo.packageName] as WeakReference<*>?
+                    if (loadApkRef?.get() != null) {
+                        HActivityThread.ActivityClientRecord.packageInfo.set(r, loadApkRef.get())
+                    }
+                    HActivityThread.ActivityClientRecord.intent.set(r, parseOriginRecord.originIntent)
+                    HActivityThread.ActivityClientRecord.activityInfo.set(r, activityInfo)
                 }
             }
+            val targetComponent = ComponentName(activityInfo.packageName, activityInfo.name)
+            intent.component = targetComponent
         }
-        val targetComponent = ComponentName(activityInfo.packageName, activityInfo.name)
-        intent.component = targetComponent
-        return true
+        return false
     }
 
     /**

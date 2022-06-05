@@ -44,6 +44,10 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
      */
     val mainProcessInitLock = ConditionVariable()
 
+    var hasKilled: Boolean = false
+        private set
+
+
     fun startProxyProcess(){
 
     }
@@ -93,10 +97,12 @@ class VmAppProcess(val appId: Int, val userId: Int, val packageName: String, val
     @Synchronized
     fun killAppProcess(){
         try {
+            mainProcessRecord = null
             for (pidEntry in vmPid2SystemPId) {
                 killProcess(pidEntry.value)
             }
         }finally {
+            hasKilled = true
             vmPid2SystemPId.clear()
         }
     }

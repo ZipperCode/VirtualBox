@@ -236,7 +236,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
     /**
      * 解析所有的虚拟程序的Activity，查找指定匹配组件
      */
-    override fun resolveActivity(intent: Intent, flags: Int, resolvedType: String, userId: Int): ResolveInfo? {
+    override fun resolveActivity(intent: Intent, flags: Int, resolvedType: String?, userId: Int): ResolveInfo? {
 //        if (VmUserManagerService.exists(userId)){
 //            logger.e("resolveActivity >> 用户 %s 不存在", userId)
 //            return null

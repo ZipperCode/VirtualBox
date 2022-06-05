@@ -4,7 +4,9 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Debug
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
@@ -17,6 +19,7 @@ import com.virtual.box.core.helper.ProviderCallHelper
 import com.virtual.box.core.proxy.ProxyContentProvider
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.core.server.am.IVmActivityThread
+import com.virtual.box.core.server.pm.VmPackageManagerService
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -85,9 +88,9 @@ object VmProcessManager {
         synchronized(existsVmAppProcess.appProcessHandleLock){
             // 创建进程记录
             val prepareVmProcessRecord = VmProcessRecord(vmApplicationInfo, userId, vmPid)
+            // 进程启动成功, 检查VmAppProcess是否存在主进程，如果存在，本进程作为子进程
+            existsVmAppProcess.checkAndSetProcess(prepareVmProcessRecord)
             if (startVmProxyProcess(prepareVmProcessRecord)) {
-                // 进程启动成功, 检查VmAppProcess是否存在主进程，如果存在，本进程作为子进程
-                existsVmAppProcess.checkAndSetProcess(prepareVmProcessRecord)
                 // 进程启动成功，将进程信息添加到列表中
                 allProcessList.add(prepareVmProcessRecord)
             }else{
@@ -97,6 +100,9 @@ object VmProcessManager {
                 // 进程启动失败，关闭app进程已经其子进程
                 existsVmAppProcess.killAppProcess()
             }
+        }
+        if (existsVmAppProcess.hasKilled){
+            throw IllegalStateException("startAppProcess fail, process killed")
         }
         return existsVmAppProcess
     }
@@ -139,7 +145,7 @@ object VmProcessManager {
             userId = mainProcess?.userId ?: -1
             this.vmProcessRecord = vmProcessRecord
             this.isMainProcess = mainProcess != null
-            this.mainProcessVmPid = mainProcess?.vmPid ?: -1
+            this.mainProcessVmPid = vmProcessRecord.vmPid
             this.mainProcessSystemPid = mainProcess?.mainProcessRecord?.systemPid ?: -1
             this.mainProcessSystemUid = mainProcess?.mainProcessRecord?.systemUid ?: -1
         }

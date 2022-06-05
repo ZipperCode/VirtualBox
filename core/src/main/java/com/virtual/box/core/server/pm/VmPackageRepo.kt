@@ -17,6 +17,7 @@ import com.virtual.box.core.server.pm.data.VmPackageInfoDataSource
 import com.virtual.box.core.server.pm.data.VmPackageResolverDataSource
 import com.virtual.box.core.server.pm.entity.VmPackageConfigInfo
 import com.virtual.box.core.server.pm.resolve.VmPackage
+import com.virtual.box.reflect.android.app.HActivityThread.ActivityClientRecord.packageInfo
 import com.virtual.box.reflect.android.content.pm.HActivityInfo.applicationInfo
 import java.io.File
 
@@ -71,6 +72,9 @@ class VmPackageRepo(
             //如果指定饿模块和组名，则只有一个匹配项 通过模块信息得到ActivityInfo
             val fitAi = getActivityInfo(comp, flags, userId);
             if (fitAi != null){
+                if (fitAi.processName.isNullOrEmpty()){
+                    fitAi.processName = fitAi.packageName
+                }
                 return listOf(
                     ResolveInfo().apply {
                         activityInfo = fitAi
@@ -309,19 +313,21 @@ class VmPackageRepo(
     }
 
     fun getVmPackageInfo(packageName: String, flags: Int): PackageInfo? {
-        val vmPackageConf = vmPackageDataSource.packageSettings[packageName] ?: return null
-        val file = File(vmPackageConf.installPackageApkFilePath)
-        val confFile = File(vmPackageConf.installPackageInfoFilePath)
-        if (!file.exists() || !confFile.exists()) {
-            // 文件不存在，删除此记录
-            removeInstallPackageInfoWithLock(vmPackageConf.packageName)
-            return null
-        }
-        // TODO 暂时不考虑flags标志，直接全家内容返回
-        val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
+//        val vmPackageConf = vmPackageDataSource.packageSettings[packageName] ?: return null
+//        val file = File(vmPackageConf.installPackageApkFilePath)
+//        val confFile = File(vmPackageConf.installPackageInfoFilePath)
+//        if (!file.exists() || !confFile.exists()) {
+//            // 文件不存在，删除此记录
+//            removeInstallPackageInfoWithLock(vmPackageConf.packageName)
+//            return null
+//        }
+//
+//        // TODO 暂时不考虑flags标志，直接全家内容返回
+//        val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
 //        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
 //            packageInfo.activities = emptyArray()
 //        }
+        val packageInfo = vmPackageInfoDataSource.loadInstallVmPackageInfoLock(packageName)
         return packageInfo
     }
 

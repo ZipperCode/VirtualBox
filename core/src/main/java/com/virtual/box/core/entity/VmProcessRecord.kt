@@ -63,7 +63,6 @@ class VmProcessRecord : Binder, Parcelable {
     @JvmField
     var vmAppThread: IVmActivityThread? = null
 
-
     constructor(info: ApplicationInfo, vmUid: Int, vmPid: Int): super() {
         this.info = info
         this.processName = info.processName

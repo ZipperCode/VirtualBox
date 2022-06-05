@@ -158,7 +158,8 @@ object L {
     }
 
     @JvmStatic
-    fun printStackTrace(e: Throwable){
+    fun printStackTrace(e: Throwable?){
+        e ?: return
         if (AppHelper.isDebug){
             Log.println(Log.ERROR, "[${SystemHelper.getCurrentProcessNameExcludePackage()}]进程",
                 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")

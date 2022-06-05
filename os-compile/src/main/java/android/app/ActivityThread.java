@@ -98,6 +98,10 @@ public class ActivityThread {
         throw new RuntimeException("Stub!");
     }
 
+    public ActivityClientRecord getLaunchingActivity(IBinder token) {
+        throw new RuntimeException("Stub!");
+    }
+
     class H extends Handler {
         public static final int BIND_APPLICATION = 110;
 

@@ -53,6 +53,7 @@ public class HActivityThread {
         public static MirrorReflection.FieldWrapper<ActivityInfo> activityInfo = REF.field("activityInfo");
         public static MirrorReflection.FieldWrapper<Intent> intent = REF.field("intent");
         public static MirrorReflection.FieldWrapper<Object> packageInfo = REF.field("packageInfo");
+        public static MirrorReflection.FieldWrapper<IBinder> token = REF.field("token");
 
     }
 

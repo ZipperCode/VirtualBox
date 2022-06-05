@@ -1,11 +1,10 @@
 package com.virtual.box.core.hook.core
 
-import android.util.Log
+import com.virtual.box.base.ext.kotlinInvokeOrigin
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.exception.CalledOriginMethodException
-import java.lang.Exception
+import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import java.lang.reflect.Method
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -29,17 +28,13 @@ class MethodHandle(
 
     fun invokeOriginMethod(args: Array<out Any?>?): Any?{
         try {
-            if (nativeHolderPtr != 0L){
+            if (nativeHolderPtr != 0L) {
                 VmCore.restoreMethod(nativeHolderPtr, targetNativeHolderPtr)
+                HExecutable.artMethod.set(targetMethod, targetNativeHolderPtr)
                 hasRestoreMethod.set(true)
             }
-            val result =  if (args == null){
-                targetMethod.invoke(originObj)
-            }else{
-                targetMethod.invoke(originObj, *args)
-            }
-            return result
-        }catch (e: Throwable){
+            return targetMethod.kotlinInvokeOrigin(originObj, args)
+        } catch (e: Throwable) {
             L.printStackTrace(e)
             throw CalledOriginMethodException(e.cause)
         }

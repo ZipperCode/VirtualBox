@@ -136,6 +136,7 @@ internal object VmFileSystem {
 //        }
 //        mkdirAppData(userAppDataDir)
         val dataDir = getDataDir(packageName, userId)
+        getDeDataDir(packageName, userId).checkAndMkdirs()
         dataDir.checkAndMkdirs()
         mkdirAppData(dataDir)
     }

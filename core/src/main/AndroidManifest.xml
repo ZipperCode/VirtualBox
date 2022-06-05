@@ -356,16 +356,34 @@
             android:process=":p0"
             android:taskAffinity="${applicationId}.virtualbox.task_affinity_0"/>
 
+        <activity
+            android:name=".proxy.ProxyActivity$P1"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
+            android:exported="false"
+            android:process=":p0"
+            android:taskAffinity="${applicationId}.virtualbox.task_affinity_1"/>
+
+
         <provider
             android:name="com.virtual.box.core.proxy.ProxyContentProvider$P0"
             android:authorities="${vmApplicationId}.virtualbox.proxy_content_provider_0"
             android:exported="false"
             android:process=":p0" />
 
+        <provider
+            android:name="com.virtual.box.core.proxy.ProxyContentProvider$P1"
+            android:authorities="${vmApplicationId}.virtualbox.proxy_content_provider_1"
+            android:exported="false"
+            android:process=":p1" />
 
         <service
             android:name=".proxy.ProxyService$P0"
             android:exported="true"
             android:process=":p0" />
+
+        <service
+            android:name=".proxy.ProxyService$P1"
+            android:exported="true"
+            android:process=":p1" />
     </application>
 </manifest>

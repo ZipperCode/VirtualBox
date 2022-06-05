@@ -313,6 +313,13 @@ public final class MirrorReflection {
             this.member = member;
         }
 
+        public final boolean isNull(){
+            return member == null;
+        }
+
+        public final boolean isNotNull(){
+            return member != null;
+        }
 
         public final M unwrap() {
             return member;

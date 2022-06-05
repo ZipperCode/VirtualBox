@@ -2,14 +2,10 @@ package com.virtual.box.core.helper
 
 import android.content.pm.ProviderInfo
 import android.net.Uri
-import android.os.Build
-import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.ProviderCompat
-import com.virtual.box.core.hook.delegate.ContentProviderHookHandle
-import com.virtual.box.reflect.android.providers.HSettings
-import java.lang.Exception
+import com.virtual.box.core.hook.delegate.ContentProviderStub
 
 object ProviderHelper {
 
@@ -19,7 +15,7 @@ object ProviderHelper {
 
     fun replaceNewProvider(holder: Any?, packageName: String) {
         val providerInterface = ProviderCompat.getProviderByHolder(holder) ?: return
-        val proxyInterface = ContentProviderHookHandle().wrapper(providerInterface, packageName)
+        val proxyInterface = ContentProviderStub().wrapper(providerInterface, packageName)
         ProviderCompat.setProviderByHolder(holder, proxyInterface)
     }
 

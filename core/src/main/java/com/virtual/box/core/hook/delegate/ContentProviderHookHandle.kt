@@ -5,13 +5,19 @@ import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.net.Uri
 import android.os.*
+import android.util.Log
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.reflect.android.HAttributionSourceState
 import com.virtual.box.reflect.android.content.HAttributionSource
 import java.io.FileNotFoundException
 
+@Deprecated("ContentProviderStub")
 class ContentProviderHookHandle : BaseHookHandle() {
+
+    private val logger: Logger = Logger.Companion.getLogger(L.HOOK_TAG, "ContentProviderHookHandle")
 
     fun wrapper(contentProviderProxy: IInterface, appPkg: String): IInterface? {
         target = contentProviderProxy
@@ -152,6 +158,7 @@ class ContentProviderHookHandle : BaseHookHandle() {
         callingPkg: String?, method: String?,
         arg: String?, extras: Bundle?
     ): Bundle? {
+        logger.i("call#4")
         return methodHandle.invokeOriginMethod(
             arrayOf(
                 hostPkg, method, arg, extras
@@ -165,9 +172,23 @@ class ContentProviderHookHandle : BaseHookHandle() {
         attributionSource: Any?, authority: String?,
         method: String?, arg: String?, extras: Bundle?
     ): Bundle? {
+        logger.i("call#5")
         Helper.fixAttributionSource(attributionSource, hostPkg)
         return methodHandle.invokeOriginMethod() as Bundle?
 
+    }
+
+    @Throws(RemoteException::class)
+    fun call(
+        methodHandle: MethodHandle,
+        callingPkg: Any?, string2: String?, authority: String?,
+        method: String?, arg: String?, extras: Bundle?
+    ): Bundle? {
+        logger.i("call#6 > callingPkg = %s trace = %s", callingPkg, Log.getStackTraceString(Throwable()))
+        logger.i("hostPkg = %s", hostPkg)
+        return methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg, string2, authority, method, arg, extras
+        )) as Bundle?
     }
 
     @Throws(RemoteException::class)
