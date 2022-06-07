@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Debug
 import android.os.IBinder
 import android.os.UserHandle
+import androidx.core.content.ContextCompat
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -74,12 +75,12 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
 
     @Throws(InstantiationException::class, IllegalAccessException::class, ClassNotFoundException::class)
     override fun newApplication(cl: ClassLoader, className: String, context: Context): Application {
-//        ContextCompat.fix(context)
+        Debug.waitForDebugger()
         return super.newApplication(cl, className, context)
     }
 
     override fun callActivityOnCreate(activity: Activity, icicle: Bundle?) {
-//        Debug.waitForDebugger()
+        Debug.waitForDebugger()
         if (BuildCompat.isAtLeastS){
             ComponentFixCompat.fixActivityWithOnCreate(activity)
         }

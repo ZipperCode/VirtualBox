@@ -4,11 +4,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.virtual.box.core.hook.core.MethodHandle;
 import com.virtual.box.reflect.com.android.internal.telecom.HITelecomService;
@@ -35,11 +37,13 @@ public class ITelecomServiceHookHandle extends BaseBinderHookHandle {
          methodHandle.invokeOriginMethod(new Object[]{ showDialpad, hostPkg, callingFeatureId });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     PhoneAccountHandle getDefaultOutgoingPhoneAccount(MethodHandle methodHandle, String uriScheme, String callingPackage,
                                                       String callingFeatureId){
         return (PhoneAccountHandle) methodHandle.invokeOriginMethod(new Object[]{ uriScheme, hostPkg, callingFeatureId });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     PhoneAccountHandle getUserSelectedOutgoingPhoneAccount(MethodHandle methodHandle, String callingPackage){
         return (PhoneAccountHandle) methodHandle.invokeOriginMethod(new Object[]{ hostPkg });
     }
@@ -64,6 +68,7 @@ public class ITelecomServiceHookHandle extends BaseBinderHookHandle {
         return (List<PhoneAccountHandle>) methodHandle.invokeOriginMethod(new Object[]{ hostPkg });
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     PhoneAccount getPhoneAccount(MethodHandle methodHandle, PhoneAccountHandle account, String callingPackage){
         return (PhoneAccount) methodHandle.invokeOriginMethod(new Object[]{ account, hostPkg });
     }

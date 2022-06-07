@@ -38,8 +38,33 @@ internal object HookManager {
             DisplayManagerHookHandle(),
             LauncherAppsHookHandle(),
             MediaProjectionManagerHookHandle(),
-            PackageManagerHookHandle()
+            PackageManagerHookHandle(),
+            AutofillManagerHookHandle(),
+            ConnectivityManagerHookHandle(),
+            ContextHubServiceHookHandle(),
+            IGraphicsStatsHookHandle(),
+            IMediaRouterServiceHookHandle(),
+            INotificationManagerHookHandle(),
+            IPhoneSubInfoHookHandle(),
+            IPowerManagerHookHandle(),
+            IStorageManagerHookHandle(),
+            ITelecomServiceHookHandle(),
+            ITelephonyHookHandle(),
+            ITelephonyRegistryHookHandle(),
+            IUserManagerHookHandle(),
         )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            list.add(IShortcutServiceHookHandle())
+        }
+
+        if (BuildCompat.isAtLeastM){
+            list.add(HIFingerprintServiceHookHandle())
+        }
+        if (BuildCompat.isAtLeastOreo){
+            list.add(IStorageStatsManagerHookHandle())
+        }
+
         if (BuildCompat.isAtLeastPie) {
             list.add(ActivityTaskManagerHookHandle())
         }
