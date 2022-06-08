@@ -3,12 +3,11 @@ package com.virtual.box.core.compat
 import android.app.Activity
 import android.content.ComponentName
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Build
+import android.os.Debug
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
-import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
@@ -16,7 +15,6 @@ import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.manager.VmFileSystem
-import com.virtual.box.core.manager.VmPackageManager
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivity
 import com.virtual.box.reflect.android.app.HActivityThread
@@ -133,6 +131,17 @@ object ComponentFixCompat {
             //deDataDir.checkAndMkdirs()
             // VmFileSystem.mkdirAppData(ai.packageName, userId)
         }catch (e: Exception){
+            L.printStackTrace(e)
+        }
+    }
+
+    fun fixActivityOrientation(activity: Activity){
+        try {
+            val activityInfo = HActivity.mActivityInfo.get(activity)
+            val orientation = activityInfo.screenOrientation
+            activity.requestedOrientation = orientation
+            // TODO 8.1
+        }catch (e: java.lang.Exception){
             L.printStackTrace(e)
         }
     }

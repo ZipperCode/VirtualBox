@@ -3,9 +3,13 @@ package com.virtual.box.core.hook.service
 import android.app.ActivityThread
 import android.content.ComponentName
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.*
+import android.graphics.Bitmap
 import android.os.Build
+import android.os.Bundle
 import android.os.Parcelable
+import android.os.PersistableBundle
 import androidx.annotation.RequiresApi
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.core.MethodHandle
@@ -41,12 +45,17 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         }
     }
 
+    /**
+     * 检查包启动表
+     */
     fun checkPackageStartable(methodHandle: MethodHandle, packageName: String?, userId: Int) {
-
-        val replacePackageName = packageName
+        val replacePackageName = hostPkg
         methodHandle.invokeOriginMethod(arrayOf(replacePackageName, userId))
     }
 
+    /**
+     * 包是否可用
+     */
     fun isPackageAvailable(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
         if (VmPackageManager.isInstalled(packageName, userId)){
             return true
@@ -230,37 +239,8 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
     }
 
-    fun resolveContentProvider(methodHandle: MethodHandle,name: String?, flags: Int, userId: Int): ProviderInfo? {
-        val resolveContentProvider = VmPackageManager.resolveContentProvider(name, flags, userId)
-        if (resolveContentProvider != null){
-            return resolveContentProvider
-        }
-        return methodHandle.invokeOriginMethod() as? ProviderInfo
-    }
-
-    fun getInstrumentationInfo(methodHandle: MethodHandle,
-        className: ComponentName?, flags: Int
-    ): InstrumentationInfo? {
-        return methodHandle.invokeOriginMethod() as? InstrumentationInfo
-    }
-
-    @Deprecated("maxTargetSdk = 30")
-    fun queryInstrumentation(methodHandle: MethodHandle,
-        targetPackage: String?, flags: Int
-    ): ParceledListSlice<Parcelable>? {
-        return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
-    }
-
-    fun setInstallerPackageName(methodHandle: MethodHandle,targetPackage: String?, installerPackageName: String?) {
-        methodHandle.invokeOriginMethod()
-    }
-
-    fun setApplicationCategoryHint(methodHandle: MethodHandle,packageName: String?, categoryHint: Int, callerPackageName: String?) {
-        methodHandle.invokeOriginMethod()
-    }
-
-    fun getInstallerPackageName(methodHandle: MethodHandle,packageName: String?): String? {
-        return methodHandle.invokeOriginMethod() as? String
+    fun getInstalledPackages(methodHandle: MethodHandle, flags: Int,  userId:Int):ParceledListSlice<*>?{
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
     }
 
     fun getLastChosenActivity(methodHandle: MethodHandle,
@@ -270,15 +250,637 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         return methodHandle.invokeOriginMethod() as? ResolveInfo
     }
 
-    fun overrideLabelAndIcon(methodHandle: MethodHandle,
-        componentName: ComponentName?, nonLocalizedLabel: String?,
+    /**
+     * This implements getPackagesHoldingPermissions via a "last returned row"
+     * mechanism that is not exposed the API. This is to get around the IPC
+     * limit that kicks when flags are included that bloat up the data
+     * returned.
+     */
+    fun getPackagesHoldingPermissions(
+        methodHandle: MethodHandle, permissions: Array<String?>?,
+        flags: Int, userId: Int
+    ): ParceledListSlice<*>? {
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    /**
+     * This implements getInstalledApplications via a "last returned row"
+     * mechanism that is not exposed the API. This is to get around the IPC
+     * limit that kicks when flags are included that bloat up the data
+     * returned.
+     */
+    fun getInstalledApplications(methodHandle: MethodHandle, flags: Int, userId: Int): ParceledListSlice<*>? {
+        // TODO include virtual
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    /**
+     * Retrieve all applications that are marked as persistent.
+     *
+     * @return A List&lt{
+     * return methodHandle.invokeOriginMethod();
+     * }applicationInfo> containing one entry for each persistent
+     * application.
+     */
+    fun getPersistentApplications(methodHandle: MethodHandle, flags: Int): ParceledListSlice<*>? {
+        // TODO include virtual
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun resolveContentProvider(methodHandle: MethodHandle, name: String?, flags: Int, userId: Int): ProviderInfo? {
+        // TODO virtual
+        return methodHandle.invokeOriginMethod() as ProviderInfo?
+    }
+
+    /**
+     * Retrieve sync information for all content providers.
+     *
+     * @param outNames Filled with a list of the root names of the content
+     * providers that can sync.
+     * @param outInfo Filled with a list of the ProviderInfo for each
+     * name 'outNames'.
+     */
+    fun querySyncProviders(
+        methodHandle: MethodHandle, outNames: List<String?>?,
+        outInfo: List<ProviderInfo?>?
+    ) {
+        // TODO include virtual
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun queryContentProviders(
+        methodHandle: MethodHandle,
+        processName: String?, uid: Int, flags: Int, metaDataKey: String?
+    ): ParceledListSlice<*>? {
+        // TODO include virtual
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun getInstrumentationInfo(
+        methodHandle: MethodHandle,
+        className: ComponentName?, flags: Int
+    ): InstrumentationInfo? {
+        // TODO include virtual
+        return methodHandle.invokeOriginMethod() as InstrumentationInfo?
+    }
+
+    fun queryInstrumentation(
+        methodHandle: MethodHandle,
+        targetPackage: String?, flags: Int
+    ): ParceledListSlice<*>? {
+        // TODO include virtual
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun finishPackageInstall(methodHandle: MethodHandle, token: Int, didLaunch: Boolean) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setInstallerPackageName(methodHandle: MethodHandle, targetPackage: String?, installerPackageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setApplicationCategoryHint(methodHandle: MethodHandle, packageName: String?, categoryHint: Int, callerPackageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /** @param observer IPackageDeleteObserver
+     */
+    @Deprecated(
+        """rawr, don't call AIDL methods directly! 
+      """
+    )
+    fun deletePackageAsUser(
+        methodHandle: MethodHandle, packageName: String?, versionCode: Int,
+        observer: Any?, userId: Int, flags: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getInstallerPackageName(methodHandle: MethodHandle, packageName: String?): String? {
+        return methodHandle.invokeOriginMethod() as String?
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    fun getInstallSourceInfo(methodHandle: MethodHandle, packageName: String?): InstallSourceInfo? {
+        return methodHandle.invokeOriginMethod() as InstallSourceInfo?
+    }
+
+    fun getPreferredActivities(
+        methodHandle: MethodHandle, outFilters: List<IntentFilter?>?,
+        outActivities: List<ComponentName?>?, packageName: String?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun addPersistentPreferredActivity(methodHandle: MethodHandle, filter: IntentFilter?, activity: ComponentName?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun clearPackagePersistentPreferredActivities(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun addCrossProfileIntentFilter(
+        methodHandle: MethodHandle, intentFilter: IntentFilter?, ownerPackage: String?,
+        sourceUserId: Int, targetUserId: Int, flags: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun clearCrossProfileIntentFilters(methodHandle: MethodHandle, sourceUserId: Int, ownerPackage: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setDistractingPackageRestrictionsAsUser(
+        methodHandle: MethodHandle, packageNames: Array<String?>?, restrictionFlags: Int,
+        userId: Int
+    ): Array<String?>? {
+        return methodHandle.invokeOriginMethod() as Array<String?>?
+    }
+
+    fun setPackagesSuspendedAsUser(
+        methodHandle: MethodHandle, packageNames: Array<String?>?, suspended: Boolean,
+        appExtras: PersistableBundle?, launcherExtras: PersistableBundle?,
+        dialogInfo: Any?, callingPackage: String?, userId: Int
+    ): Array<String?>? {
+        return methodHandle.invokeOriginMethod() as Array<String?>?
+    }
+
+    fun getUnsuspendablePackagesForUser(methodHandle: MethodHandle, packageNames: Array<String?>?, userId: Int): Array<String?>? {
+        return methodHandle.invokeOriginMethod() as Array<String?>?
+    }
+
+    fun isPackageSuspendedForUser(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getSuspendedPackageAppExtras(methodHandle: MethodHandle, packageName: String?, userId: Int): Bundle? {
+        return methodHandle.invokeOriginMethod() as Bundle?
+    }
+
+    /**
+     * Report the set of 'Home' activity candidates, plus (MethodHandle methodHandle, if any) which of them
+     * is the current "always use this one" setting.
+     */
+    fun getHomeActivities(methodHandle: MethodHandle, outHomeCandidates: List<ResolveInfo?>?): ComponentName? {
+        return methodHandle.invokeOriginMethod() as ComponentName?
+    }
+
+    fun setHomeActivity(methodHandle: MethodHandle, className: ComponentName?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Overrides the label and icon of the component specified by the component name. The component
+     * must belong to the calling app.
+     *
+     * These changes will be reset on the next boot and whenever the package is updated.
+     *
+     * Only the app defined as com.android.internal.R.config_overrideComponentUiPackage is allowed
+     * to call this.
+     *
+     * @param componentName The component name to override the label/icon of.
+     * @param nonLocalizedLabel The label to be displayed.
+     * @param icon The icon to be displayed.
+     * @param userId The user id.
+     */
+    fun overrideLabelAndIcon(
+        methodHandle: MethodHandle, componentName: ComponentName?, nonLocalizedLabel: String?,
         icon: Int, userId: Int
     ) {
         methodHandle.invokeOriginMethod()
     }
 
-    fun restoreLabelAndIcon(methodHandle: MethodHandle,componentName: ComponentName?, userId: Int) {
+    /**
+     * Restores the label and icon of the activity specified by the component name if either has
+     * been overridden. The component must belong to the calling app.
+     *
+     * Only the app defined as com.android.internal.R.config_overrideComponentUiPackage is allowed
+     * to call this.
+     *
+     * @param componentName The component name.
+     * @param userId The user id.
+     */
+    fun restoreLabelAndIcon(methodHandle: MethodHandle, componentName: ComponentName?, userId: Int) {
         methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * As per [android.content.pm.PackageManager.setComponentEnabledSetting].
+     */
+    fun setComponentEnabledSetting(
+        methodHandle: MethodHandle, componentName: ComponentName?,
+        newState: Int, flags: Int, userId: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * As per [android.content.pm.PackageManager.getComponentEnabledSetting].
+     */
+    fun getComponentEnabledSetting(methodHandle: MethodHandle, componentName: ComponentName?, userId: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    /**
+     * As per [android.content.pm.PackageManager.setApplicationEnabledSetting].
+     */
+    fun setApplicationEnabledSetting(
+        methodHandle: MethodHandle, packageName: String?, newState: Int, flags: Int,
+        userId: Int, callingPackage: String?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * As per [android.content.pm.PackageManager.getApplicationEnabledSetting].
+     */
+    fun getApplicationEnabledSetting(methodHandle: MethodHandle, packageName: String?, userId: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    /**
+     * Logs process start information (MethodHandle methodHandle, including APK hash) to the security log.
+     */
+    fun logAppProcessStartIfNeeded(
+        methodHandle: MethodHandle,
+        packageName: String?,
+        processName: String?,
+        uid: Int,
+        seinfo: String?,
+        apkFile: String?,
+        pid: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Set whether the given package should be considered stopped, making
+     * it not visible to implicit intents that filter stopped packages.
+     */
+    fun setPackageStoppedState(methodHandle: MethodHandle, packageName: String?, stopped: Boolean, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Delete all the cache files an applications cache directory
+     * @param packageName The package name of the application whose cache
+     * files need to be deleted
+     * @param observer a callback used to notify when the deletion is finished.
+     */
+    fun deleteApplicationCacheFiles(methodHandle: MethodHandle, packageName: String?, observer: IPackageDataObserver?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Delete all the cache files an applications cache directory
+     * @param packageName The package name of the application whose cache
+     * files need to be deleted
+     * @param userId the user to delete application cache for
+     * @param observer a callback used to notify when the deletion is finished.
+     */
+    fun deleteApplicationCacheFilesAsUser(methodHandle: MethodHandle, packageName: String?, userId: Int, observer: IPackageDataObserver?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Clear the user data directory of an application.
+     * @param packageName The package name of the application whose cache
+     * files need to be deleted
+     * @param observer a callback used to notify when the operation is completed.
+     */
+    fun clearApplicationUserData(methodHandle: MethodHandle, packageName: String?, observer: IPackageDataObserver?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Clear the profile data of an application.
+     * @param packageName The package name of the application whose profile data
+     * need to be deleted
+     */
+    fun clearApplicationProfileData(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Get package statistics including the code, data and cache size for
+     * an already installed package
+     * @param packageName The package name of the application
+     * @param userHandle Which user the size should be retrieved for
+     * @param observer IPackageStatsObserver a callback to use to notify when the asynchronous
+     * retrieval of information is complete.
+     */
+    fun getPackageSizeInfo(methodHandle: MethodHandle, packageName: String?, userHandle: Int, observer: Any?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+
+    /**
+     * Notify the package manager that a package is going to be used and why.
+     *
+     * See PackageManager.NOTIFY_PACKAGE_USE_* for reasons.
+     */
+    fun notifyPackageUse(methodHandle: MethodHandle, packageName: String?, reason: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Notify the package manager that a list of dex files have been loaded.
+     *
+     * @param loadingPackageName the name of the package who performs the load
+     * @param classLoaderContextMap a map from file paths to dex files that have been loaded to
+     * the class loader context that was used to load them.
+     * @param loaderIsa the ISA of the loader process
+     */
+    fun notifyDexLoad(
+        methodHandle: MethodHandle, loadingPackageName: String?,
+        classLoaderContextMap: Map<String?, String?>?, loaderIsa: String?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Register an application dex module with the package manager.
+     * The package manager will keep track of the given module for future optimizations.
+     *
+     * Dex module optimizations will disable the classpath checking at runtime. The client bares
+     * the responsibility to ensure that the static assumptions on classes the optimized code
+     * hold at runtime (MethodHandle methodHandle, e.g. there's no duplicate classes the classpath).
+     *
+     * Note that the package manager already keeps track of dex modules loaded with
+     * [dalvik.system.DexClassLoader] and [dalvik.system.PathClassLoader].
+     * This can be called for an eager registration.
+     *
+     * The call might take a while and the results will be posted on the mathread, using
+     * the given callback.
+     *
+     * If the module is intended to be shared with other apps, make sure that the file
+     * permissions allow for it.
+     * If at registration time the permissions allow for others to read it, the module would
+     * be marked as a shared module which might undergo a different optimization strategy.
+     * (MethodHandle methodHandle, usually shared modules will generated larger optimizations artifacts,
+     * taking more disk space).
+     *
+     * @param packageName the package name to which the dex module belongs
+     * @param dexModulePath the absolute path of the dex module.
+     * @param isSharedModule whether or not the module is intended to be used by other apps.
+     * @param callback if not null,
+     * [android.content.pm.IDexModuleRegisterCallback.IDexModuleRegisterCallback.onDexModuleRegistered]
+     * will be called once the registration finishes.
+     */
+    fun registerDexModule(
+        methodHandle: MethodHandle, packageName: String?, dexModulePath: String?,
+        isSharedModule: Boolean, callback: Any?
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Ask the package manager to perform a dex-opt with the given compiler filter.
+     *
+     * Note: exposed only for the shell command to allow moving packages explicitly to a
+     * definite state.
+     */
+    fun performDexOptMode(
+        methodHandle: MethodHandle, packageName: String?, checkProfiles: Boolean,
+        targetCompilerFilter: String?, force: Boolean, bootComplete: Boolean, splitName: String?
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    /**
+     * Ask the package manager to perform a dex-opt with the given compiler filter on the
+     * secondary dex files belonging to the given package.
+     *
+     * Note: exposed only for the shell command to allow moving packages explicitly to a
+     * definite state.
+     */
+    fun performDexOptSecondary(
+        methodHandle: MethodHandle, packageName: String?,
+        targetCompilerFilter: String?, force: Boolean
+    ): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    /**
+     * Ask the package manager to dump profiles associated with a package.
+     */
+    fun dumpProfiles(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun forceDexOpt(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    /**
+     * Reconcile the information we have abthe secondary dex files belonging to
+     * `packagName` and the actual dex files. For all dex files that were
+     * deleted, update the internal records and delete the generated oat files.
+     */
+    fun reconcileSecondaryDexFiles(methodHandle: MethodHandle, packageName: String?) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun movePackage(methodHandle: MethodHandle, packageName: String?, volumeUuid: String?): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun installExistingPackageAsUser(
+        methodHandle: MethodHandle, packageName: String?, userId: Int, installFlags: Int,
+        installReason: Int, whiteListedPermissions: List<String?>?
+    ): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+
+    @Deprecated("")
+    fun getIntentVerificationStatus(methodHandle: MethodHandle, packageName: String?, userId: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    @Deprecated("")
+    fun updateIntentVerificationStatus(methodHandle: MethodHandle, packageName: String?, status: Int, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    @Deprecated("")
+    fun getIntentFilterVerifications(methodHandle: MethodHandle, packageName: String?): ParceledListSlice<*>? {
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun getAllIntentFilters(methodHandle: MethodHandle, packageName: String?): ParceledListSlice<*>? {
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun setApplicationHiddenSettingAsUser(methodHandle: MethodHandle, packageName: String?, hidden: Boolean, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getApplicationHiddenSettingAsUser(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun setSystemAppHiddenUntilInstalled(methodHandle: MethodHandle, packageName: String?, hidden: Boolean) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun setSystemAppInstallState(methodHandle: MethodHandle, packageName: String?, installed: Boolean, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun setBlockUninstallForUser(methodHandle: MethodHandle, packageName: String?, blockUninstall: Boolean, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getBlockUninstallForUser(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getKeySetByAlias(methodHandle: MethodHandle, packageName: String?, alias: String?): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    fun getSigningKeySet(methodHandle: MethodHandle, packageName: String?): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    fun isPackageSignedByKeySet(methodHandle: MethodHandle, packageName: String?, ks: Any?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun isPackageSignedByKeySetExactly(methodHandle: MethodHandle, packageName: String?, ks: Any?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getInstantAppCookie(methodHandle: MethodHandle, packageName: String?, userId: Int): ByteArray? {
+        return methodHandle.invokeOriginMethod() as ByteArray?
+    }
+
+    fun setInstantAppCookie(methodHandle: MethodHandle, packageName: String?, cookie: ByteArray?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getInstantAppIcon(methodHandle: MethodHandle, packageName: String?, userId: Int): Bitmap? {
+        return methodHandle.invokeOriginMethod() as Bitmap?
+    }
+
+    fun isInstantApp(methodHandle: MethodHandle?, packageName: String?, userId: Int): Boolean {
+        return false
+    }
+
+    fun setRequiredForSystemUser(methodHandle: MethodHandle, packageName: String?, systemUserApp: Boolean): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    /**
+     * Sets whether or not an update is available. Ostensibly for instant apps
+     * to force exteranl resolution.
+     */
+    fun setUpdateAvailable(methodHandle: MethodHandle, packageName: String?, updateAvaialble: Boolean) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun isPackageDeviceAdminOnAnyUser(methodHandle: MethodHandle, packageName: String?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getInstallReason(methodHandle: MethodHandle, packageName: String?, userId: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun getSharedLibraries(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): ParceledListSlice<*>? {
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun getDeclaredSharedLibraries(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): ParceledListSlice<*>? {
+        return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+    }
+
+    fun canRequestPackageInstalls(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun getInstantAppAndroidId(methodHandle: MethodHandle, packageName: String?, userId: Int): String? {
+        return methodHandle.invokeOriginMethod() as String?
+    }
+
+    fun setHarmfulAppWarning(methodHandle: MethodHandle, packageName: String?, warning: CharSequence?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getHarmfulAppWarning(methodHandle: MethodHandle, packageName: String?, userId: Int): CharSequence? {
+        return methodHandle.invokeOriginMethod() as CharSequence?
+    }
+
+    fun hasSigningCertificate(methodHandle: MethodHandle, packageName: String?, signingCertificate: ByteArray?, flags: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    fun isPackageStateProtected(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.Q)
+    fun getModuleInfo(methodHandle: MethodHandle, packageName: String?, flags: Int): ModuleInfo? {
+        return methodHandle.invokeOriginMethod() as ModuleInfo?
+    }
+
+    fun requestChecksums(
+        methodHandle: MethodHandle,
+        packageName: String?,
+        includeSplits: Boolean,
+        optional: Int,
+        required: Int,
+        trustedInstallers: List<*>?,
+        onChecksumsReadyListener: Any?,
+        userId: Int
+    ) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun checkPermission(methodHandle: MethodHandle, permName: String?, pkgName: String?, userId: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun grantRuntimePermission(methodHandle: MethodHandle, packageName: String?, permissionName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    //------------------------------------------------------------------------
+    // We need to keep these IPackageManager for convenience splitting
+    // the permission manager. This should be cleaned up, but, will require
+    // a large change that modifies many repos.
+    //------------------------------------------------------------------------
+    fun checkUidPermission(methodHandle: MethodHandle, permName: String?, uid: Int): Int {
+        return methodHandle.invokeOriginMethod() as Int
+    }
+
+    fun setMimeGroup(methodHandle: MethodHandle, packageName: String?, group: String?, mimeTypes: List<String?>?): Any? {
+        return methodHandle.invokeOriginMethod()
+    }
+
+    fun getSplashScreenTheme(methodHandle: MethodHandle, packageName: String?, userId: Int): String? {
+        return methodHandle.invokeOriginMethod() as String?
+    }
+
+    fun setSplashScreenTheme(methodHandle: MethodHandle, packageName: String?, themeName: String?, userId: Int) {
+        methodHandle.invokeOriginMethod()
+    }
+
+    fun getMimeGroup(methodHandle: MethodHandle, packageName: String?, group: String?): List<String?>? {
+        return methodHandle.invokeOriginMethod() as List<String?>?
+    }
+
+    fun isAutoRevokeWhitelisted(methodHandle: MethodHandle, packageName: String?): Boolean {
+        return methodHandle.invokeOriginMethod() as Boolean
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    fun getProperty(methodHandle: MethodHandle, propertyName: String?, packageName: String?, className: String?): PackageManager.Property? {
+        return methodHandle.invokeOriginMethod() as PackageManager.Property?
     }
 
 }

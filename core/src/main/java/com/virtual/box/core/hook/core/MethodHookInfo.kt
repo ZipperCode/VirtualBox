@@ -5,6 +5,7 @@ import android.util.Log
 import com.virtual.box.base.ext.kotlinInvokeOrigin
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.exception.CalledOriginMethodException
+import com.virtual.box.core.hook.service.ActivityManagerHookHandle
 import com.virtual.box.reflect.java.lang.reflect.HExecutable
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method

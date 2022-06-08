@@ -84,8 +84,8 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     @Deprecated("maxTargetSdk=29", ReplaceWith("android.content.Context#startActivity(android.content.Intent) as Int"))
     fun startActivity(
         methodHandle: MethodHandle,
-        caller: Any?, callingPackage: String?, intent: Intent?, resolvedType: String,
-        resultTo: IBinder, resultWho: String,
+        caller: Any?, callingPackage: String?, intent: Intent?, resolvedType: String?,
+        resultTo: IBinder?, resultWho: String?,
         requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?
     ): Int {
         return methodHandle.invokeOriginMethod(arrayOf(
@@ -123,13 +123,13 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     )
     fun registerReceiver(
         methodHandle: MethodHandle,
-        caller: Any, callerPackage: String,
-        receiver: Any?, filter: IntentFilter,
-        requiredPermission: String, userId: Int, flags: Int
-    ): Intent {
+        caller: Any?, callerPackage: String,
+        receiver: Any?, filter: IntentFilter?,
+        requiredPermission: String?, userId: Int, flags: Int
+    ): Intent? {
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, hostPkg, receiver, filter, requiredPermission, userId, flags
-        )) as Intent
+        )) as Intent?
     }
 
     /**
@@ -138,13 +138,13 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     fun registerReceiverWithFeature(
         methodHandle: MethodHandle,
         caller: Any, callerPackage: String,
-        callingFeatureId: String, receiverId: String?, receiver: Any,
-        filter: IntentFilter, requiredPermission: String?, userId: Int, flags: Int
-    ): Intent {
+        callingFeatureId: String?, receiverId: String?, receiver: Any,
+        filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
+    ): Intent? {
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, hostPkg, callingFeatureId, receiverId, receiver, filter,
             requiredPermission, userId, flags
-        )) as Intent
+        )) as Intent?
     }
 
     /**

@@ -219,6 +219,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         var application: Application? = null
         try {
             application = HLoadedApk.makeApplication.call(loadedApk, false, null)
+            HActivityThread.mInitialApplication.set(ActivityThread.currentActivityThread(), application)
         } catch (e: Throwable) {
             logger.e(e)
         }
