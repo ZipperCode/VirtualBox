@@ -58,7 +58,7 @@ dependencies {
     implementation project(':os-reflect')
     compileOnly project(':os-compile')
     // implementation project(':hook-annotator')
-    implementation project(':nativelib')
+//    implementation project(':nativelib')
     kapt project(":hook-processor")
 
     implementation 'androidx.core:core-ktx:1.7.0'

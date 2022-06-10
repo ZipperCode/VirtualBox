@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="1.8">
       <module name="VirtualBox.free-reflect" target="11" />
+      <module name="VirtualBox.nativelib" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

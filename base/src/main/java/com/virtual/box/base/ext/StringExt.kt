@@ -66,3 +66,8 @@ fun String.charset(): Charset{
         Charset.forName("UTF-8")
     }
 }
+
+fun String.safeIntern(): String{
+    this ?: return ""
+    return this.intern()
+}
