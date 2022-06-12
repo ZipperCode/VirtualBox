@@ -71,6 +71,15 @@ object VmProcessManager {
         return result
     }
 
+    fun findProcess(packageName: String, processName: String): VmProcessRecord?{
+        for (vmProcessRecord in allProcessList) {
+            if (packageName == vmProcessRecord.packageName && processName == vmProcessRecord.processName){
+                return vmProcessRecord
+            }
+        }
+        return null
+    }
+
     /**
      * 准备启动一个新的应用进程，启动一个新应用进程时调用
      *

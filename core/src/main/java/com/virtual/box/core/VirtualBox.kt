@@ -2,24 +2,19 @@ package com.virtual.box.core
 
 import android.annotation.SuppressLint
 import android.app.ActivityThread
-import android.app.LoadedApk
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
+import com.virtual.box.base.helper.AppHelper
 import com.virtual.box.base.helper.SystemHelper
-import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
-import com.virtual.box.core.hook.core.VmCore
-import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
-import com.virtual.box.core.manager.HookManager
+import com.virtual.box.core.manager.AppHookManager
 import com.virtual.box.core.manager.ServiceManager
-import com.virtual.box.core.manager.VmActivityManager
-import com.virtual.box.core.manager.VmPackageManager
+import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
-import com.virtual.box.core.service.DaemonService
 import com.virtual.box.reflect.android.app.HActivityThread
 import me.weishu.reflection.Reflection
 
@@ -41,13 +36,13 @@ class VirtualBox {
     lateinit var mainAThread: ActivityThread
 
     fun doAttachAppBaseContext(context: Context){
+        AppHelper.init(BuildConfig.DEBUG)
         hostContext = context
         hostPkg = hostContext.packageName
         hostPm = context.packageManager
         // 去除反射限制
         Reflection.unseal(context)
-        mainAThread = ActivityThread.currentActivityThread()
-        logger.method("context = %s", context)
+        mainAThread = HActivityThread.currentActivityThread.call() as ActivityThread
         val processName = SystemHelper.getProcessName(context)
 
         mProcessType = when {
@@ -55,36 +50,33 @@ class VirtualBox {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
-        initService()
+        ServiceManager.initService()
         initHook()
     }
 
-    private fun initService(){
-        ServiceManager.initService()
-    }
 
     private fun initHook(){
         if(!isVirtualProcess){
             logger.d("初始化hook >> 非虚拟进程，不处理hook")
             return
         }
-        HookManager.initHook()
+        AppHookManager.initHook()
     }
 
     fun installPackage(installOption: VmPackageInstallOption){
-        VmPackageManager.installPackage(installOption)
+        VmAppPackageManager.installPackage(installOption)
     }
 
     fun launchApp(intent: Intent){
-        VmActivityManager.launchActivity(intent, 0)
+        VmAppActivityManager.launchActivity(intent, 0)
     }
 
     fun uninstallPackage(packageName: String){
-        VmPackageManager.uninstallPackage(packageName, 0)
+        VmAppPackageManager.uninstallPackage(packageName, 0)
     }
 
     fun getInstalledPackageInfo(): List<VmInstalledPackageInfo>{
-        return VmPackageManager.getInstalledPackageInfoList(0)
+        return VmAppPackageManager.getInstalledPackageInfoList(0)
     }
 
     /**

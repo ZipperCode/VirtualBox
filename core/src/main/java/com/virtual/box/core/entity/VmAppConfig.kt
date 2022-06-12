@@ -58,6 +58,13 @@ class VmAppConfig() : Parcelable {
         vmProcessRecord = parcel.readParcelable(VmProcessRecord::class.java.classLoader) as? VmProcessRecord
     }
 
+    fun getVmPidByProcess(processName: String): Int{
+        if (processName == packageName){
+            return mainProcessVmPid
+        }
+        return vmProcessRecord?.vmPid ?: mainProcessVmPid
+    }
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(packageName)
         parcel.writeString(processName)

@@ -1,78 +1,71 @@
 package com.virtual.box.core.manager
 
 import android.os.Build
-import android.os.Debug
 import com.virtual.box.base.util.compat.BuildCompat
-import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
-import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.hook.annotation.IHook
 import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.delegate.AppInstrumentation
 import com.virtual.box.core.hook.delegate.VmHandlerCallback
-import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
 import com.virtual.box.core.hook.service.*
-import com.virtual.box.reflect.android.app.HIActivityTaskManager
-import com.virtual.box.reflect.android.os.HServiceManager
-import com.virtual.test.NativeLib
 
 /**
  * hook管理程序，同一处理需要hook的服务等
  */
-internal object HookManager {
+internal object AppHookManager {
     const val TAG = "HookManager"
     private val logger = Logger.virtualLogger()
+
+    private val hookServiceList: MutableList<IInjectHook> = mutableListOf()
 
     fun initHook() {
         VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
         logger.d("初始化Hook")
-        val list = mutableListOf<IInjectHook>(
-            VmHandlerCallback(),
-            ActivityManagerHookHandle(),
-            AppInstrumentation(),
-            AppOpsManagerHookHandle(),
-            AppWidgetServiceHookHandle(),
-            DeviceIdentifiersPolicyServiceHookHandle(),
-            DisplayManagerHookHandle(),
-            LauncherAppsHookHandle(),
-            MediaProjectionManagerHookHandle(),
-            PackageManagerHookHandle(),
-            AutofillManagerHookHandle(),
-            ConnectivityManagerHookHandle(),
-            ContextHubServiceHookHandle(),
-            IGraphicsStatsHookHandle(),
-            IMediaRouterServiceHookHandle(),
-            INotificationManagerHookHandle(),
-            IPhoneSubInfoHookHandle(),
-            IPowerManagerHookHandle(),
-            IStorageManagerHookHandle(),
-            ITelecomServiceHookHandle(),
-            ITelephonyHookHandle(),
-            ITelephonyRegistryHookHandle(),
-            IUserManagerHookHandle(),
-            IActivityClientControllerHookHandle()
-        )
+        hookServiceList.add(VmHandlerCallback())
+        hookServiceList.add(ActivityManagerHookHandle())
+        hookServiceList.add(AppInstrumentation())
+        hookServiceList.add(AppOpsManagerHookHandle())
+        hookServiceList.add(AppWidgetServiceHookHandle())
+        hookServiceList.add(DisplayManagerHookHandle())
+        hookServiceList.add(LauncherAppsHookHandle())
+        hookServiceList.add(MediaProjectionManagerHookHandle())
+        hookServiceList.add(PackageManagerHookHandle())
+        hookServiceList.add(AutofillManagerHookHandle())
+        hookServiceList.add(ConnectivityManagerHookHandle())
+//        hookServiceList.add(ContextHubServiceHookHandle())
+        hookServiceList.add(IGraphicsStatsHookHandle())
+        hookServiceList.add(IMediaRouterServiceHookHandle())
+        hookServiceList.add(INotificationManagerHookHandle())
+        // hookServiceList.add(IPhoneSubInfoHookHandle())
+        hookServiceList.add(IPowerManagerHookHandle())
+        hookServiceList.add(IStorageManagerHookHandle())
+        hookServiceList.add(ITelecomServiceHookHandle())
+        hookServiceList.add(ITelephonyHookHandle())
+        hookServiceList.add(ITelephonyRegistryHookHandle())
+        hookServiceList.add(IUserManagerHookHandle())
+        // hookServiceList.add(IActivityClientControllerHookHandle())
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-            list.add(IShortcutServiceHookHandle())
+            hookServiceList.add(IShortcutServiceHookHandle())
         }
 
         if (BuildCompat.isAtLeastM){
-            list.add(HIFingerprintServiceHookHandle())
+            hookServiceList.add(HIFingerprintServiceHookHandle())
         }
         if (BuildCompat.isAtLeastOreo){
-            list.add(IStorageStatsManagerHookHandle())
+            hookServiceList.add(DeviceIdentifiersPolicyServiceHookHandle())
+            hookServiceList.add(IStorageStatsManagerHookHandle())
         }
 
         if (BuildCompat.isAtLeastPie) {
-            list.add(ActivityTaskManagerHookHandle())
+            hookServiceList.add(ActivityTaskManagerHookHandle())
         }
-
-        logger.d("actTask = %s", HIActivityTaskManager.Stub.asInterface.call(HServiceManager.getService.call("activity_task")))
-        list.forEach {
-            it.initHook()
+        hookServiceList.forEach {
+            logger.d("hookHandle#isHook = %s >> %s", it.isHooked(), it)
+            if (!it.isHooked()){
+                it.initHook()
+            }
         }
 //        // hook 系统文件重定向
 //        addInjector(OsStub())
@@ -112,14 +105,13 @@ internal object HookManager {
     }
 
     fun onBindApplicationHook(){
-        LibCoreOsHookHandle().initHook()
         VmCore.nativeHook()
     }
 
     @Deprecated("test")
     fun nativeHook() {
         logger.e(">> 第一次Hook之后加载So库Native方法")
-        NativeLib.kotlinDynamicRegister()
+//        NativeLib.kotlinDynamicRegister()
 //        VmCore.nativeHook()
 //        logger.e(">> 第二次Hook之后调用Native方法")
 //        NativeLib.kotlinStaticRegister()

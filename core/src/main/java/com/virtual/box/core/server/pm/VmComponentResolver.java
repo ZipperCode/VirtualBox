@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.os.Debug;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;

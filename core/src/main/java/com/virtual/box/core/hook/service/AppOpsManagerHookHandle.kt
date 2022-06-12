@@ -1,19 +1,14 @@
 package com.virtual.box.core.hook.service
 
-import android.os.IBinder
-import com.virtual.box.reflect.android.os.HServiceManager
-import com.virtual.box.reflect.com.android.internal.app.HIAppOpsService
-import android.os.Build
-import android.app.SyncNotedAppOp
-import android.os.IInterface
-import android.os.RemoteCallback
-import android.app.AsyncNotedAppOp
 import android.content.Context
+import android.os.*
 import androidx.annotation.RequiresApi
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.hook.core.MethodHandle
+import com.virtual.box.reflect.android.os.HServiceManager
+import com.virtual.box.reflect.com.android.internal.app.HIAppOpsService
+import java.lang.reflect.Method
 
 /**
  * @author zhangzhipeng
@@ -30,7 +25,12 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
     }
 
     override fun isHooked(): Boolean {
-        return getOriginObject() !== proxyInvocation
+        return getOriginObject() == proxyInvocation
+    }
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
+        logger.e("AppOpsInvoke = %s", method)
+        return super.invoke(proxy, method, args)
     }
 
     fun checkOperation(methodHandle: MethodHandle, code: Int, uid: Int, packageName: String?): Int {
@@ -42,19 +42,19 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
     fun noteOperation(
         methodHandle: MethodHandle, code: Int, uid: Int, packageName: String?, attributionTag: String?,
         shouldCollectAsyncNotedOp: Boolean, message: String?, shouldCollectMessage: Boolean
-    ): SyncNotedAppOp? {
-        logger.e("noteOperation#packageName = %s", packageName)
+    ): Any? {
+        logger.e("noteOperation#packageName = %s, uid = %s, sysUid = %s", packageName, uid, Process.myUid())
         return methodHandle.invokeOriginMethod(
             arrayOf(
                 code,
-                uid,
+                Process.myUid(),
                 hostPkg,
                 attributionTag,
                 shouldCollectAsyncNotedOp,
                 message,
                 shouldCollectMessage
             )
-        ) as SyncNotedAppOp?
+        )
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
@@ -63,7 +63,7 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
         attributionTag: String?, startIfModeDefault: Boolean,
         shouldCollectAsyncNotedOp: Boolean, message: String?, shouldCollectMessage: Boolean,
         attributionFlags: Int, attributionChainId: Int
-    ): SyncNotedAppOp? {
+    ): Any? {
         logger.e("startOperation#packageName = %s", packageName)
         return methodHandle.invokeOriginMethod(
             arrayOf(
@@ -71,7 +71,7 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
                 startIfModeDefault, shouldCollectAsyncNotedOp, message, shouldCollectMessage,
                 attributionFlags, attributionChainId
             )
-        ) as SyncNotedAppOp?
+        )
     }
 
     fun finishOperation(
@@ -107,7 +107,7 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
      */
     fun reportRuntimeAppOpAccessMessageAndGetConfig(
         methodHandle: MethodHandle, packageName: String?,
-        appOp: SyncNotedAppOp?, message: String?
+        appOp: Any?, message: String?
     ): Any? {
         logger.e("reportRuntimeAppOpAccessMessageAndGetConfig#packageName = %s", packageName)
         return methodHandle.invokeOriginMethod(arrayOf(hostPkg, appOp, message))

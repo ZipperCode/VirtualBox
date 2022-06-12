@@ -29,7 +29,7 @@ class ActivityTaskManagerHookHandle : BaseBinderHookHandle("activity_task") {
     }
 
     override fun isHooked(): Boolean {
-        return HServiceManager.getService.call("activity_task") !== this
+        return HServiceManager.getService.call("activity_task") == this
     }
 
     override fun hookInject(target: Any, proxy: Any) {

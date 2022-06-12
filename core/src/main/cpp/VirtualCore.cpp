@@ -18,7 +18,6 @@ static VirtualCore *gVmCore;
 bool hasInit = false;
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
-    ALOGD(">> VirtualCore JNI OnLoad");
     gVmCore = new VirtualCore(vm);
     return registerNativeMethod(vm);
 }

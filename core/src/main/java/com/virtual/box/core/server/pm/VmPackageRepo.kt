@@ -3,22 +3,20 @@ package com.virtual.box.core.server.pm
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.*
-import android.os.Debug
 import android.os.Parcelable
+import android.os.UserHandle
 import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
-import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.server.pm.data.VmPackageDataSource
 import com.virtual.box.core.server.pm.data.VmPackageInfoDataSource
 import com.virtual.box.core.server.pm.data.VmPackageResolverDataSource
 import com.virtual.box.core.server.pm.entity.VmPackageConfigInfo
 import com.virtual.box.core.server.pm.resolve.VmPackage
-import com.virtual.box.reflect.android.app.HActivityThread.ActivityClientRecord.packageInfo
-import com.virtual.box.reflect.android.content.pm.HActivityInfo.applicationInfo
+import com.virtual.box.core.server.user.BUserHandle
+import com.virtual.box.core.server.user.VmUserManagerService
 import java.io.File
 
 /**
@@ -137,7 +135,6 @@ class VmPackageRepo(
         return list
     }
 
-
     fun queryIntentServices(intent: Intent, resolvedType: String?, flags: Int, userId: Int): List<ResolveInfo> {
         var resolverIntent: Intent? = intent
         var comp = resolverIntent?.component
@@ -214,6 +211,17 @@ class VmPackageRepo(
         return emptyList()
     }
 
+    fun queryContentProviders(processName: String?, uid: Int, flags: Int, metaDataKey: String?): List<ProviderInfo> {
+        val userId: Int = if (processName != null) BUserHandle.getUserId(uid) else BUserHandle.getCallingUserId()
+//        if (VmUserManagerService.exists(userId)){
+//            return emptyList()
+//        }
+
+        val list = vmPackageResolver.queryProviders(processName, metaDataKey, flags, userId)
+        list.sortBy { it.initOrder }
+        return list
+    }
+
     fun resolveContentProvider(authority: String?, flags: Int, userId: Int): ProviderInfo? {
         return vmPackageResolver.queryProvider(authority, flags, userId)
     }
@@ -221,6 +229,11 @@ class VmPackageRepo(
     fun getInstrumentationInfo(className: ComponentName, flags: Int): InstrumentationInfo? {
         val packageName = className.packageName
         val loadInstallVmPackageInfoLock = vmPackageInfoDataSource.loadInstallVmPackageInfoLock(packageName)
+        // TODO system PMS fix
+        //    info.primaryCpuAbi = AndroidPackageUtils.getPrimaryCpuAbi(pkg, pkgSetting);
+        //    info.secondaryCpuAbi = AndroidPackageUtils.getSecondaryCpuAbi(pkg, pkgSetting);
+        //    info.nativeLibraryDir = pkg.getNativeLibraryDir();
+        //    info.secondaryNativeLibraryDir = pkg.getSecondaryNativeLibraryDir();
         if (loadInstallVmPackageInfoLock != null){
             return loadInstallVmPackageInfoLock.instrumentation.find { it.name == className.className }
         }

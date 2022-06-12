@@ -1,5 +1,8 @@
 package com.virtual.box.core.hook
 
+import android.Manifest
+import android.os.Debug
+import android.util.Log
 import com.virtual.box.base.ext.kotlinInvokeOrigin
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -11,7 +14,8 @@ import java.lang.reflect.Proxy
 
 abstract class BaseHookHandle : InvocationHandler, IInjectHook {
 
-    private val logger = Logger.Companion.getLogger(L.HOOK_TAG,"BaseHookHandle")
+    private val logger = Logger.Companion.getLogger(L.HOOK_TAG, "BaseHookHandle")
+
     @JvmField
     protected var hostPkg: String = VirtualBox.get().hostPkg
 
@@ -26,50 +30,57 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
         val methodIdentifier = method.name
         val methodParamIdentifier = getMethodParamIdentifier(method)
         val identifier = "$methodIdentifier#$methodParamIdentifier"
-        if (proxyTargetMethodCache.containsKey(identifier)){
-            return proxyTargetMethodCache[identifier]!!.invoke(this, target!!, method, args)
+        if (proxyTargetMethodCache.containsKey(identifier)) {
+            return proxyTargetMethodCache[identifier]!!.invoke1(this, target!!, method, args)
         }
-        return kotlinInvokeOrigin(target!!, method, args)
+        return method.kotlinInvokeOrigin(target!!, args)
     }
 
-    protected open fun kotlinInvokeOrigin(proxy: Any, method: Method, args: Array<out Any?>?): Any?{
+    protected open fun kotlinInvokeOrigin(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
         return method.kotlinInvokeOrigin(target!!, args)
     }
 
     override fun initHook() {
         try {
-            target = getOriginObject() ?: return
-            if (target is Proxy){
+            target = getOriginObject()
+            if (target == null) {
+                logger.i("initHook#fail cls = %s target == null", this)
+                return
+            }
+            if (target is Proxy) {
+                logger.i("initHook#target is Proxy => %s", this)
                 return
             }
             proxyInvocation = Proxy.newProxyInstance(
                 target!!.javaClass.classLoader,
                 getAllInterface(target!!.javaClass),
                 this
-            ) ?: return
+            )
+
+            if (proxyInvocation == null) {
+                logger.i("initHook#fail cls = %s proxyInvocation == null", this)
+                return
+            }
             val selfDeclareMethods = javaClass.declaredMethods
             val proxyDeclareMethods = proxyInvocation!!.javaClass.declaredMethods
-
             for (selfDeclareMethod in selfDeclareMethods) {
                 for (proxyDeclareMethod in proxyDeclareMethods) {
                     selfDeclareMethod.isAccessible = true
                     val methodIdentifier = selfDeclareMethod.name
-                    if (methodIdentifier == proxyDeclareMethod.name){
+                    if (methodIdentifier == proxyDeclareMethod.name) {
                         val selfMethodParamIdentifier = getSelfMethodParamIdentifier(selfDeclareMethod)
                         val methodParamIdentifier = getMethodParamIdentifier(proxyDeclareMethod)
                         val selfIdentifier = "$methodIdentifier#$selfMethodParamIdentifier"
                         val proxyIdentifier = "$methodIdentifier#$methodParamIdentifier"
-                        if (selfIdentifier == proxyIdentifier){
+                        if (selfIdentifier == proxyIdentifier) {
                             val methodHookInfo = MethodHookInfo(selfDeclareMethod)
                             proxyTargetMethodCache[proxyIdentifier] = methodHookInfo
                         }
-
                     }
                 }
             }
-
             hookInject(target!!, proxyInvocation!!)
-        }catch (e: Throwable){
+        } catch (e: Throwable) {
             L.printStackTrace(e)
         }
     }
@@ -96,7 +107,7 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
         }
     }
 
-    private fun getSelfMethodParamIdentifier(method: Method): String{
+    private fun getSelfMethodParamIdentifier(method: Method): String {
         return "${method.parameterTypes.size - 1}"
 //        val paramType = method.parameterTypes
 //        val newParamType = arrayOfNulls<Any>(paramType.size - 1)
@@ -106,7 +117,7 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
 //        return newParamType.contentToString()
     }
 
-    private fun getMethodParamIdentifier(method: Method): String{
+    private fun getMethodParamIdentifier(method: Method): String {
 //        return method.parameterTypes.contentToString()
         return "${method.parameterTypes.size}"
     }

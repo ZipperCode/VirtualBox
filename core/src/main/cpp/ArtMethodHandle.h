@@ -14,6 +14,8 @@ class ArtMethodHandle{
 private:
     static JNIEnv* sJniEnv;
     static int sAndroidLevel;
+    static jclass sExecutableClass;
+    static jfieldID sArtMethodFieldId;
 public:
     static bool sInitArtMethodOffsetStatus;
     static uint32_t sArtMethodAccFlagOffset;

@@ -27,43 +27,76 @@ class MethodHookInfo(
         var result: Any? = null
         val curProxyMethod1Ptr = originArtMethod
         val curTargetMethodPtr = HExecutable.artMethod.get(method)
-        synchronized(this){
-            var hookResult: Boolean = false
-            val holderPtr = VmCore.replaceMethod(curProxyMethod1Ptr, curTargetMethodPtr)
-            val methodHandle = MethodHandle(
-                originObj, method, args, holderPtr, curTargetMethodPtr
-            )
-            var throwable: Throwable? = null
-            try {
-                result = if (args == null){
-                    targetStubMethod.invoke(proxyObj, methodHandle)
-                }else{
-                    targetStubMethod.invoke(proxyObj, methodHandle, *args)
-                }
-                hookResult = true
-            } catch (t: Throwable){
-                if (t.cause is CalledOriginMethodException){
-                    Log.e("HOOK", Log.getStackTraceString(t.cause!!.cause!!))
-                    throw t.cause!!.cause!!
-                }
-                throwable = t
-                hookResult = false
-            }finally {
-                if (!methodHandle.hasRestoreMethod.get()){
-                    VmCore.restoreMethod(holderPtr, curTargetMethodPtr)
-                    HExecutable.artMethod.set(targetStubMethod, curTargetMethodPtr)
-                }else{
-                    if (throwable != null){
-                        throw throwable
+        synchronized(originArtMethod){
+            synchronized(method){
+                var hookResult: Boolean = false
+                val holderPtr = VmCore.replaceMethod(curProxyMethod1Ptr, curTargetMethodPtr)
+                val methodHandle = MethodHandle(
+                    originObj, method, args, holderPtr, curTargetMethodPtr
+                )
+                var throwable: Throwable? = null
+                try {
+                    result = if (args == null){
+                        targetStubMethod.invoke(proxyObj, methodHandle)
+                    }else{
+                        targetStubMethod.invoke(proxyObj, methodHandle, *args)
                     }
+                    hookResult = true
+                } catch (t: Throwable){
+                    if (t.cause is CalledOriginMethodException){
+                        throw t.cause!!.cause!!
+                    }
+                    throwable = t
+                    hookResult = false
+                }finally {
+                    if (!methodHandle.hasRestoreMethod.get() || HExecutable.artMethod.get(method) == curProxyMethod1Ptr){
+                        VmCore.restoreMethod(holderPtr, curTargetMethodPtr)
+                        HExecutable.artMethod.set(targetStubMethod, curProxyMethod1Ptr)
+                    }else{
+                        if (throwable != null){
+                            throw throwable
+                        }
+                    }
+                    L.printStackTrace(throwable)
                 }
-                L.printStackTrace(throwable)
+                if (hookResult){
+                    return result
+                }
+                return targetStubMethod.kotlinInvokeOrigin(originObj, args)
             }
-            if (hookResult){
-                return result
-            }
-            return targetStubMethod.kotlinInvokeOrigin(originObj, args)
         }
+    }
+
+    fun invoke1(proxyObj: Any?, originObj: Any?, method: Method, args: Array<out Any?>?): Any?{
+        var result: Any? = null
+        val methodHandle = MethodHandle(
+            originObj, method, args
+        )
+        var throwable: Throwable? = null
+        var hookResult: Boolean = false
+        try {
+            result = if (args == null){
+                targetStubMethod.invoke(proxyObj, methodHandle)
+            }else{
+                targetStubMethod.invoke(proxyObj, methodHandle, *args)
+            }
+            hookResult = true
+        } catch (t: Throwable){
+            if (t.cause is CalledOriginMethodException){
+                throw t.cause!!.cause!!
+            }
+            throwable = t
+            hookResult = false
+        }finally {
+            if (throwable != null){
+                throw throwable
+            }
+            L.printStackTrace(throwable)
+        }
+        if (hookResult){
+            return result
+        }
+        return method.kotlinInvokeOrigin(originObj, args)
     }
 
     override fun toString(): String {

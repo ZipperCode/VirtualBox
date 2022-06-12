@@ -179,4 +179,11 @@ object L {
                 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         }
     }
+
+    @JvmStatic
+    fun nativeLogD(format: String, vararg args: Any?){
+        if (AppHelper.isDebug){
+            Log.println(Log.DEBUG, "VirtualBox", String.format(format, args))
+        }
+    }
 }

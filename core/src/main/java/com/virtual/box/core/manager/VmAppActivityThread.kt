@@ -1,15 +1,14 @@
 package com.virtual.box.core.manager
 
 import android.annotation.SuppressLint
-import android.app.ActivityThread
-import android.app.Application
-import android.app.Instrumentation
-import android.app.LoadedApk
+import android.app.*
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ProviderInfo
+import android.content.pm.ServiceInfo
 import android.graphics.Compatibility
 import android.os.*
 import android.util.ArraySet
@@ -18,33 +17,30 @@ import androidx.annotation.MainThread
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.BuildConfig
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.helper.IoHelper
 import com.virtual.box.core.helper.ProviderHelper
-import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.delegate.ContentProviderStub
 import com.virtual.box.core.server.am.IVmActivityThread
 import com.virtual.box.reflect.MirrorReflection
-import com.virtual.box.reflect.android.app.HActivityThread
-import com.virtual.box.reflect.android.app.HContextImpl
-import com.virtual.box.reflect.android.app.HLoadedApk
-import com.virtual.box.reflect.android.app.HResourcesManager
+import com.virtual.box.reflect.android.app.*
 import com.virtual.box.reflect.android.content.HContentProviderClient
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
 import com.virtual.box.reflect.android.provider.HFontsContract
+import com.virtual.box.reflect.android.util.HSingleton
 import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
 import java.io.File
+import java.lang.ref.WeakReference
 
 /**
  * 虚拟进程的ActivityThread模拟实现
  *
  */
 @SuppressLint("StaticFieldLeak")
-internal object VmActivityThread : IVmActivityThread.Stub() {
+internal object VmAppActivityThread : IVmActivityThread.Stub() {
 
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmApplicationManager")
 
@@ -112,9 +108,10 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         if (!isInit){
             handleBindApplication(providerInfo.packageName, providerInfo.processName, currentProcessVmUserId)
         }
+        Debug.waitForDebugger()
         val split = providerInfo.authority.split(";").toTypedArray()
         for (auth in split) {
-            val contentProviderClient = mContext.contentResolver.acquireContentProviderClient(auth)
+            val contentProviderClient = mContext.contentResolver.acquireContentProviderClient(auth) ?: continue
             val iInterface: IInterface = HContentProviderClient.mContentProvider.get(contentProviderClient) ?: continue
             return iInterface.asBinder()
         }
@@ -145,12 +142,70 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         }
     }
 
+//    fun handleCreateAppService(createServiceData: Any): Boolean{
+//        val serviceInfo = HActivityThread.CreateServiceData.info.get(createServiceData)
+//        if (!isInit || isProxyOrHostService(serviceInfo)){
+//            return false
+//        }
+//        val vmPid = vmAppConfig!!.getVmPidByProcess(serviceInfo.packageName)
+//
+//        val intent = Intent()
+//        intent.component = ComponentName(mVmPackageName, serviceInfo.name)
+//        VmActivityManager.startService(intent, null, false, vmAppConfig!!.userId)
+//        return true
+//    }
+//
+//    private fun isProxyOrHostService(serviceInfo: ServiceInfo): Boolean{
+//        val vmPid = vmAppConfig!!.getVmPidByProcess(serviceInfo.packageName)
+//        if (serviceInfo.packageName == VirtualBox.get().hostPkg){
+//            return true
+//        }
+//        return serviceInfo.name != ProxyManifest.getProxyService(vmPid)
+//                && serviceInfo.name != ProxyManifest.getProxyJobService(vmPid)
+//    }
+
+    fun handleCreateVmService(serviceInfo: ServiceInfo, token: IBinder): Service?{
+        if (!isInit){
+            return null
+        }
+        val serviceInstance = try {
+            try {
+                Class.forName(serviceInfo.name).newInstance()
+            }catch (e: ClassNotFoundException){
+                val classLoader = getClassLoader(serviceInfo.packageName)
+                classLoader?.loadClass(serviceInfo.name)!!
+            }
+        }catch (e: Exception){
+            logger.e(e)
+            null
+        }
+
+        if (serviceInstance == null){
+            logger.e("unable newInstance service: %s", serviceInfo.name)
+            return null
+        }
+        val packageContext = VirtualBox.get().hostContext.createPackageContext(serviceInfo.packageName,
+            Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY)
+
+        HContextImpl.mOuterContext.set(packageContext, serviceInstance)
+        HService.attach.call(serviceInstance,
+            packageContext, ActivityThread.currentActivityThread(),
+            serviceInfo.name, token, vmApplication, getIActivityManager())
+        (serviceInstance as Service).onCreate()
+        return serviceInstance
+    }
+
+    override fun schduleStopService(intent: Intent?) {
+        TODO("Not yet implemented")
+    }
+
     @MainThread
     internal fun handleBindApplication(packageName: String, processName: String, userId: Int) {
         logger.i("handleBindApplication > packageName = %s, processName = %s", packageName, processName)
+        logger.i("handleBindApplication > vmAppConfig = %s", vmAppConfig)
 
-        currentProcessVmUserId = vmAppConfig!!.userId
-        val packageInfo = VmPackageManager.getPackageInfo(
+        currentProcessVmUserId = vmAppConfig?.userId ?: 0
+        val packageInfo = VmAppPackageManager.getPackageInfo(
             packageName, PackageManager.GET_ACTIVITIES
                     or PackageManager.GET_SERVICES
                     or PackageManager.GET_PROVIDERS
@@ -204,8 +259,6 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
             Compatibility.setTargetSdkVersion(loadedApk.targetSdkVersion);
         }
 
-        // 计算函数偏移并hook native函数
-        VmCore.init(Build.VERSION.SDK_INT, BuildConfig.DEBUG)
         IoHelper.enableRedirect(packageContext, applicationInfo)
         // 替换掉ActivityThread.AppBindData的信息为插件的信息
 
@@ -224,7 +277,7 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
             logger.e(e)
         }
         this.vmApplication = application
-        HookManager.onBindApplicationHook()
+        AppHookManager.onBindApplicationHook()
         // application生成后，需要处理插件应用中的ContentProvider，并且调用Application的onCreate方法
         if (this.vmApplication != null) {
             logger.d("插件Application初始化完成，获取插件ContentProvider进行安装")
@@ -245,9 +298,15 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
     private fun installProviders(providers: Array<ProviderInfo>, processName: String) {
         ProviderHelper.cleanAndInitProvider()
         if (providers.isNotEmpty()) {
-            ActivityThread.currentActivityThread().installSystemProviders(
-                providers.filter { it.processName == processName }.toMutableList()
-            )
+            providers.forEach {
+                try {
+                    ActivityThread.currentActivityThread().installSystemProviders(
+                        mutableListOf(it)
+                    )
+                }catch (e: Exception){
+                    L.printStackTrace(e)
+                }
+            }
             val providerMap = HActivityThread.mProviderMap.get(ActivityThread.currentActivityThread())
             for (mutableEntry in providerMap) {
                 val value = mutableEntry.value
@@ -307,5 +366,24 @@ internal object VmActivityThread : IVmActivityThread.Stub() {
         return null
     }
 
+    fun getClassLoader(packageName: String): ClassLoader?{
+        var targetClassLoader: ClassLoader? = null
+        val resources = HActivityThread.mPackages[ActivityThread.currentActivityThread()]
+        if (resources != null) {
+            val loadApkRef = resources[packageName] as WeakReference<*>?
+            if (loadApkRef?.get() != null) {
+                targetClassLoader = HLoadedApk.mClassLoader[loadApkRef.get()]
+            }
+        }
+        return targetClassLoader
+    }
 
+    private fun getIActivityManager(): Any{
+        val iActivityManager: Any? = if (BuildCompat.isAtLeastOreo) {
+            HActivityManager.IActivityManagerSingleton.get()
+        } else {
+            HActivityManagerNative.gDefault.get()
+        }
+        return HSingleton.get.call(iActivityManager)
+    }
 }

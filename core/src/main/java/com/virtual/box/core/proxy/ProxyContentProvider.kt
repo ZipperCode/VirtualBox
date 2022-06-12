@@ -9,8 +9,7 @@ import android.os.Bundle
 import android.os.Process
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.core.entity.VmAppConfig
-import com.virtual.box.core.entity.VmProcessRecord
-import com.virtual.box.core.manager.VmActivityThread
+import com.virtual.box.core.manager.VmAppActivityThread
 import com.virtual.box.core.server.VmApplicationService
 
 /**
@@ -50,10 +49,10 @@ open class ProxyContentProvider : ContentProvider() {
         if (method == IPC_VM_INIT_METHOD_NAME && extras != null) {
             extras.classLoader = VmAppConfig::class.java.classLoader
             val appConfig: VmAppConfig = extras.getParcelable(VmAppConfig.IPC_BUNDLE_KEY)!!
-            VmActivityThread.initProcessAppConfig(appConfig)
+            VmAppActivityThread.initProcessAppConfig(appConfig)
             val bundle = Bundle()
             // 进程启动后返回VmActivityThread引用
-            bundle.putBinder(IPC_VM_BINDER_HANDLE_KEY, VmActivityThread)
+            bundle.putBinder(IPC_VM_BINDER_HANDLE_KEY, VmAppActivityThread)
             // 返回调用者pid和uid，确定调用来源
             val callingPid = Binder.getCallingPid()
             val callingUid = Binder.getCallingUid()

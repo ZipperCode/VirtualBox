@@ -40,7 +40,7 @@ public class AppWidgetServiceHookHandle extends BaseBinderHookHandle {
 
     @Override
     public boolean isHooked() {
-        return HServiceManager.getService.call(Context.APPWIDGET_SERVICE) != this;
+        return HServiceManager.getService.call(Context.APPWIDGET_SERVICE) == this;
     }
 
     /**

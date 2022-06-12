@@ -13,6 +13,7 @@ HOOK_JNI(jboolean, createFileExclusively0, JNIEnv *env, jobject obj, jstring pat
         ALOGD(">> Hook 创建文件：path = %s", pathStr)
         env->ReleaseStringUTFChars(path, pathStr);
     }
+
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     return orig_createFileExclusively0(env, obj, redirect);
 }
@@ -25,7 +26,7 @@ HOOK_JNI(jboolean, createFileExclusively0, JNIEnv *env, jobject obj, jstring pat
  * Signature: (Ljava/io/File;)[Ljava/lang/String;
  */
 HOOK_JNI(jobjectArray, list0, JNIEnv *env, jobject obj, jobject file) {
-    ALOGE(">> UnixFileSystem#list0 > obj = %s, file = %s", obj, file)
+    ALOGE(">> UnixFileSystem#list0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_list0(env, obj, redirect);
 }
@@ -37,7 +38,7 @@ HOOK_JNI(jobjectArray, list0, JNIEnv *env, jobject obj, jobject file) {
  * Method:    createDirectory0
  * Signature: (Ljava/io/File;)Z
  */
-HOOK_JNI(jboolean, createDirectory0, JNIEnv *env, jobject obj, __attribute__((unused)) jobject filePath) {
+HOOK_JNI(jboolean, createDirectory0, JNIEnv *env, jobject obj, jobject filePath) {
     jobject redirect = IoRedirect::handleRedirectPath(env, filePath);
     return orig_createDirectory0(env, obj, redirect);
 }
@@ -50,6 +51,7 @@ HOOK_JNI(jboolean, createDirectory0, JNIEnv *env, jobject obj, __attribute__((un
  * Signature: (Ljava/io/File;J)Z
  */
 HOOK_JNI(jboolean, setLastModifiedTime0, JNIEnv *env, jobject obj, jobject file, jobject time) {
+    ALOGE(">> UnixFileSystem#setLastModifiedTime0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_setLastModifiedTime0(env, obj, redirect, time);
 }
@@ -62,6 +64,7 @@ HOOK_JNI(jboolean, setLastModifiedTime0, JNIEnv *env, jobject obj, jobject file,
  * Signature: (Ljava/io/File;)J
  */
 HOOK_JNI(jlong, getLastModifiedTime0, JNIEnv *env, jobject obj, jobject filePath) {
+    ALOGE(">> UnixFileSystem#getLastModifiedTime0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, filePath);
     return orig_getLastModifiedTime0(env, obj, redirect);
 }
@@ -74,6 +77,7 @@ HOOK_JNI(jlong, getLastModifiedTime0, JNIEnv *env, jobject obj, jobject filePath
  * Signature: (Ljava/io/File;)Z
  */
 HOOK_JNI(jboolean, setReadOnly0, JNIEnv *env, jobject obj, jobject file) {
+    ALOGE(">> UnixFileSystem#setReadOnly0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_setReadOnly0(env, obj, redirect);
 }
@@ -84,6 +88,7 @@ HOOK_JNI(jboolean, setReadOnly0, JNIEnv *env, jobject obj, jobject file) {
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 HOOK_JNI(jstring, canonicalize0, JNIEnv *env, jobject obj, jstring path) {
+    ALOGE(">> UnixFileSystem#canonicalize0 ")
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     return orig_canonicalize0(env, obj, redirect);
 }
@@ -94,6 +99,7 @@ HOOK_JNI(jstring, canonicalize0, JNIEnv *env, jobject obj, jstring path) {
  * Signature: (Ljava/lang/String;)I
  */
 HOOK_JNI(jint, getBooleanAttributes0, JNIEnv *env, jobject obj, jstring abspath) {
+    ALOGE(">> UnixFileSystem#getBooleanAttributes0 ")
     jstring redirect = IoRedirect::handleRedirectPath(env, abspath);
     return orig_getBooleanAttributes0(env, obj, redirect);
 }
@@ -105,6 +111,7 @@ HOOK_JNI(jint, getBooleanAttributes0, JNIEnv *env, jobject obj, jstring abspath)
  */
 HOOK_JNI(jboolean, setPermission0, JNIEnv *env, jobject obj, jobject file, jint access,
          jboolean enable, jboolean owneronly) {
+    ALOGE(">> UnixFileSystem#setPermission0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_setPermission0(env, obj, redirect, access, enable, owneronly);
 }
@@ -115,46 +122,35 @@ HOOK_JNI(jboolean, setPermission0, JNIEnv *env, jobject obj, jobject file, jint 
  * Signature: (Ljava/io/File;I)J
  */
 HOOK_JNI(jboolean, getSpace0, JNIEnv *env, jobject obj, jobject file, jint t) {
+    ALOGE(">> UnixFileSystem#getSpace0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_getSpace0(env, obj, redirect, t);
 }
-/*
- * Class:     java_io_UnixFileSystem
- * Method:    getSpace0
- * Signature: (Ljava/io/File;I)J
- */
-HOOK_JNI(jboolean, checkAccess, JNIEnv *env, jobject obj, jboolean access) {
-    ALOGD("UnixFileSystem >> file = %s, access = %u", obj, access);
-    return orig_checkAccess(env, obj, access);
-}
 
 void FileSystemHookHandle::nativeHook(JNIEnv *env) {
-//    handleHook(env, "canonicalize0", "(Ljava/lang/String;)Ljava/lang/String;",
-//               (void *) new_canonicalize0, (void **) (&orig_canonicalize0), false);
-//    handleHook(env, "getLastModifiedTime0", "(Ljava/io/File;)J",
-//               (void *) new_getLastModifiedTime0, (void **) (&orig_getLastModifiedTime0),
-//               false);
-//    handleHook(env, "setPermission0", "(Ljava/io/File;IZZ)Z",
-//               (void *) new_setPermission0, (void **) (&orig_setPermission0), false);
-//    handleHook(env, "createFileExclusively0", "(Ljava/lang/String;)Z",
-//               (void *) new_createFileExclusively0,
-//               (void **) (&orig_createFileExclusively0), false);
-//    handleHook(env, "list0", "(Ljava/io/File;)[Ljava/lang/String;",
-//               (void *) new_list0, (void **) (&orig_list0), false);
-//    handleHook(env, "createDirectory0", "(Ljava/io/File;)Z",
-//               (void *) new_createDirectory0, (void **) (&orig_createDirectory0), false);
-//    // 设置最后修改时间
-//    handleHook(env, "setLastModifiedTime0", "(Ljava/io/File;J)Z",
-//               (void *) new_setLastModifiedTime0, (void **) (&orig_setLastModifiedTime0),
-//               false);
-//    // 设置只读
-//    handleHook(env, "setReadOnly0", "(Ljava/io/File;)Z",
-//               (void *) new_setReadOnly0, (void **) (&orig_setReadOnly0), false);
-//    // 获取文件空间大小
-//    handleHook(env, "getSpace0", "(Ljava/io/File;I)J",
-//               (void *) new_getSpace0, (void **) (&orig_getSpace0), false);
-//    // 检查文件是否存在，
-//    handleHook(env, "checkAccess", "(Ljava/io/File;I)Z",
-//               (void *) new_checkAccess, (void **) (&orig_checkAccess), false);
+    handleHook(env, "canonicalize0", "(Ljava/lang/String;)Ljava/lang/String;",
+               (void *) new_canonicalize0, (void **) (&orig_canonicalize0), false);
+    handleHook(env, "getLastModifiedTime0", "(Ljava/io/File;)J",
+               (void *) new_getLastModifiedTime0, (void **) (&orig_getLastModifiedTime0),
+               false);
+    handleHook(env, "setPermission0", "(Ljava/io/File;IZZ)Z",
+               (void *) new_setPermission0, (void **) (&orig_setPermission0), false);
+    handleHook(env, "createFileExclusively0", "(Ljava/lang/String;)Z",
+               (void *) new_createFileExclusively0,
+               (void **) (&orig_createFileExclusively0), false);
+    handleHook(env, "list0", "(Ljava/io/File;)[Ljava/lang/String;",
+               (void *) new_list0, (void **) (&orig_list0), false);
+    handleHook(env, "createDirectory0", "(Ljava/io/File;)Z",
+               (void *) new_createDirectory0, (void **) (&orig_createDirectory0), false);
+    // 设置最后修改时间
+    handleHook(env, "setLastModifiedTime0", "(Ljava/io/File;J)Z",
+               (void *) new_setLastModifiedTime0, (void **) (&orig_setLastModifiedTime0),
+               false);
+    // 设置只读
+    handleHook(env, "setReadOnly0", "(Ljava/io/File;)Z",
+               (void *) new_setReadOnly0, (void **) (&orig_setReadOnly0), false);
+    // 获取文件空间大小
+    handleHook(env, "getSpace0", "(Ljava/io/File;I)J",
+               (void *) new_getSpace0, (void **) (&orig_getSpace0), false);
 }
 

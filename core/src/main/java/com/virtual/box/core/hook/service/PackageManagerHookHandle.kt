@@ -6,31 +6,27 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.*
 import android.graphics.Bitmap
-import android.os.Build
-import android.os.Bundle
-import android.os.Parcelable
-import android.os.PersistableBundle
+import android.os.*
 import androidx.annotation.RequiresApi
-import com.virtual.box.core.VirtualBox
+import com.virtual.box.base.util.log.L
+import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.hook.core.MethodHandle
-import com.virtual.box.core.manager.VmActivityThread
-import com.virtual.box.core.manager.VmPackageManager
+import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HContextImpl
-import com.virtual.box.reflect.android.os.HServiceManager
 
 /**
  * IPackageManager Hook
  */
 @Suppress("UNUSED")
 class PackageManagerHookHandle : BaseBinderHookHandle("package") {
+
+    private val logger = Logger.getLogger(L.HOOK_TAG, "PackageManagerHookHandle")
+
     override fun getOriginObject(): Any? {
         return HActivityThread.sPackageManager.get(ActivityThread.currentActivityThread())
-    }
-
-    override fun isHooked(): Boolean {
-        return HServiceManager.getService.call(serviceName) != this
     }
 
     override fun hookInject(target: Any, proxy: Any) {
@@ -49,7 +45,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
      * 检查包启动表
      */
     fun checkPackageStartable(methodHandle: MethodHandle, packageName: String?, userId: Int) {
-        val replacePackageName = hostPkg
+        val replacePackageName = packageName
         methodHandle.invokeOriginMethod(arrayOf(replacePackageName, userId))
     }
 
@@ -57,15 +53,15 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
      * 包是否可用
      */
     fun isPackageAvailable(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
-        if (VmPackageManager.isInstalled(packageName, userId)){
+        if (VmAppPackageManager.isInstalled(packageName, userId)) {
             return true
         }
         return methodHandle.invokeOriginMethod(arrayOf(packageName, userId)) as Boolean
     }
 
     fun getPackageInfo(methodHandle: MethodHandle, packageName: String, flags: Int, userId: Int): PackageInfo? {
-        val packageInfo = VmPackageManager.getPackageInfo(packageName, flags, userId)
-        if (packageInfo != null){
+        val packageInfo = VmAppPackageManager.getPackageInfo(packageName, flags, userId)
+        if (packageInfo != null) {
             return packageInfo
         }
         return methodHandle.invokeOriginMethod() as? PackageInfo
@@ -77,8 +73,8 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         versionedPackage: VersionedPackage?,
         flags: Int, userId: Int
     ): PackageInfo? {
-        val packageInfo = VmPackageManager.getPackageInfo(versionedPackage!!.packageName, flags, userId)
-        if (packageInfo != null){
+        val packageInfo = VmAppPackageManager.getPackageInfo(versionedPackage!!.packageName, flags, userId)
+        if (packageInfo != null) {
             return packageInfo
         }
         return methodHandle.invokeOriginMethod() as? PackageInfo
@@ -89,15 +85,14 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getPackageGids(methodHandle: MethodHandle, packageName: String?, flags: Int, userId: Int): IntArray? {
-        return methodHandle.invokeOriginMethod() as IntArray
+        return methodHandle.invokeOriginMethod(arrayOf(hostPkg, flags, userId)) as IntArray
     }
 
-    fun getApplicationInfo(methodHandle: MethodHandle,packageName: String, flags: Int, userId: Int): ApplicationInfo? {
-        if (packageName == VirtualBox.get().hostPkg) {
-            return methodHandle.invokeOriginMethod() as? ApplicationInfo
-        }
-        val applicationInfo = VmPackageManager.getApplicationInfo(packageName, flags, userId)
-        if (applicationInfo != null){
+    fun getApplicationInfo(methodHandle: MethodHandle, packageName: String, flags: Int, userId: Int): ApplicationInfo? {
+        logger.i("getApplication#packageName = %s", packageName)
+        val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, flags, userId)
+        logger.i("getApplication#applicationInfo = %s", applicationInfo)
+        if (applicationInfo != null) {
             return applicationInfo
         }
         return methodHandle.invokeOriginMethod() as? ApplicationInfo
@@ -107,143 +102,157 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
      * @return the target SDK for the given package name, or -1 if it cannot be retrieved
      */
     fun getTargetSdkVersion(methodHandle: MethodHandle, packageName: String): Int {
-        if (packageName == VirtualBox.get().hostPkg){
-            return methodHandle.invokeOriginMethod() as Int
-        }
-        val applicationInfo = VmPackageManager.getApplicationInfo(packageName, 0, VmActivityThread.currentProcessVmUserId)
-        if (applicationInfo != null){
+        val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, 0, VmAppActivityThread.currentProcessVmUserId)
+        if (applicationInfo != null) {
             return applicationInfo.targetSdkVersion
         }
         return methodHandle.invokeOriginMethod() as Int
     }
 
     fun getActivityInfo(methodHandle: MethodHandle, className: ComponentName, flags: Int, userId: Int): ActivityInfo? {
-        val activityInfo = VmPackageManager.getActivityInfo(className, flags, userId)
-        if (activityInfo != null){
+        val activityInfo = VmAppPackageManager.getActivityInfo(className, flags, userId)
+        if (activityInfo != null) {
             return activityInfo
         }
         return methodHandle.invokeOriginMethod() as? ActivityInfo
     }
 
-    fun activitySupportsIntent(methodHandle: MethodHandle,
+    fun activitySupportsIntent(
+        methodHandle: MethodHandle,
         className: ComponentName?, intent: Intent?,
         resolvedType: String?
     ): Boolean {
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    fun getReceiverInfo(methodHandle: MethodHandle,className: ComponentName?, flags: Int, userId: Int): ActivityInfo? {
-        val receiverInfo = VmPackageManager.getReceiverInfo(className, flags, userId)
-        if (receiverInfo != null){
+    fun getReceiverInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ActivityInfo? {
+        val receiverInfo = VmAppPackageManager.getReceiverInfo(className, flags, userId)
+        if (receiverInfo != null) {
             return receiverInfo
         }
         return methodHandle.invokeOriginMethod() as? ActivityInfo
     }
 
-    fun getServiceInfo(methodHandle: MethodHandle,className: ComponentName?, flags: Int, userId: Int): ServiceInfo? {
-        val serviceInfo = VmPackageManager.getServiceInfo(className, flags, userId)
-        if (serviceInfo != null){
+    fun getServiceInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ServiceInfo? {
+        val serviceInfo = VmAppPackageManager.getServiceInfo(className, flags, userId)
+        if (serviceInfo != null) {
             return serviceInfo
         }
         return methodHandle.invokeOriginMethod() as? ServiceInfo
     }
 
-    fun getProviderInfo(methodHandle: MethodHandle,className: ComponentName?, flags: Int, userId: Int): ProviderInfo? {
-        val providerInfo = VmPackageManager.getProviderInfo(className, flags, userId)
-        if (providerInfo != null){
+    fun getProviderInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ProviderInfo? {
+        val providerInfo = VmAppPackageManager.getProviderInfo(className, flags, userId)
+        if (providerInfo != null) {
             return providerInfo
         }
         return methodHandle.invokeOriginMethod() as? ProviderInfo
     }
 
-    fun checkSignatures(methodHandle: MethodHandle,pkg1: String?, pkg2: String?): Int {
+    /**
+     * check PackageSetting1.getSigningDetails == PackageSetting2.getSigningDetails
+     */
+    fun checkSignatures(methodHandle: MethodHandle, pkg1: String?, pkg2: String?): Int {
         return methodHandle.invokeOriginMethod() as Int
     }
 
-    fun checkUidSignatures(methodHandle: MethodHandle,uid1: Int, uid2: Int): Int {
+    fun checkUidSignatures(methodHandle: MethodHandle, uid1: Int, uid2: Int): Int {
         return methodHandle.invokeOriginMethod() as Int
     }
 
-    fun resolveIntent(methodHandle: MethodHandle,intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ResolveInfo? {
-        val resolveIntent = VmPackageManager.resolveIntent(intent, resolvedType, flags, userId)
-        if (resolveIntent != null){
+    fun resolveIntent(methodHandle: MethodHandle, intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ResolveInfo? {
+        val resolveIntent = VmAppPackageManager.resolveIntent(intent, resolvedType, flags, userId)
+        if (resolveIntent != null) {
             return resolveIntent
         }
         return methodHandle.invokeOriginMethod() as? ResolveInfo
     }
 
-    fun findPersistentPreferredActivity(methodHandle: MethodHandle,intent: Intent?, userId: Int): ResolveInfo? {
+    fun findPersistentPreferredActivity(methodHandle: MethodHandle, intent: Intent?, userId: Int): ResolveInfo? {
         return methodHandle.invokeOriginMethod() as? ResolveInfo
     }
 
-    fun queryIntentActivities(methodHandle: MethodHandle,
+    fun queryIntentActivities(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentActivities = VmPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
-        if (queryIntentActivities.list.isNotEmpty()){
+        val queryIntentActivities = VmAppPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
+        if (queryIntentActivities.list.isNotEmpty()) {
             return queryIntentActivities
         }
         return methodHandle.invokeOriginMethod() as ParceledListSlice<Parcelable>?
     }
 
-    fun queryIntentActivityOptions(methodHandle: MethodHandle,
-        caller: ComponentName?, specifics: Array<Intent?>?,
-        specificTypes: Array<String?>?, intent: Intent?,
+    fun queryIntentActivityOptions(
+        methodHandle: MethodHandle,
+        caller: ComponentName?, specifics: Array<Intent>?,
+        specificTypes: Array<String>?, intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
+        val queryIntentActivityOptions =
+            VmAppPackageManager.queryIntentActivityOptions(caller, specifics, specificTypes, intent, resolvedType, flags, userId)
+        if (queryIntentActivityOptions.list.isNotEmpty()) {
+            return queryIntentActivityOptions
+        }
         return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
     }
 
-    fun queryIntentReceivers(methodHandle: MethodHandle,
+    fun queryIntentReceivers(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentReceivers = VmPackageManager.queryIntentReceivers(intent, resolvedType, flags, userId)
-        if (queryIntentReceivers.list.isNotEmpty()){
+        val queryIntentReceivers = VmAppPackageManager.queryIntentReceivers(intent, resolvedType, flags, userId)
+        if (queryIntentReceivers.list.isNotEmpty()) {
             return queryIntentReceivers
         }
         return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
     }
 
-    fun resolveService(methodHandle: MethodHandle,
+    fun resolveService(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ResolveInfo? {
-        val resolveService = VmPackageManager.resolveService(intent, resolvedType, flags, userId)
-        if (resolveService != null){
+        val resolveService = VmAppPackageManager.resolveService(intent, resolvedType, flags, userId)
+        if (resolveService != null) {
             return resolveService
         }
         return methodHandle.invokeOriginMethod() as? ResolveInfo
     }
 
-    fun queryIntentServices(methodHandle: MethodHandle,
+    fun queryIntentServices(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentServices = VmPackageManager.queryIntentServices(intent, resolvedType, flags, userId)
-        if (queryIntentServices.list.isNotEmpty()){
+        val queryIntentServices = VmAppPackageManager.queryIntentServices(intent, resolvedType, flags, userId)
+        if (queryIntentServices.list.isNotEmpty()) {
             return queryIntentServices
         }
         return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
     }
 
-    fun queryIntentContentProviders(methodHandle: MethodHandle,
+    fun queryIntentContentProviders(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentContentProviders = VmPackageManager.queryIntentContentProviders(intent, resolvedType, flags, userId)
-        if (queryIntentContentProviders.list.isNotEmpty()){
+        val queryIntentContentProviders = VmAppPackageManager.queryIntentContentProviders(intent, resolvedType, flags, userId)
+        if (queryIntentContentProviders.list.isNotEmpty()) {
             return queryIntentContentProviders
         }
         return methodHandle.invokeOriginMethod() as? ParceledListSlice<Parcelable>
     }
 
-    fun getInstalledPackages(methodHandle: MethodHandle, flags: Int,  userId:Int):ParceledListSlice<*>?{
+    fun getInstalledPackages(methodHandle: MethodHandle, flags: Int, userId: Int): ParceledListSlice<*>? {
+        // TODO
         return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
     }
 
-    fun getLastChosenActivity(methodHandle: MethodHandle,
+    fun getLastChosenActivity(
+        methodHandle: MethodHandle,
         intent: Intent?,
         resolvedType: String?, flags: Int
     ): ResolveInfo? {
@@ -288,6 +297,10 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun resolveContentProvider(methodHandle: MethodHandle, name: String?, flags: Int, userId: Int): ProviderInfo? {
+        val resolveContentProvider = VmAppPackageManager.resolveContentProvider(name, flags, userId)
+        if (resolveContentProvider != null) {
+            return resolveContentProvider
+        }
         // TODO virtual
         return methodHandle.invokeOriginMethod() as ProviderInfo?
     }
@@ -312,7 +325,10 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         methodHandle: MethodHandle,
         processName: String?, uid: Int, flags: Int, metaDataKey: String?
     ): ParceledListSlice<*>? {
-        // TODO include virtual
+        val queryContentProviders = VmAppPackageManager.queryContentProviders(processName, uid, flags, metaDataKey)
+        if (queryContentProviders.list.isNotEmpty()) {
+            return queryContentProviders
+        }
         return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
     }
 
@@ -320,7 +336,13 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         methodHandle: MethodHandle,
         className: ComponentName?, flags: Int
     ): InstrumentationInfo? {
-        // TODO include virtual
+        if (className?.packageName == hostPkg) {
+            return methodHandle.invokeOriginMethod() as InstrumentationInfo?
+        }
+        val instrumentationInfo = VmAppPackageManager.getInstrumentationInfo(className, flags)
+        if (instrumentationInfo != null) {
+            return instrumentationInfo
+        }
         return methodHandle.invokeOriginMethod() as InstrumentationInfo?
     }
 
@@ -328,7 +350,13 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         methodHandle: MethodHandle,
         targetPackage: String?, flags: Int
     ): ParceledListSlice<*>? {
-        // TODO include virtual
+        if (targetPackage == hostPkg) {
+            return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
+        }
+        val queryInstrumentation = VmAppPackageManager.queryInstrumentation(targetPackage, flags)
+        if (queryInstrumentation != null) {
+            return queryInstrumentation;
+        }
         return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
     }
 
@@ -357,15 +385,16 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         methodHandle.invokeOriginMethod()
     }
 
+    /**
+     * PMS没啥特殊测操作
+     */
     fun getInstallerPackageName(methodHandle: MethodHandle, packageName: String?): String? {
         return methodHandle.invokeOriginMethod() as String?
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
-    fun getInstallSourceInfo(methodHandle: MethodHandle, packageName: String?): InstallSourceInfo? {
-        return methodHandle.invokeOriginMethod() as InstallSourceInfo?
-    }
-
+    /**
+     * PMS解析intent返回对应的Activity数量
+     */
     fun getPreferredActivities(
         methodHandle: MethodHandle, outFilters: List<IntentFilter?>?,
         outActivities: List<ComponentName?>?, packageName: String?
@@ -734,9 +763,14 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    fun getBlockUninstallForUser(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
-        return methodHandle.invokeOriginMethod() as Boolean
-    }
+//    fun getBlockUninstallForUser(methodHandle: MethodHandle, packageName: String?, userId: Int): Boolean {
+//        try {
+//            return methodHandle.invokeOriginMethod() as Boolean
+//        }catch (e: RemoteException){
+//            logger.e(e)
+//            return false
+//        }
+//    }
 
     fun getKeySetByAlias(methodHandle: MethodHandle, packageName: String?, alias: String?): Any? {
         return methodHandle.invokeOriginMethod()
@@ -879,8 +913,19 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
 
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun getProperty(methodHandle: MethodHandle, propertyName: String?, packageName: String?, className: String?): PackageManager.Property? {
-        return methodHandle.invokeOriginMethod() as PackageManager.Property?
+    fun getProperty(methodHandle: MethodHandle, propertyName: String?, packageName: String?, className: String?): Any? {
+        return methodHandle.invokeOriginMethod()
     }
 
+    fun getArtManager(methodHandle: MethodHandle): Any? {
+        logger.i("getArtManager before")
+        try {
+            return methodHandle.invokeOriginMethod()
+        } catch (e: Throwable) {
+            logger.e(e)
+            return null
+        }finally {
+            logger.i("getArtManager after")
+        }
+    }
 }

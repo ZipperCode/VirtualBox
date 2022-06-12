@@ -37,7 +37,6 @@ public class HActivityThread {
     public static MirrorReflection.MethodWrapper<IBinder> getApplicationThread = REF.method("getApplicationThread");
     public static MirrorReflection.MethodWrapper<Object> getSystemContext = REF.method("getSystemContext");
 
-
     /**
      * List<ProviderInfo>
      */

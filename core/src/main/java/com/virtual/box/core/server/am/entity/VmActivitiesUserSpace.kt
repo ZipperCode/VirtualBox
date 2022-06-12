@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.os.IBinder
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.manager.VmPackageManager
-import com.virtual.box.core.server.pm.VmPackageManagerService
 
 /**
  * 虚拟的用户活动空间

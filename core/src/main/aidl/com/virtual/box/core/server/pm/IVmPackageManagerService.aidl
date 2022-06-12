@@ -71,4 +71,6 @@ interface IVmPackageManagerService {
 
     ResolveInfo resolveActivity(in Intent intent, int flags, String resolvedType, int userId);
 
+    ParceledListSlice queryContentProviders(String processName, int uid, int flags, String metaDataKey);
+
 }

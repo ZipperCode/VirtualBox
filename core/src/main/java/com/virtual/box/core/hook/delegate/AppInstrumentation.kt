@@ -6,20 +6,16 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.Debug
 import android.os.IBinder
 import android.os.UserHandle
-import androidx.core.content.ContextCompat
-import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.manager.VmActivityManager
-import com.virtual.box.core.manager.VmActivityThread
-import com.virtual.box.core.manager.VmPackageManager
+import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HLoadedApk
 import java.lang.ref.WeakReference
@@ -78,13 +74,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
         return super.newApplication(cl, className, context)
     }
 
-    override fun callActivityOnCreate(activity: Activity, icicle: Bundle?) {
-        if (BuildCompat.isAtLeastS){
-            ComponentFixCompat.fixActivityWithOnCreate(activity)
-        }
-        ComponentFixCompat.fixActivityOrientation(activity)
-        super.callActivityOnCreate(activity, icicle)
-    }
+
 
     @Throws(InstantiationException::class, IllegalAccessException::class, ClassNotFoundException::class)
     override fun newActivity(cl: ClassLoader, className: String, intent: Intent): Activity {
@@ -124,13 +114,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -138,7 +128,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, activity, intent, requestCode)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode)
         }
@@ -162,13 +152,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -176,7 +166,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode)
         }
@@ -203,13 +193,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -217,7 +207,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, str, intent, requestCode,options)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, str, shadowIntent, requestCode,options)
         }
@@ -245,12 +235,12 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_ACTIVITIES,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -258,7 +248,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, options)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, VmActivityThread.currentProcessVmUserId)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, VmAppActivityThread.currentProcessVmUserId)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, options)
         }
@@ -285,13 +275,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -299,7 +289,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode, bundle)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode, bundle)
         }
@@ -329,13 +319,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
-        val resolveInfo = VmPackageManager.resolveActivity(
+        val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmActivityThread.currentProcessVmUserId
+            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -343,7 +333,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle)
         }
 
-        val shadowIntent = VmActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, iBinder, iBinder2, activity, shadowIntent, requestCode, bundle, userHandle)
         }

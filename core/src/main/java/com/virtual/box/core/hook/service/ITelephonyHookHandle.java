@@ -17,7 +17,6 @@ import android.telephony.CellInfo;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.NetworkScanRequest;
 import android.telephony.ServiceState;
-import android.telephony.SignalStrengthUpdateRequest;
 import android.telephony.UiccCardInfo;
 import android.telephony.VisualVoicemailSmsFilterSettings;
 
@@ -915,7 +914,7 @@ public class ITelephonyHookHandle extends BaseBinderHookHandle {
      * Set a SignalStrengthUpdateRequest to receive notification when Signal Strength breach the
      * specified thresholds.
      */
-    void setSignalStrengthUpdateRequest(MethodHandle methodHandle, int subId, SignalStrengthUpdateRequest request,
+    void setSignalStrengthUpdateRequest(MethodHandle methodHandle, int subId, Object request,
                                         String callingPackage){
         methodHandle.invokeOriginMethod(new Object[]{ subId, request, hostPkg });
     }
@@ -923,7 +922,7 @@ public class ITelephonyHookHandle extends BaseBinderHookHandle {
     /**
      * Clear a SignalStrengthUpdateRequest from system.
      */
-    void clearSignalStrengthUpdateRequest(MethodHandle methodHandle, int subId, SignalStrengthUpdateRequest request,
+    void clearSignalStrengthUpdateRequest(MethodHandle methodHandle, int subId, Object request,
                                           String callingPackage){
         methodHandle.invokeOriginMethod(new Object[]{ subId, request, hostPkg });
     }

@@ -3,6 +3,7 @@ package com.virtual.box.core.helper
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.os.Debug
 import com.virtual.box.base.ext.checkAndCreate
 import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.util.log.L
@@ -43,18 +44,27 @@ object IoHelper {
             // /data/data
             rule["/data/data/$packageName"] = packageInfo.dataDir
             rule["/data/user/0/$packageName"] = packageInfo.dataDir
-
-            if (VirtualBox.get().hostContext.externalCacheDir != null && context.externalCacheDir != null) {
-                val external = context.externalCacheDir!!.parentFile!!
-                // sdcard
-                rule["/sdcard/Android/data/$packageName"] = external.absolutePath
-                rule["/sdcard/android/data/$packageName"] = external.absolutePath
-                rule["/storage/emulated/0/android/data/$packageName"] = external.absolutePath
-                rule["/storage/emulated/0/Android/data/$packageName"] = external.absolutePath
-//                rule["/storage/emulated/0/Android/data/$packageName/files"] =
-//                    File(external.absolutePath, "files").absolutePath
-//                rule["/storage/emulated/0/Android/data/$packageName/cache"] =
-//                    File(external.absolutePath, "cache").absolutePath
+            // /storage/emulated/0/Android/data/com.sinyee.babybus.world/cache
+            // /storage/emulated/0/Android/data
+            // /storage/0DE7-2F1C/Android/data/com.sinyee.babybus.world/cache
+            // /sbin/su
+            // /system/bin/su
+            // null/downloadCache
+            // /data
+            // /proc/25168/cmdline
+            // /system/lib
+            // /storage/emulated/0
+            // /system/product/lib
+            // /data/local/tmp/webview-command-line
+            // /system/product/app/webview/webview.apk
+            // /system/lib/libwebviewchromium_plat_support.so
+            // /proc/meminfo
+            if (VirtualBox.get().hostContext.externalCacheDir != null){
+                val external = VirtualBox.get().hostContext.externalCacheDir!!.parentFile!!
+                rule["/sdcard/Android/data/$packageName"] = File(external, "/sdcard/Android/data/$packageName").absolutePath
+                rule["/sdcard/android/data/$packageName"] = File(external, "/sdcard/android/data/$packageName").absolutePath
+                rule["/storage/emulated/0/android/data/$packageName"] = File(external, "/storage/emulated/0/android/data/$packageName").absolutePath
+                rule["/storage/emulated/0/Android/data/$packageName"] = File(external, "/storage/emulated/0/Android/data/$packageName").absolutePath
             }
         }catch (e: Exception){
             L.printStackTrace(e)

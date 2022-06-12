@@ -22,7 +22,7 @@ class VmServiceProvider: ContentProvider() {
     private val logger = Logger.getLogger(L.SERVER_TAG,"VmServiceProvider")
 
     override fun onCreate(): Boolean {
-        logger.d("初始化服务内容提供者")
+        logger.d("服务进程开始启动中。。。")
         MMKV.initialize(context!!)
         // 初始化服务
         VmFileSystem.initSystem(context!!)

@@ -354,6 +354,8 @@
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:exported="false"
             android:process=":p0"
+            android:screenOrientation="behind"
+            android:theme="@android:style/Theme.Translucent"
             android:taskAffinity="${applicationId}.virtualbox.task_affinity_0"/>
 
         <activity
@@ -361,6 +363,8 @@
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:exported="false"
             android:process=":p0"
+            android:screenOrientation="behind"
+            android:theme="@android:style/Theme.Translucent"
             android:taskAffinity="${applicationId}.virtualbox.task_affinity_1"/>
 
 

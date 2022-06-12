@@ -1,6 +1,7 @@
 package com.virtual.box.reflect.android.app;
 
 
+import android.app.ActivityThread;
 import android.app.LoadedApk;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -21,7 +22,5 @@ public class HContextImpl {
     public static MirrorReflection.FieldWrapper<Object> mResourcesManager = REF.field("mResourcesManager");
     public static MirrorReflection.FieldWrapper<Context> mOuterContext = REF.field("mOuterContext");
 
-
-
-
+    public static MirrorReflection.StaticMethodWrapper<Context> createAppContext = REF.staticMethod("createAppContext", ActivityThread.class, LoadedApk.class);
 }

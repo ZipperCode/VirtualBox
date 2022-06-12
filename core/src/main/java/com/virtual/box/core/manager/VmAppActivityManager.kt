@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import android.os.RemoteException
-import com.virtual.box.base.ext.asInt
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -17,7 +16,7 @@ import com.virtual.box.reflect.android.app.servertransaction.HClientTransaction
 import com.virtual.box.reflect.android.app.servertransaction.HLaunchActivityItem
 import java.lang.ref.WeakReference
 
-object VmActivityManager {
+object VmAppActivityManager {
     private val logger = Logger.getLogger(L.HOST_TAG, "VmActivityManager")
 
     private var service: IVmActivityManagrService? = null
@@ -80,8 +79,8 @@ object VmActivityManager {
         val activityInfo = parseOriginRecord.activityInfo
         if(activityInfo != null){
             // bind
-            if (!VmActivityThread.isInit) {
-                VmActivityThread.handleBindApplication(
+            if (!VmAppActivityThread.isInit) {
+                VmAppActivityThread.handleBindApplication(
                     activityInfo.packageName,
                     activityInfo.processName ?: activityInfo.packageName,
                     parseOriginRecord.userId
@@ -136,6 +135,15 @@ object VmActivityManager {
     fun initNewProcess(packageName: String, processName: String, userId: Int): VmAppConfig?{
         return try {
             requireService().initNewProcess(packageName, processName, userId)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
+            null
+        }
+    }
+
+    fun startService(intent: Intent?, resolvedType: String?,requireForeground: Boolean, userId: Int): ComponentName? {
+        return try {
+            requireService().startService(intent, resolvedType,requireForeground, userId)
         }catch (e: RemoteException){
             L.printStackTrace(e)
             null

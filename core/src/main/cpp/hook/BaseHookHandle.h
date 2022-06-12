@@ -11,32 +11,42 @@
   ret (*orig_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)
 
+#define HOOK_PTR(name) reinterpret_cast<void *>(new_##name), \
+    reinterpret_cast<void **>(&orig_##name), false
+#define HOOK_STATIC_PTR(name) reinterpret_cast<void *>(new_##name), \
+    reinterpret_cast<void **>(&orig_##name), true
+
 #include <jni.h>
 #include "utils/log.h"
 #include "utils/modifiers.h"
 #include "IoRedirect.h"
 #include "ArtMethodHandle.h"
 
-class BaseHookHandle{
+class BaseHookHandle {
 protected:
-    const char* mClassName;
-    BaseHookHandle(JNIEnv *env, const char *name): mClassName(name){
+    const char *mClassName;
+    jclass mHookMethod;
+
+    BaseHookHandle(JNIEnv *env, const char *name) : mClassName(name) {
         jclass hookClass = env->FindClass(mClassName);
-        if (hookClass == nullptr){
+        if (hookClass == nullptr) {
             env->ExceptionClear();
+            ALOGE("hookNativeFunc >> findHookClass fial: find class == null")
             return;
         }
+        mHookMethod = reinterpret_cast<jclass>(env->NewGlobalRef(hookClass));
         // 正常情况下so库的加载和某个类一起，所以可以起到初始化so库作用，
         // 至于加载地点不一致的地方，后续再看（系统库一般都很早会加载好）
         jobject initLibLoad = env->AllocObject(hookClass);
-        if (initLibLoad != nullptr){
+        if (initLibLoad != nullptr) {
             env->DeleteLocalRef(initLibLoad);
         }
     }
 
 public:
 
-    virtual void nativeHook(JNIEnv*env) = 0;
+    virtual void nativeHook(JNIEnv *env) = 0;
+
 protected:
     /**
      * hook jni方法
@@ -54,18 +64,22 @@ protected:
     int handleHook(
             JNIEnv *env, const char *method_name, const char *sign,
             void *new_fun, void **orig_fun, bool is_static
-            ){
-        jclass hookClass = env->FindClass(mClassName);
-        if (!hookClass) {
-            ALOGE("hookNativeFunc >> not found class fail: %s %s", mClassName, method_name);
-            env->ExceptionClear();
-            return JNI_FALSE;
+    ) {
+        if (mHookMethod == nullptr){
+            jclass hookClass = env->FindClass(mClassName);
+            if (!hookClass) {
+                ALOGE("hookNativeFunc >> not found class fail: %s %s", mClassName, method_name);
+                env->ExceptionClear();
+                return JNI_FALSE;
+            }
+            mHookMethod = reinterpret_cast<jclass>(env->NewGlobalRef(hookClass));
         }
+
         jmethodID method;
         if (is_static) {
-            method = env->GetStaticMethodID(hookClass, method_name, sign);
+            method = env->GetStaticMethodID(mHookMethod, method_name, sign);
         } else {
-            method = env->GetMethodID(hookClass, method_name, sign);
+            method = env->GetMethodID(mHookMethod, method_name, sign);
         }
         if (!method) {
             env->ExceptionClear();
@@ -77,8 +91,8 @@ protected:
                 {method_name, sign, (void *) new_fun},
         };
         // 检查是否是native方法
-        auto pArtMethod = reinterpret_cast<uint32_t *>(ArtMethodHandle::getArtMethodPtr(env, hookClass, method));
-        ALOGD(">> flags = %s" , prettyJavaAccessFlags(ArtMethodHandle::getAccessFlags(pArtMethod)).c_str())
+        auto pArtMethod = reinterpret_cast<uint32_t *>(ArtMethodHandle::getArtMethodPtr(env, mHookMethod, method));
+//        ALOGD("hookNativeFunc >> flags = %s", prettyJavaAccessFlags(ArtMethodHandle::getAccessFlags(pArtMethod)).c_str())
         if (!ArtMethodHandle::checkNativeMethod(pArtMethod)) {
             ALOGE("hookNativeFunc >> check flags error. class：%s, method：%s", mClassName, method_name);
             return JNI_FALSE;
@@ -87,18 +101,18 @@ protected:
         // 否者调用原方法可能会出现问题
         ArtMethodHandle::clearFastNativeFlag(pArtMethod);
         auto pNativeOffset = pArtMethod + ArtMethodHandle::getArtMethodNativeOffset();
-        ALOGD(">> pNativeOffset Address     = %p", pNativeOffset)
-        ALOGD(">> pNativeOffset Value       = %x", (unsigned int)(*pNativeOffset))
+//        ALOGD("hookNativeFunc >> pNativeOffset Address     = %p", pNativeOffset)
+//        ALOGD("hookNativeFunc >> pNativeOffset Value       = %x", (unsigned int) (*pNativeOffset))
         // 如果JNI方法没有注册，这边拿到的地址将会是art_jni_dlsym_lookup_stub
-        *orig_fun = reinterpret_cast<void*>(*pNativeOffset);
+        *orig_fun = reinterpret_cast<void *>(*pNativeOffset);
         // 拿到art函数指针 赋值到 orig_fun中，完成native方法的hook
         // 将java native方法注册为自定义的方法
-        if (env->RegisterNatives(hookClass, jniNativeMethod, 1) < 0) {
+        if (env->RegisterNatives(mHookMethod, jniNativeMethod, 1) < 0) {
             ALOGE("hookNativeFunc >> jni hook error. class：%s, method：%s", mClassName, method_name);
             return JNI_FALSE;
         }
         // 添加fastNative优化
-        if (ArtMethodHandle::getAndroidLevel() >= __ANDROID_API_O__){
+        if (ArtMethodHandle::getAndroidLevel() >= __ANDROID_API_O__) {
             ArtMethodHandle::addAccessFlags(pArtMethod, kAccFastNative);
         }
         return JNI_TRUE;
@@ -139,7 +153,7 @@ public:
         if ((access_flags & kAccSynchronized) != 0) {
             result += "synchronized ";
         }
-        if ((access_flags & kAccNative) != 0){
+        if ((access_flags & kAccNative) != 0) {
             result += "native";
         }
         return result;

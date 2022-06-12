@@ -26,7 +26,7 @@ abstract class BaseBinderHookHandle : BaseHookHandle, IBinder {
     }
 
     override fun isHooked(): Boolean {
-        return getOriginObject() != proxyInvocation
+        return getOriginObject() == proxyInvocation
     }
 
     override fun hookInject(target: Any, proxy: Any) {

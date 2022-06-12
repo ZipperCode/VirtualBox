@@ -13,6 +13,10 @@
 #define JAVA_FILE_GET_ABSOLUTE_PATH_METHOD_SIGN "()Ljava/lang/String;"
 #define JAVA_FILE_CONSTRUCTOR_PATH_METHOD_SIGN "(Ljava/lang/String;)V"
 
+#define VIRTUAL_PRIVATE_ROOT "/data/user/0/com.virtual.box/files/virtual/"
+#define VIRTUAL_EXTERNAL_ROOT "/data/user/0/com.virtual.box/files/virtual/"
+#define VIRTUAL_EXTERNAL_1_ROOT "/data/user/0/com.virtual.box/files/virtual/"
+
 using namespace std;
 
 class IoRedirect{

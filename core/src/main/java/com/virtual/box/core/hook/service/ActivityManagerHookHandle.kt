@@ -20,9 +20,9 @@ import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
-import com.virtual.box.core.manager.VmActivityManager
-import com.virtual.box.core.manager.VmActivityThread
-import com.virtual.box.core.manager.VmPackageManager
+import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
@@ -58,7 +58,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     override fun isHooked(): Boolean {
-        return HSingleton.mInstance.get() != proxyInvocation
+        return getOriginObject() == proxyInvocation
     }
 
     fun openContentUri(methodHandle: MethodHandle, uriString: String): ParcelFileDescriptor? {
@@ -210,9 +210,9 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         name: String?, userId: Int, stable: Boolean
     ): Any? {
         if (callingPackage == VirtualBox.get().hostPkg){
+            logger.i("getContentProvider#host获取ContentProvider")
             return methodHandle.invokeOriginMethod()
         }
-
         if (ProxyManifest.isProxy(name)){
             logger.i("getContentProvider#是代理Provider，调用源方法")
             return methodHandle.invokeOriginMethod()
@@ -227,24 +227,29 @@ class ActivityManagerHookHandle : BaseHookHandle() {
             ProviderHelper.replaceNewProvider(result)
             return result
         }else{
-
-            val providerInfo = VmPackageManager.resolveContentProvider(
+            logger.i("getContentProvider#获取非系统Provider pks = %s, auth = %s", callingPackage, name)
+            val providerInfo = VmAppPackageManager.resolveContentProvider(
                 name, PackageManager.GET_PROVIDERS,
-                VmActivityThread.currentProcessVmUserId
-            ) ?: return null
+                VmAppActivityThread.currentProcessVmUserId
+            )
+            if (providerInfo == null){
+                logger.e("getContentProvider#VmPMS获取ProviderInfo == null")
+                return null
+            }
+
             logger.i("getContentProvider#解析到Provider = %s", providerInfo)
             val packageName = providerInfo.packageName
             val processName = providerInfo.processName
-            val initNewProcess = VmActivityManager.initNewProcess(packageName, processName, VmActivityThread.currentProcessVmUserId)
+            val initNewProcess = VmAppActivityManager.initNewProcess(packageName, processName, VmAppActivityThread.currentProcessVmUserId)
                 ?: return methodHandle.invokeOriginMethod()
             logger.i("getContentProvider#初始化Provider进程成功 appConfig = %s", initNewProcess)
             var stubAuth = name
             var iContentProvider: IBinder? = null
-            if (initNewProcess.mainProcessVmPid != VmActivityThread.currentProcessVmPid){
+            if (initNewProcess.mainProcessVmPid != VmAppActivityThread.currentProcessVmPid){
                 logger.i("getContentProvider#插件号进程不一致，是获取的非当前进程的Provider")
-                iContentProvider = VmActivityThread.acquireContentProviderClient(providerInfo)
-                stubAuth = ProxyManifest.getProxyAuthorities(initNewProcess.vmProcessRecord!!.vmPid)
             }
+            iContentProvider = VmAppActivityThread.acquireContentProviderClient(providerInfo)
+            stubAuth = ProxyManifest.getProxyAuthorities(initNewProcess.vmProcessRecord!!.vmPid)
 
             if (iContentProvider == null){
                 logger.e("getContentProvider#获取Provider为空")
@@ -257,7 +262,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
                 caller, hostPkg, stubAuth, userId, stable
             )) ?: return null
 
-            ProviderHelper.replaceProviderAndInfo(result, providerInfo, VmActivityThread.mVmPackageName)
+            ProviderHelper.replaceProviderAndInfo(result, providerInfo, VmAppActivityThread.mVmPackageName)
 
             return result
         }
@@ -273,11 +278,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
         callingFeatureId: String?, userId: Int
     ): ComponentName? {
-        // TODO intent
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, service, resolvedType, requireForeground, hostPkg,
-            callingFeatureId, userId
-        )) as? ComponentName
+        if (service == null){
+            return methodHandle.invokeOriginMethod(arrayOf(
+                caller, service, resolvedType, requireForeground, hostPkg,
+                callingFeatureId, userId
+            )) as? ComponentName
+        }
+        val componentName = VmAppActivityManager.startService(service, resolvedType, requireForeground, userId)
+
+        if (componentName != null){
+            return componentName
+        }
+        logger.i("startService#服务进程启动服务返回ComponentName == null, 调用源方法处理")
+        return methodHandle.invokeOriginMethod() as? ComponentName
     }
 
     fun stopService(
@@ -304,6 +317,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         instanceName: String?, callingPackage: String?, userId: Int
     ): Int {
+        logger.i("bindIsolatedService#callingPackage = %s, service = %s", callingPackage, service)
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, token, service, resolvedType, connection, flags,
             instanceName, hostPkg, userId

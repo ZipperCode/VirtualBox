@@ -16,8 +16,8 @@ class MethodHandle(
     val originObj: Any?,
     val targetMethod: Method,
     val args: Array<out Any?>?,
-    private val nativeHolderPtr: Long,
-    private val targetNativeHolderPtr: Long
+    private val nativeHolderPtr: Long = 0,
+    private val targetNativeHolderPtr: Long = 0
 ) {
 
    val hasRestoreMethod: AtomicBoolean = AtomicBoolean(false)

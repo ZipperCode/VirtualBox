@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import android.content.res.Resources
 import android.os.Build
-import android.os.Debug
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
 import com.virtual.box.base.helper.SystemHelper
@@ -13,7 +12,7 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.ContextHelper
-import com.virtual.box.core.manager.VmActivityThread
+import com.virtual.box.core.manager.VmAppActivityThread
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivity
@@ -78,7 +77,7 @@ object ComponentFixCompat {
     }
 
     fun fixResourceOnActivity(activity: Activity){
-        val vmResources = HLoadedApk.mResources.get(VmActivityThread.mVmLoadedApk)
+        val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.mVmLoadedApk)
 //        try {
 //            val field = MirrorReflection.on(Activity::class.java).field<Resources>("mResources")
 //            field.set(activity, vmResources)
@@ -133,6 +132,10 @@ object ComponentFixCompat {
         }catch (e: Exception){
             L.printStackTrace(e)
         }
+    }
+
+    fun fixActivityConfig(activity: Activity){
+
     }
 
     fun fixActivityOrientation(activity: Activity){

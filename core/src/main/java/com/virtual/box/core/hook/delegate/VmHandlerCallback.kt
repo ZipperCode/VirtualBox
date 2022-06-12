@@ -1,11 +1,11 @@
 package com.virtual.box.core.hook.delegate
 
 import android.app.ActivityThread
-import android.os.Debug
 import android.os.Handler
 import android.os.Message
+import com.virtual.box.base.util.log.L
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.manager.VmActivityManager
+import com.virtual.box.core.manager.VmAppActivityManager
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.os.HHandler
 import java.util.concurrent.atomic.AtomicBoolean
@@ -25,13 +25,15 @@ class VmHandlerCallback : Handler.Callback, IInjectHook {
                     LAUNCH_ACTIVITY,
                     // >= 9.0
                     EXECUTE_TRANSACTION -> {
-                        if (VmActivityManager.restoreOriginAdnHandleActivity(msg.obj)) {
+                        if (VmAppActivityManager.restoreOriginAdnHandleActivity(msg.obj)) {
                             originHandler?.sendMessageAtFrontOfQueue(Message.obtain(msg))
                             return true
                         }
                     }
                 }
                 return originHandlerCallback?.handleMessage(msg) ?: false
+            }catch (e: Throwable){
+              L.printStackTrace(e)
             } finally {
                 handleMessageLock.set(false)
             }

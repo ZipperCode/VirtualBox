@@ -30,7 +30,7 @@ class LibCoreOsHookHandle: BaseHookHandle() {
     }
 
     override fun isHooked(): Boolean {
-        return HLibcore.os.get() !== proxyInvocation
+        return HLibcore.os.get() == proxyInvocation
     }
 
     fun access(methodHandle: MethodHandle, path: String?, mode: Int): Boolean {
@@ -39,7 +39,6 @@ class LibCoreOsHookHandle: BaseHookHandle() {
         try {
             return methodHandle.invokeOriginMethod(arrayOf(newPath, mode)) as Boolean
         }catch (e: Exception){
-            logger.e(e)
             return false
         }
     }

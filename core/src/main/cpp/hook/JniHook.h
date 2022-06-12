@@ -3,11 +3,13 @@
 
 #include <jni.h>
 #include "FileSystemHookHandle.h"
+#include "LinuxHookHandle.h"
 #include "TestHookHandle.h"
 
 class JniHook {
 private:
     static FileSystemHookHandle *sFileSystemHookHandle;
+    static LinuxHookHandle *sLinuxHookHandle;
     static TestKotlinNativeHookHandle *sTestKotlinNativeHookHandle;
     static TestJavaNativeHookHandle *sTestJavaNativeHookHandle;
 public:

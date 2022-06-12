@@ -3,7 +3,6 @@ package com.virtual.box.core.server.pm
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.*
-import android.os.Debug
 import android.os.Parcelable
 import android.os.Process
 import com.virtual.box.base.ext.isNotNullOrEmpty
@@ -13,12 +12,8 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
-import com.virtual.box.core.manager.VmActivityThread
 import com.virtual.box.core.manager.VmPackageInstallManager
 import com.virtual.box.core.manager.VmProcessManager
-import com.virtual.box.core.server.pm.data.VmPackageDataSource
-import com.virtual.box.core.server.pm.data.VmPackageInfoDataSource
-import com.virtual.box.core.server.pm.data.VmPackageResolverDataSource
 import com.virtual.box.core.server.pm.entity.*
 import com.virtual.box.core.server.user.VmUserManagerService
 import java.io.File
@@ -42,6 +37,12 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
     private val mInstallLock = Any()
 
     private val vmPackageRepo: VmPackageRepo = VmPackageRepo()
+
+    init {
+        AppExecutors.get().execute {
+            vmPackageRepo.initData()
+        }
+    }
 
     override fun registerPackageObserver(observer: IVmPackageObserver?) {
         if (observer == null || packageObservers.contains(observer) || observer.asBinder()?.isBinderAlive == false) {
@@ -243,6 +244,14 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
 //        }
         val resolveActivities = vmPackageRepo.queryIntentActivities(intent, resolvedType, flags, userId)
         return PackageHelper.chooseBestActivity(intent, resolvedType, flags, resolveActivities)
+    }
+
+    override fun queryContentProviders(processName: String?, uid: Int, flags: Int, metaDataKey: String?): ParceledListSlice<*> {
+        val list = vmPackageRepo.queryContentProviders(processName, uid, flags, metaDataKey)
+        if (list.isEmpty()){
+            return ParceledListSlice.emptyList<ProviderInfo>()
+        }
+        return ParceledListSlice(list)
     }
 
     override fun resolveIntent(intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ResolveInfo? {

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 enum class EncodeMode{
     HEX,BASE64,NONE
 }
@@ -67,7 +68,7 @@ fun String.charset(): Charset{
     }
 }
 
-fun String.safeIntern(): String{
+fun String?.safeIntern(): String{
     this ?: return ""
     return this.intern()
 }

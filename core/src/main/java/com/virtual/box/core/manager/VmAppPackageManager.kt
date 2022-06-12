@@ -8,14 +8,14 @@ import android.os.RemoteException
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.core.server.pm.IVmPackageManagerService
 import com.virtual.box.core.server.pm.IVmPackageObserver
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
 import com.virtual.box.core.server.pm.entity.VmPackageResult
-import java.lang.Exception
 
-object VmPackageManager {
+object VmAppPackageManager {
     private val logger = Logger.getLogger(L.HOST_TAG, "VmPackageManager")
 
     private var service: IVmPackageManagerService? = null
@@ -170,6 +170,23 @@ object VmPackageManager {
         return ParceledListSlice.emptyList()
     }
 
+    fun queryIntentActivityOptions(
+        componentName: ComponentName?,
+        specifics: Array<Intent>?,
+        specificTypes: Array<String>?,
+        intent: Intent?,
+        resolvedType: String?,
+        flags: Int,
+        userId: Int
+    ): ParceledListSlice<Parcelable> {
+        try {
+            return requireService().queryIntentActivityOptions(componentName, specifics, specificTypes, intent, resolvedType, flags, userId)
+        } catch (e: RemoteException) {
+            logger.e(e)
+        }
+        return ParceledListSlice.emptyList()
+    }
+
     fun queryIntentReceivers(intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ParceledListSlice<Parcelable> {
         try {
             return requireService().queryIntentReceivers(intent, resolvedType, flags, userId)
@@ -195,6 +212,33 @@ object VmPackageManager {
             logger.e(e)
         }
         return ParceledListSlice.emptyList()
+    }
+
+    fun queryContentProviders(processName: String?, uid: Int, flags: Int, metaDataKey: String?): ParceledListSlice<Parcelable>{
+        return try {
+            requireService().queryContentProviders(processName, uid, flags, metaDataKey)
+        }catch (e: RemoteException){
+            logger.e(e)
+            ParceledListSlice.emptyList()
+        }
+    }
+
+    fun getInstrumentationInfo(className: ComponentName?, flags: Int): InstrumentationInfo?{
+        return try {
+            requireService().getInstrumentationInfo(className, flags)
+        }catch (e: RemoteException){
+            logger.e(e)
+            null
+        }
+    }
+
+    fun queryInstrumentation(targetPackage: String?, flags: Int): ParceledListSlice<Parcelable>?{
+        return try {
+            requireService().queryInstrumentation(targetPackage, flags)
+        }catch (e: RemoteException){
+            logger.e(e)
+            ParceledListSlice.emptyList()
+        }
     }
 
     fun queryIntentContentProviders(intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ParceledListSlice<Parcelable> {

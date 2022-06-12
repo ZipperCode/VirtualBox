@@ -1,23 +1,26 @@
 package com.virtual.box.core.hook.delegate
 
-import com.virtual.box.base.util.log.Logger.Companion.getLogger
-import android.content.ComponentName
-import android.content.Intent
-import android.content.IntentFilter
-import android.view.MotionEvent
-import kotlin.Throws
-import android.content.pm.ActivityInfo
-import androidx.appcompat.app.AppCompatDelegate
 import android.annotation.TargetApi
 import android.app.*
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.ActivityInfo
 import android.os.*
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatDelegate
+import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
-import com.virtual.box.reflect.MirrorReflection.MethodWrapper
+import com.virtual.box.base.util.log.Logger.Companion.getLogger
+import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.reflect.MirrorReflection
-import java.lang.Exception
+import com.virtual.box.reflect.MirrorReflection.MethodWrapper
+import com.virtual.box.reflect.android.app.HActivity
+import com.virtual.box.reflect.android.app.HApplication
+import com.virtual.box.reflect.android.content.pm.HActivityInfo
 
 abstract class BaseInstrumentationDelegate : Instrumentation() {
     protected var mBaseInstrumentation: Instrumentation? = null
@@ -37,7 +40,7 @@ abstract class BaseInstrumentationDelegate : Instrumentation() {
         mBaseInstrumentation?.onStart()
     }
 
-    override fun onException(obj: Any, e: Throwable): Boolean {
+    override fun onException(obj: Any?, e: Throwable?): Boolean {
         logger.e("onException#obj = %s, e = %s", obj, e)
         return mBaseInstrumentation!!.onException(obj, e)
     }
@@ -224,8 +227,20 @@ abstract class BaseInstrumentationDelegate : Instrumentation() {
     }
 
     override fun callActivityOnCreate(activity: Activity, icicle: Bundle?) {
-//        Debug.waitForDebugger();
         logger.i("callActivityOnCreate#activity = %s, bundle = %s", activity, icicle)
+        if (BuildCompat.isAtLeastS){
+            ComponentFixCompat.fixActivityWithOnCreate(activity)
+        }
+        val info = HActivity.mActivityInfo.get(activity)
+        if (info.theme != 0) {
+            activity.theme.applyStyle(info.theme, true)
+        }else{
+            val appInfo = HActivityInfo.applicationInfo.get(info)
+            if (appInfo.theme != 0){
+                activity.theme.applyStyle(appInfo.theme, true)
+            }
+        }
+        ComponentFixCompat.fixActivityOrientation(activity)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
         mBaseInstrumentation?.callActivityOnCreate(activity, icicle)
     }

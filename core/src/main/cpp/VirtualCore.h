@@ -20,7 +20,9 @@
  * @return
  */
 int initVm(JNIEnv *env, jclass clazz, jint android_level, jboolean debug);
-
+/**
+ * 添加重定向规则
+ */
 void addIoRules(JNIEnv *env, jclass clazz, jobjectArray originPaths, jobjectArray targetPaths);
 
 void nativeHook(JNIEnv* env, jclass clazz);
