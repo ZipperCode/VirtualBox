@@ -1,6 +1,7 @@
 package com.virtual.box.core.manager
 
 import android.os.Build
+import android.os.Debug
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.BuildConfig
@@ -8,6 +9,7 @@ import com.virtual.box.core.hook.IInjectHook
 import com.virtual.box.core.hook.core.VmCore
 import com.virtual.box.core.hook.delegate.AppInstrumentation
 import com.virtual.box.core.hook.delegate.VmHandlerCallback
+import com.virtual.box.core.hook.libcore.LibCoreOsHookHandle
 import com.virtual.box.core.hook.service.*
 
 /**
@@ -105,6 +107,10 @@ internal object AppHookManager {
     }
 
     fun onBindApplicationHook(){
+        // Debug.waitForDebugger()
+//        val libCore = LibCoreOsHookHandle()
+//        hookServiceList.add(libCore)
+//        libCore.initHook()
         VmCore.nativeHook()
     }
 

@@ -127,6 +127,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         receiver: Any?, filter: IntentFilter?,
         requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
+        logger.i("registerReceiver#callerPackage = %s", callerPackage)
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, hostPkg, receiver, filter, requiredPermission, userId, flags
         )) as Intent?
@@ -141,8 +142,22 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         callingFeatureId: String?, receiverId: String?, receiver: Any,
         filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
+        logger.i("registerReceiverWithFeature#callerPackage = %s", callerPackage)
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, hostPkg, callingFeatureId, receiverId, receiver, filter,
+            requiredPermission, userId, flags
+        )) as Intent?
+    }
+
+    fun registerReceiverWithFeature(
+        methodHandle: MethodHandle,
+        caller: Any, callerPackage: String,
+        callingFeatureId: String?, receiver: Any?,
+        filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
+    ): Intent? {
+        logger.i("registerReceiverWithFeature#callerPackage = %s", callerPackage)
+        return methodHandle.invokeOriginMethod(arrayOf(
+            caller, hostPkg, callingFeatureId, receiver, filter,
             requiredPermission, userId, flags
         )) as Intent?
     }

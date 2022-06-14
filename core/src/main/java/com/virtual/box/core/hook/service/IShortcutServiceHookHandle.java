@@ -119,8 +119,8 @@ public class IShortcutServiceHookHandle extends BaseBinderHookHandle {
         return methodHandle.invokeOriginMethod(new Object[]{hostPkg, matchFlags, userId});
     }
 
-    Object getDynamicShortcuts(MethodHandle methodHandle, String packageName, int matchFlags, int userId){
-        return methodHandle.invokeOriginMethod(new Object[]{hostPkg, matchFlags, userId});
+    Object getDynamicShortcuts(MethodHandle methodHandle, String packageName, int userId){
+        return methodHandle.invokeOriginMethod(new Object[]{hostPkg, userId});
     }
 
     Object pushDynamicShortcut(MethodHandle methodHandle, String packageName, ShortcutInfo shortcut, int userId){

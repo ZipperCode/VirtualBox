@@ -90,8 +90,8 @@ protected:
         JNINativeMethod jniNativeMethod[] = {
                 {method_name, sign, (void *) new_fun},
         };
-        // 检查是否是native方法
-        auto pArtMethod = reinterpret_cast<uint32_t *>(ArtMethodHandle::getArtMethodPtr(env, mHookMethod, method));
+        // 检查是否是native方法 arm 中无法强转成uint32_t，因为arm中不支持内存对齐
+        auto pArtMethod = reinterpret_cast<size_t *>(ArtMethodHandle::getArtMethodPtr(env, mHookMethod, method));
 //        ALOGD("hookNativeFunc >> flags = %s", prettyJavaAccessFlags(ArtMethodHandle::getAccessFlags(pArtMethod)).c_str())
         if (!ArtMethodHandle::checkNativeMethod(pArtMethod)) {
             ALOGE("hookNativeFunc >> check flags error. class：%s, method：%s", mClassName, method_name);
@@ -101,6 +101,7 @@ protected:
         // 否者调用原方法可能会出现问题
         ArtMethodHandle::clearFastNativeFlag(pArtMethod);
         auto pNativeOffset = pArtMethod + ArtMethodHandle::getArtMethodNativeOffset();
+//        ALOGE("hookNativeFunc >> pArtMethod    Address     = %x",  (unsigned int) (*pArtMethod))
 //        ALOGD("hookNativeFunc >> pNativeOffset Address     = %p", pNativeOffset)
 //        ALOGD("hookNativeFunc >> pNativeOffset Value       = %x", (unsigned int) (*pNativeOffset))
         // 如果JNI方法没有注册，这边拿到的地址将会是art_jni_dlsym_lookup_stub
@@ -111,6 +112,8 @@ protected:
             ALOGE("hookNativeFunc >> jni hook error. class：%s, method：%s", mClassName, method_name);
             return JNI_FALSE;
         }
+//        ALOGD("hookNativeFunc >> newFunc  Address     = %p", new_fun)
+//        ALOGD("hookNativeFunc >> origFunc Address     = %p", orig_fun)
         // 添加fastNative优化
         if (ArtMethodHandle::getAndroidLevel() >= __ANDROID_API_O__) {
             ArtMethodHandle::addAccessFlags(pArtMethod, kAccFastNative);

@@ -108,7 +108,6 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         if (!isInit){
             handleBindApplication(providerInfo.packageName, providerInfo.processName, currentProcessVmUserId)
         }
-        Debug.waitForDebugger()
         val split = providerInfo.authority.split(";").toTypedArray()
         for (auth in split) {
             val contentProviderClient = mContext.contentResolver.acquireContentProviderClient(auth) ?: continue
@@ -203,7 +202,7 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
     internal fun handleBindApplication(packageName: String, processName: String, userId: Int) {
         logger.i("handleBindApplication > packageName = %s, processName = %s", packageName, processName)
         logger.i("handleBindApplication > vmAppConfig = %s", vmAppConfig)
-
+        Debug.waitForDebugger()
         currentProcessVmUserId = vmAppConfig?.userId ?: 0
         val packageInfo = VmAppPackageManager.getPackageInfo(
             packageName, PackageManager.GET_ACTIVITIES
@@ -300,6 +299,7 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         if (providers.isNotEmpty()) {
             providers.forEach {
                 try {
+                    Debug.waitForDebugger()
                     ActivityThread.currentActivityThread().installSystemProviders(
                         mutableListOf(it)
                     )
