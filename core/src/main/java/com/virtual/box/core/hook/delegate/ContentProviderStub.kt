@@ -37,11 +37,16 @@ class ContentProviderStub: InvocationHandler, IInjectHook {
             val arg = args[0]
             if (arg is String) {
                 args[0] = pkg
-            } else if (arg?.javaClass?.name == "AttributionSource") {
+            } else if (arg?.javaClass?.simpleName == "AttributionSource") {
                 Helper.fixAttributionSource(arg, pkg)
             }
         }
-        return method.kotlinInvokeOrigin(target!!, args)
+        return try {
+            method.kotlinInvokeOrigin(target!!, args)
+        }catch (e: Exception){
+            L.printStackTrace(e.cause)
+            throw e.cause!!
+        }
     }
 
     override fun initHook() {
@@ -82,7 +87,6 @@ class ContentProviderStub: InvocationHandler, IInjectHook {
             val nextAttributionSource = HAttributionSource.getNext.call(attributionSource)
             nextAttributionSource ?: return
             fixAttributionSource(nextAttributionSource, hostPks)
-
         }
     }
 }

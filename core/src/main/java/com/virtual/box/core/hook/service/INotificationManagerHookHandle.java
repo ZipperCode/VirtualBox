@@ -88,7 +88,7 @@ public class INotificationManagerHookHandle extends BaseBinderHookHandle {
     void cancelNotificationWithTag(MethodHandle methodHandle, String pkg, String opPkg, String tag, int id, int userId) {
         logger.i("cancelNotificationWithTag#pks = %s, opPkg = %s", pkg, opPkg);
         methodHandle.invokeOriginMethod(new Object[]{
-                pkg, opPkg, tag, id, userId
+                hostPkg, hostPkg, tag, id, userId
         });
     }
 

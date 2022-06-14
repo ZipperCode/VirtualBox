@@ -34,6 +34,8 @@ import dalvik.system.PathClassLoader
 import dalvik.system.VMRuntime
 import java.io.File
 import java.lang.ref.WeakReference
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * 虚拟进程的ActivityThread模拟实现
@@ -202,7 +204,6 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
     internal fun handleBindApplication(packageName: String, processName: String, userId: Int) {
         logger.i("handleBindApplication > packageName = %s, processName = %s", packageName, processName)
         logger.i("handleBindApplication > vmAppConfig = %s", vmAppConfig)
-        Debug.waitForDebugger()
         currentProcessVmUserId = vmAppConfig?.userId ?: 0
         val packageInfo = VmAppPackageManager.getPackageInfo(
             packageName, PackageManager.GET_ACTIVITIES
@@ -266,7 +267,7 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         HActivityThread.AppBindData.appInfo[originBoundApplication] = applicationInfo
         HActivityThread.AppBindData.info[originBoundApplication] = loadedApk
         HActivityThread.AppBindData.processName[originBoundApplication] = processName
-        HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers.toList()
+        // HActivityThread.AppBindData.providers[originBoundApplication] = packageInfo.providers.toMutableList()
 
         var application: Application? = null
         try {
@@ -297,11 +298,11 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
     private fun installProviders(providers: Array<ProviderInfo>, processName: String) {
         ProviderHelper.cleanAndInitProvider()
         if (providers.isNotEmpty()) {
+
             providers.forEach {
                 try {
-                    Debug.waitForDebugger()
                     ActivityThread.currentActivityThread().installSystemProviders(
-                        mutableListOf(it)
+                        Arrays.asList(it)
                     )
                 }catch (e: Exception){
                     L.printStackTrace(e)
@@ -366,6 +367,21 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         return null
     }
 
+    fun getAppLoadedApk(): Any?{
+        return getLoadedApk(mVmPackageName)
+    }
+
+    fun getLoadedApk(packageName: String): Any?{
+        val resources = HActivityThread.mPackages[ActivityThread.currentActivityThread()]
+        if (resources != null) {
+            val loadApkRef = resources[packageName] as WeakReference<*>?
+            if (loadApkRef?.get() != null) {
+                return loadApkRef.get()
+            }
+        }
+        return null
+    }
+
     fun getClassLoader(packageName: String): ClassLoader?{
         var targetClassLoader: ClassLoader? = null
         val resources = HActivityThread.mPackages[ActivityThread.currentActivityThread()]
@@ -386,4 +402,5 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         }
         return HSingleton.get.call(iActivityManager)
     }
+
 }

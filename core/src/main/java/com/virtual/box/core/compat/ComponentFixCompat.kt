@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import android.content.res.Resources
 import android.os.Build
+import android.os.Debug
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
 import com.virtual.box.base.helper.SystemHelper
@@ -17,9 +18,11 @@ import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivity
 import com.virtual.box.reflect.android.app.HActivityThread
+import com.virtual.box.reflect.android.app.HContextImpl
 import com.virtual.box.reflect.android.app.HLoadedApk
 import com.virtual.box.reflect.android.content.pm.HActivityInfo
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
+import com.virtual.box.reflect.android.view.HContextThemeWrapper
 import java.util.*
 
 object ComponentFixCompat {
@@ -38,6 +41,7 @@ object ComponentFixCompat {
         // fix packageName
         ContextHelper.fixPackageName(activity, vmPackageName)
         ContextHelper.fixBaseContextLoadApk(activity)
+
     }
     /**
      * 修复Activity中的Application对象
@@ -77,14 +81,19 @@ object ComponentFixCompat {
     }
 
     fun fixResourceOnActivity(activity: Activity){
-        val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.mVmLoadedApk)
-//        try {
-//            val field = MirrorReflection.on(Activity::class.java).field<Resources>("mResources")
-//            field.set(activity, vmResources)
-//        }catch (e: Exception){
-//            L.printStackTrace(e)
-//        }
+        if (activity !is AppCompatActivity){
+            val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.getAppLoadedApk())
+            val newTheme = vmResources.newTheme()
+            HContextThemeWrapper.mResources.set(activity, vmResources)
+            HContextThemeWrapper.mTheme.set(activity, newTheme)
+            val curActInfo = HActivity.mActivityInfo.get(activity)
+            if (curActInfo != null){
+                HContextThemeWrapper.mThemeResource.set(activity, curActInfo.theme)
+            }
+            return
+        }
 
+        val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.getAppLoadedApk())
         try {
             val field = MirrorReflection.on(AppCompatActivity::class.java).field<Resources>("mResources")
             field.set(activity, vmResources)

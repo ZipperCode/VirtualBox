@@ -7,6 +7,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Base64;
 
+import com.virtual.box.base.util.compat.BuildCompat;
 import com.virtual.box.base.util.log.L;
 
 import java.io.File;
@@ -34,7 +35,7 @@ public class Reflection {
         }
 
         // try exempt API first.
-        if (exemptAll()) {
+        if (BuildCompat.isAtMostQ() && exemptAll()) {
             return 0;
         }
         if (unsealByDexFile(context)) {

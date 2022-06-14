@@ -6,10 +6,12 @@ import android.content.ContextWrapper
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.manager.VmAppActivityThread
 import com.virtual.box.reflect.android.app.HContextImpl
+import com.virtual.box.reflect.android.content.HContentResolver
 import java.lang.Exception
 
 object ContextHelper {
 
+    const val MAX_DEEP = 10
     /**
      * 修复上下文中的包名
      */
@@ -17,15 +19,20 @@ object ContextHelper {
         try {
             var preContext: Context? = context
             var curContext: Context? = context
+            var deep = 0
             do {
                 if (curContext is ContextWrapper){
                     preContext = curContext
                     curContext = curContext.baseContext
                 }
-            }while (curContext != null && preContext != curContext)
+            }while (curContext != null && preContext != curContext && deep++ < MAX_DEEP)
             HContextImpl.mBasePackageName.set(curContext, packageName)
             HContextImpl.mOpPackageName.set(curContext, packageName)
 
+            val contentResolver = HContextImpl.mContentResolver.get(curContext)
+            if (contentResolver != null){
+                HContentResolver.mPackageName.set(contentResolver, packageName)
+            }
         }catch (e: Exception){
             L.printStackTrace(e)
         }
@@ -34,12 +41,13 @@ object ContextHelper {
     fun fixBaseContextLoadApk(activity: Activity){
         var preContext: Context? = activity
         var curContext: Context? = activity
+        var deep = 0
         do {
             if (curContext is ContextWrapper){
                 preContext = curContext
                 curContext = curContext.baseContext
             }
-        }while (curContext != null && preContext != curContext)
+        }while (curContext != null && preContext != curContext && deep++ < MAX_DEEP)
 
         if (curContext !is ContextWrapper){
             HContextImpl.mPackageInfo.set(curContext, VmAppActivityThread.mVmLoadedApk)

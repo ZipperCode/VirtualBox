@@ -14,15 +14,25 @@ object BuildCompat {
     val isAtLeastS: Boolean
         get() = Build.VERSION.SDK_INT >= 31 || Build.VERSION.SDK_INT >= 30 && Build.VERSION.PREVIEW_SDK_INT == 1
 
+    val isAtMostS: Boolean
+        get() = Build.VERSION.SDK_INT <= 31
+
     // 11
     @JvmStatic
     val isAtLeastR: Boolean
         get() = Build.VERSION.SDK_INT >= 30 || Build.VERSION.SDK_INT >= 29 && Build.VERSION.PREVIEW_SDK_INT == 1
+    @JvmStatic
+    val isAtMostR: Boolean
+        get() = Build.VERSION.SDK_INT <= 30
 
     // 10
     @JvmStatic
     val isAtLeastQ: Boolean
         get() = Build.VERSION.SDK_INT >= 29 || Build.VERSION.SDK_INT >= 28 && Build.VERSION.PREVIEW_SDK_INT == 1
+
+    @JvmStatic
+    val isAtMostQ: Boolean
+        get() = Build.VERSION.SDK_INT <= 29
 
     // 9
     @JvmStatic

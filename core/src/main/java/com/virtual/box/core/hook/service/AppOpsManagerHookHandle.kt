@@ -99,7 +99,7 @@ class AppOpsManagerHookHandle : BaseBinderHookHandle(Context.APP_OPS_SERVICE) {
     // Remaining methods are only used  Java.
     fun checkPackage(methodHandle: MethodHandle, uid: Int, packageName: String?): Int {
         logger.e("checkPackage#packageName = %s", packageName)
-        return methodHandle.invokeOriginMethod(arrayOf(uid, hostPkg)) as Int
+        return methodHandle.invokeOriginMethod(arrayOf(Process.myUid(), hostPkg)) as Int
     }
 
     /**

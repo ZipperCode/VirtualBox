@@ -33,7 +33,7 @@ abstract class BaseHookHandle : InvocationHandler, IInjectHook {
         if (proxyTargetMethodCache.containsKey(identifier)) {
             return proxyTargetMethodCache[identifier]!!.invoke1(this, target!!, method, args)
         }
-        logger.e(">>>> invoke target method = %s", method)
+        logger.e("invoke target method = %s", method)
         return method.kotlinInvokeOrigin(target!!, args)
     }
 

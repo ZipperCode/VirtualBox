@@ -139,7 +139,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     fun registerReceiverWithFeature(
         methodHandle: MethodHandle,
         caller: Any, callerPackage: String,
-        callingFeatureId: String?, receiverId: String?, receiver: Any,
+        callingFeatureId: String?, receiverId: String?, receiver: Any?,
         filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
         logger.i("registerReceiverWithFeature#callerPackage = %s", callerPackage)

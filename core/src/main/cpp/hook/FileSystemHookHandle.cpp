@@ -8,11 +8,11 @@
  * Signature: (Ljava/lang/String;)Z;
  */
 HOOK_JNI(jboolean, createFileExclusively0, JNIEnv *env, jobject obj, jstring path) {
-    if (DEBUG_LOG) {
-        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
-        ALOGD(">> Hook 创建文件：path = %s", pathStr)
-        env->ReleaseStringUTFChars(path, pathStr);
-    }
+//    if (DEBUG_LOG) {
+//        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
+//        ALOGD(">> Hook 创建文件：path = %s", pathStr)
+//        env->ReleaseStringUTFChars(path, pathStr);
+//    }
 
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     return orig_createFileExclusively0(env, obj, redirect);
@@ -26,7 +26,7 @@ HOOK_JNI(jboolean, createFileExclusively0, JNIEnv *env, jobject obj, jstring pat
  * Signature: (Ljava/io/File;)[Ljava/lang/String;
  */
 HOOK_JNI(jobjectArray, list0, JNIEnv *env, jobject obj, jobject file) {
-    ALOGE(">> UnixFileSystem#list0 ")
+//    ALOGE(">> UnixFileSystem#list0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_list0(env, obj, redirect);
 }
@@ -51,7 +51,7 @@ HOOK_JNI(jboolean, createDirectory0, JNIEnv *env, jobject obj, jobject filePath)
  * Signature: (Ljava/io/File;J)Z
  */
 HOOK_JNI(jboolean, setLastModifiedTime0, JNIEnv *env, jobject obj, jobject file, jobject time) {
-    ALOGE(">> UnixFileSystem#setLastModifiedTime0 ")
+//    ALOGE(">> UnixFileSystem#setLastModifiedTime0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_setLastModifiedTime0(env, obj, redirect, time);
 }
@@ -64,7 +64,7 @@ HOOK_JNI(jboolean, setLastModifiedTime0, JNIEnv *env, jobject obj, jobject file,
  * Signature: (Ljava/io/File;)J
  */
 HOOK_JNI(jlong, getLastModifiedTime0, JNIEnv *env, jobject obj, jobject filePath) {
-    ALOGE(">> UnixFileSystem#getLastModifiedTime0 ")
+//    ALOGE(">> UnixFileSystem#getLastModifiedTime0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, filePath);
     return orig_getLastModifiedTime0(env, obj, redirect);
 }
@@ -88,7 +88,7 @@ HOOK_JNI(jboolean, setReadOnly0, JNIEnv *env, jobject obj, jobject file) {
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 HOOK_JNI(jstring, canonicalize0, JNIEnv *env, jobject obj, jstring path) {
-    ALOGE(">> UnixFileSystem#canonicalize0 ")
+//    ALOGE(">> UnixFileSystem#canonicalize0 ")
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     return orig_canonicalize0(env, obj, redirect);
 }
@@ -99,7 +99,7 @@ HOOK_JNI(jstring, canonicalize0, JNIEnv *env, jobject obj, jstring path) {
  * Signature: (Ljava/lang/String;)I
  */
 HOOK_JNI(jint, getBooleanAttributes0, JNIEnv *env, jobject obj, jstring abspath) {
-    ALOGE(">> UnixFileSystem#getBooleanAttributes0 ")
+//    ALOGE(">> UnixFileSystem#getBooleanAttributes0 ")
     jstring redirect = IoRedirect::handleRedirectPath(env, abspath);
     return orig_getBooleanAttributes0(env, obj, redirect);
 }
@@ -111,7 +111,7 @@ HOOK_JNI(jint, getBooleanAttributes0, JNIEnv *env, jobject obj, jstring abspath)
  */
 HOOK_JNI(jboolean, setPermission0, JNIEnv *env, jobject obj, jobject file, jint access,
          jboolean enable, jboolean owneronly) {
-    ALOGE(">> UnixFileSystem#setPermission0 ")
+//    ALOGE(">> UnixFileSystem#setPermission0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_setPermission0(env, obj, redirect, access, enable, owneronly);
 }
@@ -122,7 +122,7 @@ HOOK_JNI(jboolean, setPermission0, JNIEnv *env, jobject obj, jobject file, jint 
  * Signature: (Ljava/io/File;I)J
  */
 HOOK_JNI(jboolean, getSpace0, JNIEnv *env, jobject obj, jobject file, jint t) {
-    ALOGE(">> UnixFileSystem#getSpace0 ")
+//    ALOGE(">> UnixFileSystem#getSpace0 ")
     jobject redirect = IoRedirect::handleRedirectPath(env, file);
     return orig_getSpace0(env, obj, redirect, t);
 }

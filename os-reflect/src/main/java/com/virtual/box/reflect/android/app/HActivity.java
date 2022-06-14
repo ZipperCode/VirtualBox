@@ -19,6 +19,7 @@ public class HActivity {
     public static final MirrorReflection.FieldWrapper<ContextThemeWrapper> mBaseCompat = REF.field("mBase");
     public static final MirrorReflection.FieldWrapper<android.view.ContextThemeWrapper> mBase = REF.field("mBase");
     public static final MirrorReflection.FieldWrapper<ComponentName> mComponent = REF.field("mComponent");
+    public static final MirrorReflection.FieldWrapper<CharSequence> mTitle = REF.field("mTitle");
 
 
 

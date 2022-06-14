@@ -61,7 +61,7 @@ public final class BootstrapClass {
             setHiddenApiExemptions.invoke(sVmRuntime, new Object[]{methods});
             return true;
         } catch (Throwable e) {
-            L.printStackTrace(e);
+            L.he("调用exempt失败");
             return false;
         }
     }
