@@ -14,7 +14,7 @@ import java.lang.reflect.Proxy
 
 abstract class BaseHookHandle : InvocationHandler, IInjectHook {
 
-    private val logger = Logger.Companion.getLogger(L.HOOK_TAG, "BaseHookHandle")
+    private val logger = Logger.Companion.getLogger(L.HOOK_TAG, javaClass.simpleName)
 
     @JvmField
     protected var hostPkg: String = VirtualBox.get().hostPkg

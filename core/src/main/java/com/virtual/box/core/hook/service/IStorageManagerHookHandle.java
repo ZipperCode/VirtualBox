@@ -1,5 +1,6 @@
 package com.virtual.box.core.hook.service;
 
+import android.os.Process;
 import android.os.storage.StorageVolume;
 
 import androidx.annotation.Nullable;
@@ -32,8 +33,9 @@ public class IStorageManagerHookHandle extends BaseBinderHookHandle {
      * TODO 需要做uid处理
      */
     StorageVolume[] getVolumeList(MethodHandle methodHandle, int uid, String packageName, int flags){
+        logger.i("getVolumeList#uid = %s, sysUid = %s, package = %s", uid, Process.myUid(), packageName);
         return (StorageVolume[]) methodHandle.invokeOriginMethod(new Object[]{
-           uid, hostPkg, flags
+                Process.myUid(), hostPkg, flags
         });
     }
 }

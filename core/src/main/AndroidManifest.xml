@@ -326,8 +326,10 @@
     <uses-permission
         android:name="android.permission.HARDWARE_TEST"
         tools:ignore="ProtectedPermissions" />
-    <application>
-
+    <application
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="n">
         <provider
             android:name="com.virtual.box.core.server.VmServiceProvider"
             android:authorities="${vmApplicationId}.virtualbox.VmServiceProvider"
