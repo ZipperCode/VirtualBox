@@ -285,6 +285,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
         this.vmApplication = application
         AppHookManager.onBindApplicationHook()
+        Debug.waitForDebugger()
         // application生成后，需要处理插件应用中的ContentProvider，并且调用Application的onCreate方法
         if (this.vmApplication != null) {
             logger.d("插件Application初始化完成，获取插件ContentProvider进行安装")
