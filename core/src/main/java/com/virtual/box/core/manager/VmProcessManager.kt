@@ -1,25 +1,16 @@
 package com.virtual.box.core.manager
 
-import android.app.ActivityManager
-import android.content.Context
-import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Debug
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
-import com.virtual.box.core.BuildConfig
-import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.entity.VmAppProcess
 import com.virtual.box.core.entity.VmProcessRecord
 import com.virtual.box.core.helper.ProcessHelper
 import com.virtual.box.core.helper.ProviderCallHelper
 import com.virtual.box.core.proxy.ProxyContentProvider
-import com.virtual.box.core.proxy.ProxyManifest
-import com.virtual.box.core.server.am.IVmActivityThread
-import com.virtual.box.core.server.pm.VmPackageManagerService
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -163,8 +154,8 @@ object VmProcessManager {
             vmProcessRecord.getProxyAuthority(),
             ProxyContentProvider.IPC_VM_INIT_METHOD_NAME, null, bundle
         ) ?: return false
-        val vmActivityThreadHandle = resultBundle.getBinder(ProxyContentProvider.IPC_VM_BINDER_HANDLE_KEY)
-        if (vmActivityThreadHandle == null || !vmActivityThreadHandle.isBinderAlive) {
+        val vmApplicationThreadHandle = resultBundle.getBinder(ProxyContentProvider.IPC_VM_BINDER_HANDLE_KEY)
+        if (vmApplicationThreadHandle == null || !vmApplicationThreadHandle.isBinderAlive) {
             return false
         }
         //
@@ -175,7 +166,7 @@ object VmProcessManager {
             systemPid = stubPid
             systemUid = stubUid
             systemProcessName = stubProcessName
-            vmAppThread = IVmActivityThread.Stub.asInterface(vmActivityThreadHandle)
+            applicationThread = IAppApplicationThread.Stub.asInterface(vmApplicationThreadHandle)
             linkToDeath()
         }
         return true

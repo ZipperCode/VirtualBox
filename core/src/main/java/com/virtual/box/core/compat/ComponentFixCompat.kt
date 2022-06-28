@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import android.content.res.Resources
 import android.os.Build
-import android.os.Debug
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
 import com.virtual.box.base.helper.SystemHelper
@@ -13,12 +12,11 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.ContextHelper
-import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivity
 import com.virtual.box.reflect.android.app.HActivityThread
-import com.virtual.box.reflect.android.app.HContextImpl
 import com.virtual.box.reflect.android.app.HLoadedApk
 import com.virtual.box.reflect.android.content.pm.HActivityInfo
 import com.virtual.box.reflect.android.content.pm.HApplicationInfo
@@ -82,7 +80,7 @@ object ComponentFixCompat {
 
     fun fixResourceOnActivity(activity: Activity){
         if (activity !is AppCompatActivity){
-            val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.getAppLoadedApk())
+            val vmResources = HLoadedApk.mResources.get(AppActivityThread.getAppLoadedApk())
             val newTheme = vmResources.newTheme()
             HContextThemeWrapper.mResources.set(activity, vmResources)
             HContextThemeWrapper.mTheme.set(activity, newTheme)
@@ -93,7 +91,7 @@ object ComponentFixCompat {
             return
         }
 
-        val vmResources = HLoadedApk.mResources.get(VmAppActivityThread.getAppLoadedApk())
+        val vmResources = HLoadedApk.mResources.get(AppActivityThread.getAppLoadedApk())
         try {
             val field = MirrorReflection.on(AppCompatActivity::class.java).field<Resources>("mResources")
             field.set(activity, vmResources)

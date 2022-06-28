@@ -79,8 +79,8 @@ object VmAppActivityManager {
         val activityInfo = parseOriginRecord.activityInfo
         if(activityInfo != null){
             // bind
-            if (!VmAppActivityThread.isInit) {
-                VmAppActivityThread.handleBindApplication(
+            if (!AppActivityThread.isInit) {
+                AppActivityThread.handleBindApplication(
                     activityInfo.packageName,
                     activityInfo.processName ?: activityInfo.packageName,
                     parseOriginRecord.userId
@@ -143,7 +143,7 @@ object VmAppActivityManager {
 
     fun startService(intent: Intent?, resolvedType: String?,requireForeground: Boolean, userId: Int): ComponentName? {
         return try {
-            requireService().startService(intent, resolvedType,requireForeground, userId)
+            requireService().startService(AppActivityThread.getApplicationThread(), intent, resolvedType,requireForeground, userId)
         }catch (e: RemoteException){
             L.printStackTrace(e)
             null
@@ -153,7 +153,7 @@ object VmAppActivityManager {
     @Synchronized
     private fun requireService(): IVmActivityManagrService {
         if (service == null || !service!!.asBinder().isBinderAlive){
-            service = IVmActivityManagrService.Stub.asInterface(ServiceManager.getService(VmServiceManager.ACTIVITY_MANAGER))
+            service = IVmActivityManagrService.Stub.asInterface(AppServiceManager.getService(VmServiceManager.ACTIVITY_MANAGER))
         }
         return service!!
     }

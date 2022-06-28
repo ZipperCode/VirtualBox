@@ -11,7 +11,6 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmProxyServiceRecord
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
@@ -19,7 +18,7 @@ import com.virtual.box.core.server.pm.VmPackageManagerService
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class VmActiveServices {
+class VmActiveServices1 {
 
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmActiveServices")
 
@@ -27,11 +26,9 @@ class VmActiveServices {
 
     private val runningServiceTokens: MutableList<IBinder> = ArrayList()
 
-    private val processServices= WeakHashMap<IAppApplicationThread, MutableMap<FilterComparison, RunningServiceRecord>>()
-
     private val recordLock = Any()
 
-    fun startServiceLock(service: Intent?, resolvedType: String?, requireForeground: Boolean, userId: Int): ComponentName? {
+    fun startServiceLock( service: Intent?, resolvedType: String?, requireForeground: Boolean, userId: Int): ComponentName? {
         if (service == null) {
             logger.e("startService#fail intent == null")
             return null
@@ -42,25 +39,15 @@ class VmActiveServices {
             logger.e("startService#fail, resolvedService == null, intent = %s", service)
             return null
         }
-
         val serviceInfo = resolveInfo.serviceInfo!!
         val packageName = serviceInfo.packageName
         val processName = serviceInfo.processName ?: packageName
-
         val initNewProcess = try {
             VmActivityManagerService.initNewProcess(packageName, processName, userId)
         } catch (e: Exception) {
             logger.e("startService#fial, unable create new process packageName = %s, processName = %s", packageName, processName)
-            return null
+            throw e
         }
-
-        if (initNewProcess.vmProcessRecord?.applicationThread == null){
-            VmProcessManager.killProcess(initNewProcess.packageName, initNewProcess.userId)
-            logger.e("startService#失败，[%s]appConfig中不存在IAppApplicationThread的Binder引用", initNewProcess.packageName)
-            return null
-        }
-        val targetApplicationThread = initNewProcess.vmProcessRecord!!.applicationThread!!
-
 
         val runningServiceRecord = getOrCreateRunningServiceRecord(service, serviceInfo)
 
@@ -69,7 +56,7 @@ class VmActiveServices {
         // TODO 这边先不动，直接使用分发方式
         val shadowIntent = createStubServiceIntent(service, serviceInfo, runningServiceRecord, serviceProcessUserId, vmPid)
 
-        val componentName =  try {
+        return  try {
             if (requireForeground && BuildCompat.isAtLeastOreo) {
                 VirtualBox.get().hostContext.startForegroundService(shadowIntent)
             } else {
@@ -79,13 +66,7 @@ class VmActiveServices {
             removeRunningServiceRecord(runningServiceRecord)
             logger.e(e)
             null
-        } ?: return null
-
-
-    }
-
-    private fun startDispatcherServiceLock(caller: IAppApplicationThread, targetService: Intent){
-
+        }
     }
 
     fun stopService(intent: Intent?, resolvedType: String?, userId: Int): Int {

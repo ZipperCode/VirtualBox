@@ -9,6 +9,7 @@ import android.os.IBinder
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.helper.PackageHelper
@@ -175,7 +176,7 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
     }
 
     override fun startService(intent: Intent?, resolvedType: String?, requireForeground: Boolean, userId: Int): ComponentName? {
-        return vmActiveServices.startService(intent, resolvedType, requireForeground, userId)
+        return vmActiveServices.startServiceLock(intent, resolvedType, requireForeground, userId)
     }
 
     override fun stopService(intent: Intent?, resolvedType: String?, userId: Int): Int {

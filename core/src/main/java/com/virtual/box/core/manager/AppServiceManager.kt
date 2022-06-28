@@ -19,7 +19,7 @@ import com.virtual.box.core.service.DaemonService
 /**
  * 客户端使用
  */
-object ServiceManager {
+object AppServiceManager {
 
     private val logger = Logger.getLogger(L.VM_TAG, "ServiceManager")
     /**

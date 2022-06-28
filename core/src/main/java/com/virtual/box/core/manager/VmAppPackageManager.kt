@@ -8,7 +8,6 @@ import android.os.RemoteException
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.core.server.pm.IVmPackageManagerService
 import com.virtual.box.core.server.pm.IVmPackageObserver
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
@@ -286,7 +285,7 @@ object VmAppPackageManager {
     @Synchronized
     private fun requireService(): IVmPackageManagerService {
         if (service == null || !service!!.asBinder().isBinderAlive) {
-            service = IVmPackageManagerService.Stub.asInterface(ServiceManager.getService(VmServiceManager.PACKAGE_MANAGER))
+            service = IVmPackageManagerService.Stub.asInterface(AppServiceManager.getService(VmServiceManager.PACKAGE_MANAGER))
         }
         return service!!
     }

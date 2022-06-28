@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.ParceledListSlice;
 import java.lang.String;
 import com.virtual.box.core.entity.VmAppConfig;
+import com.virtual.box.core.app.IAppApplicationThread;
 
 interface IVmActivityManagrService {
 
@@ -19,7 +20,8 @@ interface IVmActivityManagrService {
 
     VmAppConfig initNewProcess(in String packageName, in String processName, int userId);
 
-    ComponentName startService(in Intent intent, in String resolvedType, boolean requireForeground, in int userId);
+    ComponentName startService(in IAppApplicationThread caller, in Intent intent, in String resolvedType,
+            boolean requireForeground, in int userId);
 
     int stopService(in Intent intent, in String resolvedType, int userId);
 

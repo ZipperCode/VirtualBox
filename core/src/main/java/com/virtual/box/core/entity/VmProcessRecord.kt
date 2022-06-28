@@ -2,11 +2,10 @@ package com.virtual.box.core.entity
 
 import android.content.pm.ApplicationInfo
 import android.os.*
-import androidx.versionedparcelable.ParcelField
 import com.virtual.box.base.util.log.L
+import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
-import com.virtual.box.core.server.am.IVmActivityThread
 
 
 class VmProcessRecord : Binder, Parcelable {
@@ -61,7 +60,7 @@ class VmProcessRecord : Binder, Parcelable {
      * 虚拟进程的 IVmActivityThread 代理对象
      */
     @JvmField
-    var vmAppThread: IVmActivityThread? = null
+    var applicationThread: IAppApplicationThread? = null
 
     constructor(info: ApplicationInfo, vmUid: Int, vmPid: Int): super() {
         this.info = info
@@ -100,12 +99,12 @@ class VmProcessRecord : Binder, Parcelable {
     }
 
     fun linkToDeath(){
-        vmAppThread?.asBinder()?.linkToDeath(object : IBinder.DeathRecipient{
+        applicationThread?.asBinder()?.linkToDeath(object : IBinder.DeathRecipient{
             override fun binderDied() {
                 VmProcessManager.killProcess(packageName, vmUid)
                 try {
-                    vmAppThread?.asBinder()?.unlinkToDeath(this, 0)
-                    vmAppThread = null
+                    applicationThread?.asBinder()?.unlinkToDeath(this, 0)
+                    applicationThread = null
                 }catch (e: RemoteException){
                     L.printStackTrace(e)
                 }

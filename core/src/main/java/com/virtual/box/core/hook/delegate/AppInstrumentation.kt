@@ -14,7 +14,7 @@ import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.IInjectHook
 import com.virtual.box.core.manager.VmAppActivityManager
-import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HLoadedApk
@@ -114,13 +114,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -152,13 +152,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -193,13 +193,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -235,12 +235,12 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_ACTIVITIES,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -248,7 +248,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, options)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, VmAppActivityThread.currentProcessVmUserId)
+        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, AppActivityThread.currentProcessVmUserId)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, options)
         }
@@ -275,13 +275,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){
@@ -319,13 +319,13 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return ActivityResult(Activity.RESULT_CANCELED, Intent())
         }
         val dataString = intent.dataString
-        if (dataString != null && dataString == "package:${VmAppActivityThread.mVmPackageName}") {
+        if (dataString != null && dataString == "package:${AppActivityThread.mVmPackageName}") {
             intent.data = Uri.parse("package:${VirtualBox.get().hostPkg}")
         }
 
         val resolveInfo = VmAppPackageManager.resolveActivity(
             intent, PackageManager.GET_META_DATA,
-            intent.resolveType(context), VmAppActivityThread.currentProcessVmUserId
+            intent.resolveType(context), AppActivityThread.currentProcessVmUserId
         )
 
         if (resolveInfo == null){

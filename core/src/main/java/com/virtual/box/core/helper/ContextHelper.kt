@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import com.virtual.box.base.util.log.L
-import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.reflect.android.app.HContextImpl
 import com.virtual.box.reflect.android.content.HContentResolver
 import java.lang.Exception
@@ -50,7 +50,7 @@ object ContextHelper {
         }while (curContext != null && preContext != curContext && deep++ < MAX_DEEP)
 
         if (curContext !is ContextWrapper){
-            HContextImpl.mPackageInfo.set(curContext, VmAppActivityThread.mVmLoadedApk)
+            HContextImpl.mPackageInfo.set(curContext, AppActivityThread.mVmLoadedApk)
         }
     }
 

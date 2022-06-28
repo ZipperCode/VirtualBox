@@ -34,7 +34,7 @@ internal class AppServiceDispatcher {
         if (findServiceRecord?.service != null){
             return findServiceRecord.service
         }
-        val service = VmAppActivityThread.handleCreateVmService(stubServiceRecord.serviceInfo, stubServiceRecord.token) ?: return null
+        val service = AppActivityThread.handleCreateVmService(stubServiceRecord.serviceInfo, stubServiceRecord.token) ?: return null
         serviceRecord[FilterComparison(stubServiceRecord.originIntent)] = AppServiceRecord(service)
         return service
     }

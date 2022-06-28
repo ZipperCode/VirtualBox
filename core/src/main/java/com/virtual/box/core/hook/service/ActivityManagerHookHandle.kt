@@ -21,7 +21,7 @@ import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.core.manager.VmAppActivityManager
-import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.proxy.ProxyManifest
 import com.virtual.box.reflect.android.app.HActivityManager
@@ -245,7 +245,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
             logger.i("getContentProvider#获取非系统Provider pks = %s, auth = %s", callingPackage, name)
             val providerInfo = VmAppPackageManager.resolveContentProvider(
                 name, PackageManager.GET_PROVIDERS,
-                VmAppActivityThread.currentProcessVmUserId
+                AppActivityThread.currentProcessVmUserId
             )
             if (providerInfo == null){
                 logger.e("getContentProvider#VmPMS获取ProviderInfo == null")
@@ -255,15 +255,15 @@ class ActivityManagerHookHandle : BaseHookHandle() {
             logger.i("getContentProvider#解析到Provider = %s", providerInfo)
             val packageName = providerInfo.packageName
             val processName = providerInfo.processName
-            val initNewProcess = VmAppActivityManager.initNewProcess(packageName, processName, VmAppActivityThread.currentProcessVmUserId)
+            val initNewProcess = VmAppActivityManager.initNewProcess(packageName, processName, AppActivityThread.currentProcessVmUserId)
                 ?: return methodHandle.invokeOriginMethod()
             logger.i("getContentProvider#初始化Provider进程成功 appConfig = %s", initNewProcess)
             var stubAuth = name
             var iContentProvider: IBinder? = null
-            if (initNewProcess.mainProcessVmPid != VmAppActivityThread.currentProcessVmPid){
+            if (initNewProcess.mainProcessVmPid != AppActivityThread.currentProcessVmPid){
                 logger.i("getContentProvider#插件号进程不一致，是获取的非当前进程的Provider")
             }
-            iContentProvider = VmAppActivityThread.acquireContentProviderClient(providerInfo)
+            iContentProvider = AppActivityThread.acquireContentProviderClient(providerInfo)
             stubAuth = ProxyManifest.getProxyAuthorities(initNewProcess.vmProcessRecord!!.vmPid)
 
             if (iContentProvider == null){
@@ -277,7 +277,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
                 caller, hostPkg, stubAuth, userId, stable
             )) ?: return null
 
-            ProviderHelper.replaceProviderAndInfo(result, providerInfo, VmAppActivityThread.mVmPackageName)
+            ProviderHelper.replaceProviderAndInfo(result, providerInfo, AppActivityThread.mVmPackageName)
 
             return result
         }

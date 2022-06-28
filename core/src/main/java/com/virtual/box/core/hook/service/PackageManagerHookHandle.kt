@@ -11,7 +11,7 @@ import androidx.annotation.RequiresApi
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.hook.core.MethodHandle
-import com.virtual.box.core.manager.VmAppActivityThread
+import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivityThread
@@ -102,7 +102,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
      * @return the target SDK for the given package name, or -1 if it cannot be retrieved
      */
     fun getTargetSdkVersion(methodHandle: MethodHandle, packageName: String): Int {
-        val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, 0, VmAppActivityThread.currentProcessVmUserId)
+        val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, 0, AppActivityThread.currentProcessVmUserId)
         if (applicationInfo != null) {
             return applicationInfo.targetSdkVersion
         }

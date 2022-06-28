@@ -18,6 +18,7 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.ContextHelper
 import com.virtual.box.core.helper.IoHelper
@@ -42,7 +43,7 @@ import kotlin.collections.ArrayList
  *
  */
 @SuppressLint("StaticFieldLeak")
-internal object VmAppActivityThread : IVmActivityThread.Stub() {
+internal object AppActivityThread : IVmActivityThread.Stub() {
 
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmApplicationManager")
 
@@ -80,6 +81,8 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
 
     private lateinit var mContext: Context
 
+    private val applicationThread: ApplicationThread = ApplicationThread()
+
     fun initProcessAppConfig(vmAppConfig: VmAppConfig) {
         logger.d("initProcessAppConfig#vmAppConfig = %s", vmAppConfig)
         synchronized(initProcessLock) {
@@ -104,6 +107,10 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
 
     override fun getVmActivityThread(): IBinder {
         TODO("Not yet implemented")
+    }
+
+    fun getApplicationThread(): IAppApplicationThread{
+        return applicationThread
     }
 
     override fun acquireContentProviderClient(providerInfo: ProviderInfo): IBinder? {
@@ -403,4 +410,32 @@ internal object VmAppActivityThread : IVmActivityThread.Stub() {
         return HSingleton.get.call(iActivityManager)
     }
 
+    private class ApplicationThread: IAppApplicationThread.Stub() {
+        override fun getVmAppConfig(): VmAppConfig? {
+            return AppActivityThread.vmAppConfig
+        }
+
+        override fun scheduleCreateService(token: IBinder, serviceInfo: ServiceInfo, intent: Intent) {
+
+        }
+
+        override fun schduleStopService(token: IBinder, intent: Intent) {
+
+        }
+
+
+        override fun scheduleBindService(toekn: IBinder, intent: Intent?, rebind: Boolean) {
+            TODO("Not yet implemented")
+        }
+
+        override fun scheduleUnbindService(token: IBinder, intent: Intent?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun acquireContentProviderClient(providerInfo: ProviderInfo?): IBinder {
+            TODO("Not yet implemented")
+        }
+
+
+    }
 }

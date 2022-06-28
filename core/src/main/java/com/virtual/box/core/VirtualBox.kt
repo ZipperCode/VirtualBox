@@ -10,7 +10,7 @@ import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
 import com.virtual.box.core.manager.AppHookManager
-import com.virtual.box.core.manager.ServiceManager
+import com.virtual.box.core.manager.AppServiceManager
 import com.virtual.box.core.manager.VmAppActivityManager
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
@@ -50,7 +50,7 @@ class VirtualBox {
             processName.endsWith(context.getString(R.string.server_process_name)) -> ProcessType.Server
             else -> ProcessType.VmClient
         }
-        ServiceManager.initService()
+        AppServiceManager.initService()
         initHook()
     }
 
