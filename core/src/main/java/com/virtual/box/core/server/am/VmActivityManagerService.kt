@@ -5,7 +5,10 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ParceledListSlice
+import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Process
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
@@ -22,6 +25,15 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmActivityManagerService")
 
     private val vmActiveServices = VmActiveServices()
+
+    private val vmHandlerThread: HandlerThread = HandlerThread("VmAms", Process.THREAD_PRIORITY_DEFAULT)
+
+    internal val vmHandler: Handler
+
+    init {
+        vmHandlerThread.start()
+        vmHandler = Handler(vmHandlerThread.looper)
+    }
 
     /**
      * 虚拟程序启动入口

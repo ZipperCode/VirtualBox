@@ -143,7 +143,7 @@ object VmAppActivityManager {
 
     fun startService(intent: Intent?, resolvedType: String?,requireForeground: Boolean, userId: Int): ComponentName? {
         return try {
-            requireService().startService(AppActivityThread.getApplicationThread(), intent, resolvedType,requireForeground, userId)
+            requireService().startService(intent, resolvedType,requireForeground, userId)
         }catch (e: RemoteException){
             L.printStackTrace(e)
             null

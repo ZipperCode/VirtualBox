@@ -20,7 +20,7 @@ interface IVmActivityManagrService {
 
     VmAppConfig initNewProcess(in String packageName, in String processName, int userId);
 
-    ComponentName startService(in IAppApplicationThread caller, in Intent intent, in String resolvedType,
+    ComponentName startService(in Intent intent, in String resolvedType,
             boolean requireForeground, in int userId);
 
     int stopService(in Intent intent, in String resolvedType, int userId);

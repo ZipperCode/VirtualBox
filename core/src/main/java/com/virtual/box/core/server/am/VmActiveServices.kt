@@ -7,6 +7,7 @@ import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.IBinder
 import android.os.RemoteException
+import androidx.collection.ArrayMap
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -15,6 +16,8 @@ import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmProxyServiceRecord
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.core.server.am.entity.RunningServiceRecord
+import com.virtual.box.core.server.am.entity.VmServiceRecord
 import com.virtual.box.core.server.pm.VmPackageManagerService
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -23,13 +26,10 @@ class VmActiveServices {
 
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmActiveServices")
 
-    private val runningServiceRecords: MutableMap<FilterComparison, RunningServiceRecord> = HashMap()
-
-    private val runningServiceTokens: MutableList<IBinder> = ArrayList()
-
-    private val processServices= WeakHashMap<IAppApplicationThread, MutableMap<FilterComparison, RunningServiceRecord>>()
+    val runService = ArrayMap<FilterComparison, VmServiceRecord>()
 
     private val recordLock = Any()
+
 
     fun startServiceLock(service: Intent?, resolvedType: String?, requireForeground: Boolean, userId: Int): ComponentName? {
         if (service == null) {
@@ -59,33 +59,45 @@ class VmActiveServices {
             logger.e("startService#失败，[%s]appConfig中不存在IAppApplicationThread的Binder引用", initNewProcess.packageName)
             return null
         }
+        val vmPid = initNewProcess.getVmPidByProcess(processName)
         val targetApplicationThread = initNewProcess.vmProcessRecord!!.applicationThread!!
-
+        if (!startDispatcherServiceLock(targetApplicationThread, vmPid)){
+            return null
+        }
 
         val runningServiceRecord = getOrCreateRunningServiceRecord(service, serviceInfo)
-
         val serviceProcessUserId = initNewProcess.userId
-        val vmPid = initNewProcess.getVmPidByProcess(processName)
-        // TODO 这边先不动，直接使用分发方式
-        val shadowIntent = createStubServiceIntent(service, serviceInfo, runningServiceRecord, serviceProcessUserId, vmPid)
 
-        val componentName =  try {
-            if (requireForeground && BuildCompat.isAtLeastOreo) {
-                VirtualBox.get().hostContext.startForegroundService(shadowIntent)
-            } else {
-                VirtualBox.get().hostContext.startService(shadowIntent)
-            }
+        try {
+            targetApplicationThread.scheduleCreateService()
         } catch (e: Exception) {
             removeRunningServiceRecord(runningServiceRecord)
             logger.e(e)
             null
         } ?: return null
 
-
+        return service.component
     }
 
-    private fun startDispatcherServiceLock(caller: IAppApplicationThread, targetService: Intent){
-
+    private fun startDispatcherServiceLock(caller: IAppApplicationThread, vmPid: Int): Boolean{
+        synchronized(recordLock) {
+            if (!processServices.containsKey(caller)){
+                val shadowIntent = createStubService(vmPid)
+                try {
+                    if (BuildCompat.isAtLeastOreo) {
+                        VirtualBox.get().hostContext.startForegroundService(shadowIntent)
+                    } else {
+                        VirtualBox.get().hostContext.startService(shadowIntent)
+                    }
+                } catch (e: Exception) {
+                    logger.e(e)
+                    null
+                } ?: return false
+                processServices[caller] = mutableMapOf()
+                return true
+            }
+            return true
+        }
     }
 
     fun stopService(intent: Intent?, resolvedType: String?, userId: Int): Int {
@@ -112,11 +124,22 @@ class VmActiveServices {
         }
 
         try {
-            processRecord.applicationThread?.schduleStopService(intent)
+//            processRecord.applicationThread?.schduleStopService(intent)
         } catch (e: RemoteException) {
             logger.e(e)
         }
         return 0
+    }
+
+    private fun createStubService(vmPid: Int):Intent{
+        val shadow = Intent()
+        val shadowComponentName = ComponentName(
+            VirtualBox.get().hostPkg,
+            ProxyManifest.getProxyService(vmPid)
+        )
+        shadow.component = shadowComponentName
+        shadow.action = UUID.randomUUID().toString()
+        return shadow
     }
 
     private fun createStubServiceIntent(
@@ -171,27 +194,5 @@ class VmActiveServices {
         return runningServiceTokens.find { it == token } as RunningServiceRecord?
     }
 
-    /**
-     * Service running token
-     */
-    class RunningServiceRecord(
-        val intent: Intent,
-        val serviceInfo: ServiceInfo
-    ) : Binder() {
-        // onStartCommand startId
-        val startId = AtomicInteger(1)
-        val bindCount = AtomicInteger(0)
-
-        val andIncrementStartId: Int
-            get() = startId.getAndIncrement()
-
-        fun decrementBindCountAndGet(): Int {
-            return bindCount.decrementAndGet()
-        }
-
-        fun incrementBindCountAndGet(): Int {
-            return bindCount.incrementAndGet()
-        }
-    }
 
 }

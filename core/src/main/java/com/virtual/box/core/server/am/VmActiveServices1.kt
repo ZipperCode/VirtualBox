@@ -93,7 +93,7 @@ class VmActiveServices1 {
         }
 
         try {
-            processRecord.applicationThread?.schduleStopService(intent)
+//            processRecord.applicationThread?.schduleStopService(intent)
         } catch (e: RemoteException) {
             logger.e(e)
         }
