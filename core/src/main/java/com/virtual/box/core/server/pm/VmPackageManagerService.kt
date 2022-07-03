@@ -103,7 +103,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
                 }
                 var packageInfo: PackageInfo? = null
                 try {
-                    packageInfo = VirtualBox.get().hostContext.packageManager.getPackageInfo(option.packageName, 0);
+                    packageInfo = VirtualBox.get().hostPm.getPackageInfo(option.packageName, 0);
                 } catch (e: Exception) {
                     return VmPackageResult.installFail("安装失败，未找到对应的package = ${option.packageName}")
                 }
@@ -112,10 +112,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             // TODO 后续添加检查是否安装过此应用了
             logger.method("【IPC】安装应用（应用包），文件路径 path = %s", filePath)
             // 解析apk文件包
-            val aPackage = PackageHelper.parserApk(filePath)
-            if (aPackage == null) {
-                return VmPackageResult.installFail("解析apk文件：${filePath}失败")
-            }
+            val aPackage = PackageHelper.parserApk(filePath) ?: return VmPackageResult.installFail("解析apk文件：${filePath}失败")
             val packageName = aPackage.packageName
             val versionCode = aPackage.mVersionCode
             // 获取宿主的包内容
@@ -123,17 +120,16 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             val vmPackageInfo = PackageHelper.convertPackageInfo(hostPackageInfo, aPackage)
             // 检查是否安装或更新
             if (vmPackageRepo.checkNeedInstalledOrUpdated(packageName, versionCode.toLong())) {
-                VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath)
+                VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath, userId)
             } else {
                 isUpdatePackage = true
-                PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo)
+                val packageAbi = PackageHelper.getPackageCpuAbi(packageName, userId)
+                PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo, packageAbi)
             }
             // 创建用户
             VmUserManagerService.checkOrCreateUser(userId)
             // 停止同包名下的应用进程
             VmProcessManager.killProcess(vmPackageInfo.packageName, userId)
-            // 安装用户数据
-            VmPackageInstallManager.installVmPackageAsUserData(vmPackageInfo, userId)
             // 安装包配置
             val vmPackageSetting = VmPackageConfigInfo(vmPackageInfo, option)
             // 保存安装信息

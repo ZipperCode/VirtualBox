@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Debug
 import com.virtual.box.base.ext.checkAndMkdirs
+import com.virtual.box.base.ext.deleteDir
 import com.virtual.box.base.helper.SystemHelper
 import java.io.File
 import java.util.*
@@ -21,6 +22,21 @@ internal object VmFileSystem {
 
     private lateinit var mVirtualRoot: File
 
+    /**
+     * {vmDir}/data/app/
+     */
+    private lateinit var mAppsInstallDir: File
+
+    /**
+     * {vmDir}/data/user/
+     */
+    private lateinit var mUsersSpaceDir: File
+
+    /**
+     * {vmDir}/data/data/
+     */
+    private lateinit var mUserAppsDataDir: File
+
     lateinit var mUserInfoConfig: File
         private set
 
@@ -34,10 +50,76 @@ internal object VmFileSystem {
         }
         mContext = context.applicationContext
         mVirtualRoot = File(mContext.filesDir, "virtual")
-        mVirtualRoot.checkAndMkdirs()
+        mAppsInstallDir = File(mVirtualRoot, "data/app/")
+        mUsersSpaceDir = File(mVirtualRoot,"data/user/")
+        mUserAppsDataDir = File(mVirtualRoot,"data/data/")
+
+        mAppsInstallDir.checkAndMkdirs()
+        mUsersSpaceDir.checkAndMkdirs()
+        mUserAppsDataDir.checkAndMkdirs()
+
         mUserInfoConfig = File(mVirtualRoot,"user.conf")
         mInstallPackageInfoConfig = File(mVirtualRoot, "install.conf")
         isInit = true
+    }
+
+    /**
+     * 应用安装目录，区分不同用户的安装位置
+     * {host}/data/app/{userId}/{package}
+     */
+    fun getAppInstallDir(packageName: String, userId: Int): File{
+        return File(mAppsInstallDir, String.format(Locale.CHINA,"%s/%s", userId, packageName))
+    }
+
+    /**
+     * {host}/data/app/{userId}/{package}/lib
+     */
+    fun getAppInstallLibDir(packageName: String, userId: Int): File{
+        return File(mAppsInstallDir, String.format(Locale.CHINA,"%s/%s/lib/", userId, packageName))
+    }
+
+    fun mkdirAppInstallDir(packageName: String, userId: Int){
+        val installAppDir = getAppInstallDir(packageName, userId)
+        File(installAppDir,"lib").checkAndMkdirs()
+        File(installAppDir, "oat").checkAndMkdirs()
+    }
+
+    fun handleInstallDir(packageName: String, userId: Int){
+        val installAppDir = getAppInstallDir(packageName, userId)
+        if (installAppDir.exists()){
+            installAppDir.deleteDir()
+        }
+        File(installAppDir,"lib").checkAndMkdirs()
+        File(installAppDir, "oat").checkAndMkdirs()
+    }
+
+    /**
+     * {host}/data/app/{userId}/{package}/base.apk
+     */
+    fun getAppInstallBaseApkFile(packageName: String, userId: Int): File{
+        return File(getAppInstallDir(packageName, userId),"base.apk")
+    }
+
+    fun getInstallAppPackageInfoFile(packageName: String, userId: Int):File{
+        return File(getAppInstallDir(packageName, userId),INSTALL_PACKAGE_INFO_FILE_NAME)
+    }
+
+    /**
+     * {host}/data/data/{userId}/{package}
+     */
+    fun getAppDataDir(packageName: String, userId: Int): File{
+        return File(mUserAppsDataDir,String.format(Locale.CHINA,"%s/%s", userId, packageName))
+    }
+
+    fun mkdirAppDataDir(packageName: String, userId: Int){
+        val appDataDir = getAppDataDir(packageName, userId)
+        File(appDataDir, "files").checkAndMkdirs()
+        File(appDataDir, "cache").checkAndMkdirs()
+        File(appDataDir, "code_cache").checkAndMkdirs()
+        File(appDataDir, "lib").checkAndMkdirs()
+        File(appDataDir, "databases").checkAndMkdirs()
+        File(appDataDir, "shared_prefs").checkAndMkdirs()
+        File(appDataDir, "oat").checkAndMkdirs()
     }
 
     /**
@@ -106,18 +188,15 @@ internal object VmFileSystem {
         return installAppArm64LibDir.exists() && installAppArm64LibDir.listFiles()?.isNotEmpty() == true
     }
 
-    fun getPackageAbi(packageName: String): String? {
-        val currentAbi = SystemHelper.sCurrentSimpleCpuAbi
-        val installAppLibAbiDir = getInstallAppLibAbiDir(packageName, currentAbi)
-        if (installAppLibAbiDir.exists() && installAppLibAbiDir.listFiles()?.isNotEmpty() == true){
-            return currentAbi
-        }
-        return null
-    }
+
 
     fun checkPackageAbi(packageName: String, abi: String): Boolean {
         val installAppLibAbiDir = getInstallAppLibAbiDir(packageName, abi)
         return installAppLibAbiDir.exists()
+    }
+
+    fun handleNewInstallAppDir(packageName: String, userId: Int){
+
     }
 
     fun mkdirAppInstall(packageName: String){

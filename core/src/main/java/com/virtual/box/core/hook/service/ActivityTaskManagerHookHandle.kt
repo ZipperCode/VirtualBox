@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.os.Bundle
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.compat.ActivityManagerCompat
 import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.reflect.android.app.HActivityTaskManager
 import com.virtual.box.reflect.android.util.HSingleton

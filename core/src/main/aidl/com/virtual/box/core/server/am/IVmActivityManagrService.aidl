@@ -25,14 +25,16 @@ interface IVmActivityManagrService {
 
     int stopService(in Intent intent, in String resolvedType, int userId);
 
-    boolean stopServiceToken(in ComponentName componentName, in IBinder token, int userId);
+    boolean stopServiceToken(in ComponentName componentName, in IBinder token, int startId, int userId);
 
-    int prepareBindService(in Intent intent, in IBinder token, in String resulvedType,
-        in IServiceConnection connection, int flags, int userId);
+    int bindService(IAppApplicationThread caller, in Intent intent, IBinder token,
+        IServiceConnection conn,in String resolvedType, int userId);
 
-    int unbindService(in IServiceConnection connection, int userId);
+    boolean unbindService(in IServiceConnection connection, int userId);
 
     IBinder peekService(in Intent intent, in String resolvedType, int userId);
+
+    void publishService(IBinder token, in Intent intent, IBinder binder);
 
     Intent sendBroadcast(in Intent intent, String resolvedType, int userId);
 
@@ -41,4 +43,12 @@ interface IVmActivityManagrService {
     ParceledListSlice getServices(in String callingPackage, int userId);
 
     String getCallingPackage(in IBinder token, int userId);
+
+    void forceStopPackage(in String packageName, int userId);
+
+    void killApplication(in String packageName, int appId, int userId, in String reason);
+
+    void killApplicationProcess(in String processName,int uid);
+
+    void killBackgroundProcesses(in String packageName, int userId);
 }

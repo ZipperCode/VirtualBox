@@ -7,9 +7,6 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 
 interface IVmActivityThread {
-    IBinder getVmActivityThread();
     IBinder acquireContentProviderClient(in ProviderInfo providerInfo);
     void handleApplication();
-
-    void schduleStopService(in Intent intent);
 }

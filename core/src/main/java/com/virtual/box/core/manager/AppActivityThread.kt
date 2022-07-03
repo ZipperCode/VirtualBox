@@ -36,7 +36,6 @@ import dalvik.system.VMRuntime
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * 虚拟进程的ActivityThread模拟实现
@@ -81,7 +80,11 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
 
     private lateinit var mContext: Context
 
+    private val handler = Handler(Looper.getMainLooper())
+
     private val applicationThread: ApplicationThread = ApplicationThread()
+
+    private lateinit var systemServiceMapRef: MutableMap<IBinder, Service>
 
     fun initProcessAppConfig(vmAppConfig: VmAppConfig) {
         logger.d("initProcessAppConfig#vmAppConfig = %s", vmAppConfig)
@@ -95,6 +98,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
         mContext = VirtualBox.get().hostContext
         this.vmAppConfig = vmAppConfig
+        systemServiceMapRef = HActivityThread.mServices.get(ActivityThread.currentActivityThread())
         val binder = asBinder()
         try {
             binder.linkToDeath({
@@ -103,10 +107,6 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         } catch (e: RemoteException) {
             logger.e(e)
         }
-    }
-
-    override fun getVmActivityThread(): IBinder {
-        TODO("Not yet implemented")
     }
 
     fun getApplicationThread(): IAppApplicationThread{
@@ -136,7 +136,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
         if (Looper.myLooper() != Looper.getMainLooper()) {
             val conditionVariable = ConditionVariable()
-            Handler(Looper.getMainLooper()).post {
+            handler.post {
                 vmAppConfig?.run {
                     handleBindApplication(packageName, processName, userId)
                 }
@@ -150,31 +150,9 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
     }
 
-//    fun handleCreateAppService(createServiceData: Any): Boolean{
-//        val serviceInfo = HActivityThread.CreateServiceData.info.get(createServiceData)
-//        if (!isInit || isProxyOrHostService(serviceInfo)){
-//            return false
-//        }
-//        val vmPid = vmAppConfig!!.getVmPidByProcess(serviceInfo.packageName)
-//
-//        val intent = Intent()
-//        intent.component = ComponentName(mVmPackageName, serviceInfo.name)
-//        VmActivityManager.startService(intent, null, false, vmAppConfig!!.userId)
-//        return true
-//    }
-//
-//    private fun isProxyOrHostService(serviceInfo: ServiceInfo): Boolean{
-//        val vmPid = vmAppConfig!!.getVmPidByProcess(serviceInfo.packageName)
-//        if (serviceInfo.packageName == VirtualBox.get().hostPkg){
-//            return true
-//        }
-//        return serviceInfo.name != ProxyManifest.getProxyService(vmPid)
-//                && serviceInfo.name != ProxyManifest.getProxyJobService(vmPid)
-//    }
-
-    fun handleCreateVmService(serviceInfo: ServiceInfo, token: IBinder): Service?{
+    private fun handleCreateAppService(serviceInfo: ServiceInfo, token: IBinder, intent: Intent){
         if (!isInit){
-            return null
+            return
         }
         val serviceInstance = try {
             try {
@@ -185,26 +163,80 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
             }
         }catch (e: Exception){
             logger.e(e)
-            null
         }
-
         if (serviceInstance == null){
             logger.e("unable newInstance service: %s", serviceInfo.name)
-            return null
+            return
         }
-        val packageContext = VirtualBox.get().hostContext.createPackageContext(serviceInfo.packageName,
-            Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY)
+
+        val packageContext = createPackageContext(serviceInfo.applicationInfo)
 
         HContextImpl.mOuterContext.set(packageContext, serviceInstance)
-        HService.attach.call(serviceInstance,
-            packageContext, ActivityThread.currentActivityThread(),
+        HService.attach.call(serviceInstance, packageContext, ActivityThread.currentActivityThread(),
             serviceInfo.name, token, vmApplication, getIActivityManager())
+
         (serviceInstance as Service).onCreate()
-        return serviceInstance
+        val serviceMap = HActivityThread.mServices.get(ActivityThread.currentActivityThread())
+        serviceMap?.put(token, serviceInstance)
+        // TODO ams serviceDoneExecuting
     }
 
-    override fun schduleStopService(intent: Intent?) {
-        TODO("Not yet implemented")
+    fun handleAppServiceArgs(token: IBinder, startId: Int, intent: Intent?){
+        val s = systemServiceMapRef[token]
+        if (s != null){
+            try {
+                val res = s.onStartCommand(intent, 0, startId)
+                // TODO serviceDoneExecuting res
+            }catch (e: Exception){
+                logger.e(e)
+            }
+        }
+    }
+
+    fun handleStopAppService(token: IBinder){
+        val s = systemServiceMapRef.remove(token)
+        if (s != null){
+            try {
+                s.onDestroy()
+                HService.detachAndCleanUp.call(s)
+                // TODO serviceDoneExecuting
+            }catch (e:Exception){
+                logger.e(e)
+            }
+        }
+    }
+
+    fun handleBindAppService(token: IBinder, intent: Intent?, rebind: Boolean){
+        val s = systemServiceMapRef[token]
+        if (s != null){
+            try{
+                if (!rebind){
+                    val binder = s.onBind(intent)
+                    VmAppActivityManager.publishService(token, intent, binder)
+                }else{
+                    s.onRebind(intent)
+                    // TODO serviceDoneExecuting
+                }
+            }catch(e: Exception){
+                logger.e(e)
+            }
+        }
+    }
+
+    fun handleUnbindAppService(token: IBinder, intent: Intent?){
+        val s = systemServiceMapRef[token]
+        if (s != null){
+            try{
+                val doRebind = s.onUnbind(intent)
+                if (doRebind){
+                    // TODO unbindFinished
+                }else{
+                    // TODO serviceDoneExecuting
+                }
+            }catch(e: Exception){
+                logger.e(e)
+            }
+        }
     }
 
     @MainThread
@@ -412,25 +444,47 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
     }
 
     private class ApplicationThread: IAppApplicationThread.Stub() {
+
         override fun getVmAppConfig(): VmAppConfig? {
             return AppActivityThread.vmAppConfig
         }
 
-        override fun scheduleCreateService(token: IBinder, serviceInfo: ServiceInfo, intent: Intent) {
+        override fun attachApplication(appConfig: VmAppConfig){
+            if (AppActivityThread.vmAppConfig == null){
+                AppActivityThread.vmAppConfig = appConfig
+            }
+            handleApplication()
+        }
 
+        override fun scheduleCreateService(token: IBinder, serviceInfo: ServiceInfo, intent: Intent) {
+            handler.post {
+                handleCreateAppService(serviceInfo, token, intent)
+            }
+        }
+
+        override fun scheduleServiceArgs(token: IBinder, startId: Int, intent: Intent?) {
+            handler.post {
+                handleAppServiceArgs(token, startId, intent)
+            }
         }
 
         override fun schduleStopService(token: IBinder, intent: Intent) {
-
+            handler.post {
+                handleStopAppService(token)
+            }
         }
 
 
-        override fun scheduleBindService(toekn: IBinder, intent: Intent?, rebind: Boolean) {
-            TODO("Not yet implemented")
+        override fun scheduleBindService(token: IBinder, intent: Intent?, rebind: Boolean) {
+            handler.post {
+                handleBindAppService(token, intent, rebind)
+            }
         }
 
         override fun scheduleUnbindService(token: IBinder, intent: Intent?) {
-            TODO("Not yet implemented")
+            handler.post {
+                handleUnbindAppService(token, intent)
+            }
         }
 
         override fun acquireContentProviderClient(providerInfo: ProviderInfo?): IBinder {

@@ -18,4 +18,6 @@ public class HService {
     public static MirrorReflection.MethodWrapper<Void> attach = REF.method("attach",
         Context.class, ActivityThread.class, String.class, IBinder.class,
             Application.class, Object.class);
+
+    public static MirrorReflection.MethodWrapper<Void> detachAndCleanUp = REF.method("detachAndCleanUp");
 }

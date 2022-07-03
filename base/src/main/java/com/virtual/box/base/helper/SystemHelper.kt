@@ -15,6 +15,12 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 object SystemHelper {
+
+    const val ABI_X86 = "x86"
+    const val ABI_X64 = "x86_64"
+    const val ABI_ARM = "armeabi-v7a"
+    const val ABI_ARM64 = "arm64-v8a"
+    const val ABI_UNKNOWN = "-"
     /**
      * 当前进程名称
      */
@@ -23,45 +29,33 @@ object SystemHelper {
     var sCurrentCpuAbi: String
         private set
 
-    var sCurrentSimpleCpuAbi: String
-        private set
+
 
     init {
         try {
             Runtime.getRuntime().exec("getprop ro.product.cpu.abi").inputStream.use {
                 val cpuAbiLine = readLine()
                 when {
-                    cpuAbiLine?.contains("x86") == true -> {
-                        sCurrentCpuAbi = "x86"
-                        sCurrentSimpleCpuAbi = "x86"
+                    cpuAbiLine?.contains(ABI_X86) == true -> {
+                        sCurrentCpuAbi = ABI_X86
                     }
-                    cpuAbiLine?.contains("x86_64") == true -> {
-                        sCurrentCpuAbi = "x86_64"
-                        sCurrentSimpleCpuAbi = "x86_64"
+                    cpuAbiLine?.contains(ABI_X64) == true -> {
+                        sCurrentCpuAbi = ABI_X64
                     }
-                    cpuAbiLine?.contains("armeabi-v7a") == true -> {
-                        sCurrentCpuAbi = "armeabi-v7a"
-                        sCurrentSimpleCpuAbi = "armeabi"
+                    cpuAbiLine?.contains(ABI_ARM) == true -> {
+                        sCurrentCpuAbi = ABI_ARM
                     }
-                    cpuAbiLine?.contains("arm64-v8a") == true -> {
-                        sCurrentCpuAbi = "arm64-v8a"
-                        sCurrentSimpleCpuAbi = "arm64"
+                    cpuAbiLine?.contains(ABI_ARM64) == true -> {
+                        sCurrentCpuAbi = ABI_ARM64
                     }
                     else -> {
-                        val index = Build.CPU_ABI.indexOf("-")
-                        sCurrentSimpleCpuAbi = if (index == -1){
-                            Build.CPU_ABI
-                        }else{
-                            Build.CPU_ABI.substring(0, index)
-                        }
                         sCurrentCpuAbi = Build.CPU_ABI
                     }
                 }
             }
         } catch (e: Exception) {
             L.printStackTrace(e)
-            sCurrentCpuAbi = Build.CPU_ABI
-            sCurrentSimpleCpuAbi = Build.CPU_ABI
+            sCurrentCpuAbi = ABI_UNKNOWN
         }
     }
 

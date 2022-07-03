@@ -4,6 +4,7 @@ package com.virtual.box.reflect.android.app;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -34,6 +35,7 @@ public class HActivityThread {
     public static MirrorReflection.FieldWrapper<Instrumentation> mInstrumentation = REF.field("mInstrumentation");
     public static MirrorReflection.FieldWrapper<IInterface> sPackageManager = REF.field("sPackageManager");
     public static MirrorReflection.FieldWrapper<IInterface> mAppThread = REF.field("mAppThread");
+    public static MirrorReflection.FieldWrapper<Map<IBinder, Service>> mServices = REF.field("mServices");
     public static MirrorReflection.MethodWrapper<IBinder> getApplicationThread = REF.method("getApplicationThread");
     public static MirrorReflection.MethodWrapper<Object> getSystemContext = REF.method("getSystemContext");
 

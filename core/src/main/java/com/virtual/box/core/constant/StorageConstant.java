@@ -9,4 +9,6 @@ public interface StorageConstant {
     String VM_PK_RESOLVER_INFO = "VmPackageResolverStorage";
 
     String VM_USER_INFO_NAME = "VmUserInfo";
+
+    String VM_USER_PKG_MAP_INFO = "VmUserPackageMapInfo";
 }

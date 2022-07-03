@@ -17,6 +17,7 @@ import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
+import com.virtual.box.core.compat.ActivityManagerCompat
 import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
@@ -24,6 +25,7 @@ import com.virtual.box.core.manager.VmAppActivityManager
 import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.core.server.user.BUserHandle
 import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
 import com.virtual.box.reflect.android.util.HSingleton
@@ -88,6 +90,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultTo: IBinder?, resultWho: String?,
         requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?
     ): Int {
+        logger.e("startActivity#Deprecated > maxTargetSdk = 29")
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, hostPkg, intent, resolvedType, resultTo, resultWho,
             requestCode, flags, profilerInfo, options
@@ -100,6 +103,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resultTo: IBinder?, resultWho: String?, requestCode: Int, flags: Int,
         profilerInfo: Any?, options: Bundle?
     ): Int {
+        logger.e("startActivityWithFeature")
         return methodHandle.invokeOriginMethod(
             arrayOf(
                 caller, hostPkg, callingFeatureId, intent, resolvedType, resultTo,
@@ -110,7 +114,6 @@ class ActivityManagerHookHandle : BaseHookHandle() {
 
     fun finishActivity(methodHandle: MethodHandle, token: IBinder, code: Int, data: Intent, finishTask: Int): Boolean {
         // TODO 关闭窗口时
-
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
@@ -293,17 +296,18 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
         callingFeatureId: String?, userId: Int
     ): ComponentName? {
-        if (service == null){
-            return methodHandle.invokeOriginMethod(arrayOf(
-                caller, service, resolvedType, requireForeground, hostPkg,
-                callingFeatureId, userId
-            )) as? ComponentName
+        if (hostPkg != callingPackage){
+            // TODO BUserHandle.myUserId()
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
+            if (resolveService?.serviceInfo != null){
+                logger.i("startService#解析到虚拟程序的服务信息，使用自定义ams处理")
+                val componentName = VmAppActivityManager.startService(service, resolvedType, requireForeground, userId)
+                if (componentName != null){
+                    return componentName
+                }
+            }
         }
-        val componentName = VmAppActivityManager.startService(service, resolvedType, requireForeground, userId)
 
-        if (componentName != null){
-            return componentName
-        }
         logger.i("startService#服务进程启动服务返回ComponentName == null, 调用源方法处理")
         return methodHandle.invokeOriginMethod() as? ComponentName
     }
@@ -312,7 +316,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, service: Intent?,
         resolvedType: String?, userId: Int
     ): Int {
-        // TODO intent
+        val calPkg = service?.getPackage() ?: service?.component?.packageName
+        if (hostPkg != calPkg){
+            // TODO BUserHandle.myUserId()
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
+            if (resolveService?.serviceInfo != null){
+                logger.i("stopService#解析到虚拟程序的服务信息，使用自定义ams处理")
+                val res = VmAppActivityManager.stopService(service, resolvedType, userId)
+                if (res >= 0){
+                    return res
+                }
+            }
+        }
+
         return methodHandle.invokeOriginMethod() as Int
     }
 
@@ -321,6 +337,17 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         callingPackage: String?, userId: Int
     ): Int {
+        if (hostPkg != callingPackage){
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
+            if (resolveService?.serviceInfo != null){
+                logger.i("bindService#解析到虚拟程序的服务信息，使用自定义ams处理")
+                val res = VmAppActivityManager.bindService(service, token, resolvedType, connection, userId)
+                if (res >= 0){
+                    return res
+                }
+            }
+        }
+
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, token, service, resolvedType, connection, flags,
             hostPkg, userId
@@ -332,6 +359,16 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         instanceName: String?, callingPackage: String?, userId: Int
     ): Int {
+        if (hostPkg != callingPackage){
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
+            if (resolveService?.serviceInfo != null){
+                logger.i("bindService#解析到虚拟程序的服务信息，使用自定义ams处理")
+                val res = VmAppActivityManager.bindService(service, token, resolvedType, connection, userId)
+                if (res >= 0){
+                    return res
+                }
+            }
+        }
         logger.i("bindIsolatedService#callingPackage = %s, service = %s", callingPackage, service)
         return methodHandle.invokeOriginMethod(arrayOf(
             caller, token, service, resolvedType, connection, flags,
@@ -339,15 +376,15 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         )) as Int
     }
 
-    @Deprecated("maxTargetSdk 30")
-    fun setDebugApp(methodHandle: MethodHandle, packageName: String?,
-                    waitForDebugger: Boolean, persistent: Boolean) {
-        methodHandle.invokeOriginMethod()
-    }
+//    @Deprecated("maxTargetSdk 30")
+//    fun setDebugApp(methodHandle: MethodHandle, packageName: String?,
+//                    waitForDebugger: Boolean, persistent: Boolean) {
+//        methodHandle.invokeOriginMethod()
+//    }
 
-    fun setAgentApp(methodHandle: MethodHandle, packageName: String?, agent: String?) {
-        methodHandle.invokeOriginMethod()
-    }
+//    fun setAgentApp(methodHandle: MethodHandle, packageName: String?, agent: String?) {
+//        methodHandle.invokeOriginMethod()
+//    }
 
     /**
      * @param watcher IInstrumentationWatcher
@@ -433,6 +470,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun forceStopPackage(methodHandle: MethodHandle, packageName: String?, userId: Int) {
+
         methodHandle.invokeOriginMethod()
     }
 
@@ -442,14 +480,14 @@ class ActivityManagerHookHandle : BaseHookHandle() {
 
     fun peekService(methodHandle: MethodHandle, service: Intent?, resolvedType: String?,
                     callingPackage: String?): IBinder? {
+        if (hostPkg != callingPackage){
+            return VmAppActivityManager.peekService(service, resolvedType, AppActivityThread.currentProcessVmUserId)
+        }
         return methodHandle.invokeOriginMethod(arrayOf(
             service, resolvedType, hostPkg
         )) as? IBinder
     }
 
-    /**
-     * @param profilerInfo: Any?
-     */
     @Deprecated("maxTargetSdk = 30")
     fun profileControl(
         methodHandle: MethodHandle, process: String?, userId: Int, start: Boolean,
@@ -527,11 +565,15 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun getPackageProcessState(methodHandle: MethodHandle, packageName: String?, callingPackage: String?): Int {
-        return methodHandle.invokeOriginMethod() as Int
+        return methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg, hostPkg
+        )) as Int
     }
 
     fun updateDeviceOwner(methodHandle: MethodHandle, packageName: String?) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg
+        ))
     }
 
     fun killPackageDependents(methodHandle: MethodHandle, packageName: String?, userId: Int) {
@@ -543,7 +585,7 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun isVrModePackageEnabled(methodHandle: MethodHandle, packageName: ComponentName?): Boolean {
-        return methodHandle.invokeOriginMethod() as Boolean
+        return false
     }
 
     fun notifyLockedProfile(methodHandle: MethodHandle, userId: Int) {

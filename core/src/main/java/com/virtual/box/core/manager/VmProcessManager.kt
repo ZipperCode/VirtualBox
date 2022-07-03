@@ -71,6 +71,15 @@ object VmProcessManager {
         return null
     }
 
+    fun findProcess(caller: IAppApplicationThread): VmProcessRecord?{
+        for (vmProcessRecord in allProcessList) {
+            if (vmProcessRecord.applicationThread == caller){
+                return vmProcessRecord
+            }
+        }
+        return null
+    }
+
     /**
      * 准备启动一个新的应用进程，启动一个新应用进程时调用
      *
@@ -134,6 +143,18 @@ object VmProcessManager {
                 return -1
             }
         }
+    }
+
+    fun checkProcessExists(packageName: String, processName: String, userId: Int = 0): Boolean{
+        if (processMap.containsKey(userId)){
+            val appProcessList = processMap[userId]!!
+            for (vmAppProcess in appProcessList) {
+                if (vmAppProcess.packageName == packageName){
+                    return vmAppProcess.checkProcessExists(processName)
+                }
+            }
+        }
+        return false
     }
 
     private fun startVmProxyProcess(vmProcessRecord: VmProcessRecord): Boolean {
@@ -216,9 +237,9 @@ object VmProcessManager {
         }
     }
 
-    fun killProcess(packageName: String?, vmUid: Int) {
+    fun killProcess(packageName: String?, userId: Int) {
         synchronized(userProcessMapLock){
-            val userRunAppProcessList = processMap[vmUid]
+            val userRunAppProcessList = processMap[userId]
             userRunAppProcessList?.run {
                 val appProcess = find { it.packageName == packageName } ?: return@run
                 // 移除主进程

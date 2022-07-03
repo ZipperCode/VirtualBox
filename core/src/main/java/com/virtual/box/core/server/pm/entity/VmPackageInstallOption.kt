@@ -10,14 +10,23 @@ import androidx.annotation.IntDef
  * @date   2022/4/26
  **/
 class VmPackageInstallOption() : Parcelable {
-
+    /**
+     * 安装来源
+     */
     @JvmField
     @Options
     var originFlags: Int = 0
 
+    /**
+     * 安装包名，flag = [FLAG_SYSTEM] 时使用
+     */
     var packageName: String = ""
 
+    /**
+     * 安装包文件路径，flag = [FLAG_STORAGE] 时使用
+     */
     var filePath: String = ""
+
     @JvmField
     var installFlag: Int = 0
 

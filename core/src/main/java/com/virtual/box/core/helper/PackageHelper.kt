@@ -51,15 +51,52 @@ object PackageHelper {
     @JvmStatic
     @WorkerThread
     @Throws(Exception::class)
-    fun copyLibrary(apkFile: File, targetLibRootDir: File) {
+    fun copyLibrary(apkFile: File, targetLibRootDir: File):Boolean {
         val startTime = System.currentTimeMillis()
         if (!targetLibRootDir.exists()) {
             targetLibRootDir.mkdirs()
         }
+        var hasSoFile = false
         ZipFile(apkFile).use {
-            findAndCopyLibrary(it, targetLibRootDir)
+            hasSoFile = findAndCopyLibrary(it, targetLibRootDir)
         }
         L.sd("$TAG >> 文件：${apkFile.absolutePath} 运行库拷贝成功，耗时：${System.currentTimeMillis() - startTime}")
+        return hasSoFile
+    }
+
+    fun getPackageCpuAbi(packageName: String, userId: Int): String{
+        val libRootDir = VmFileSystem.getAppInstallLibDir(packageName, userId)
+        val systemAbi = SystemHelper.sCurrentCpuAbi
+        var hasArm32 = false
+        var hasArm64 = false
+        var hasX86 = false
+        var hasX64 = false
+        val files = libRootDir.listFiles() ?: return SystemHelper.ABI_ARM
+
+        for (file in files) {
+            when (file.name) {
+                systemAbi -> return systemAbi
+                SystemHelper.ABI_ARM -> hasArm32 = true
+                SystemHelper.ABI_ARM64 -> hasArm64 = true
+                SystemHelper.ABI_X86 -> hasX86 = true
+                SystemHelper.ABI_X64 -> hasX64 = true
+            }
+        }
+        if (hasArm64 || hasArm32){
+            return if (hasArm64){
+                SystemHelper.ABI_ARM64
+            }else{
+                SystemHelper.ABI_ARM
+            }
+        }else if (hasX64 || hasX86){
+            return if (hasX64){
+                SystemHelper.ABI_X64
+            }else{
+                SystemHelper.ABI_X86
+            }
+        }
+
+        return SystemHelper.ABI_ARM
     }
 
     @Synchronized
@@ -225,16 +262,16 @@ object PackageHelper {
         return null
     }
 
-    fun fixInstallApplicationInfo(vmApplicationInfo: ApplicationInfo) {
+    /**
+     * 首次安装时修复安装包中的 ApplicationInfo
+     */
+    fun fixInstallApplicationInfo(vmApplicationInfo: ApplicationInfo, cpuAbi: String) {
         val packageName = vmApplicationInfo.packageName
-        if (!VmFileSystem.checkPackageAbi(packageName, SystemHelper.sCurrentSimpleCpuAbi)){
-            throw IllegalStateException("未匹配到合适的cpu架构 ${SystemHelper.sCurrentCpuAbi}")
-        }
         vmApplicationInfo.apply {
-            val installAppLibAbiDir = VmFileSystem.getInstallAppLibAbiDir(packageName, SystemHelper.sCurrentSimpleCpuAbi)
+            val installAppLibAbiDir = VmFileSystem.getInstallAppLibAbiDir(packageName, cpuAbi)
             nativeLibraryDir = installAppLibAbiDir.absolutePath
-            HApplicationInfo.primaryCpuAbi.set(this, SystemHelper.sCurrentCpuAbi)
-            HApplicationInfo.secondaryCpuAbi.set(this, "armeabi-v7a")
+            HApplicationInfo.primaryCpuAbi.set(this, cpuAbi)
+            HApplicationInfo.secondaryCpuAbi.set(this, SystemHelper.ABI_ARM)
             HApplicationInfo.nativeLibraryRootDir.set(this, VmFileSystem.getInstallAppLibDir(packageName).absolutePath)
             val installFile = VmFileSystem.getInstallBaseApkFile(packageName)
             publicSourceDir = installFile.absolutePath
@@ -290,7 +327,7 @@ object PackageHelper {
     }
 
     @Throws(Exception::class)
-    private fun findAndCopyLibrary(zipFile: ZipFile, targetLibRootDir: File) {
+    private fun findAndCopyLibrary(zipFile: ZipFile, targetLibRootDir: File) : Boolean{
         L.sd("LibraryHelper >> 查找并拷贝so库")
         val prefix = "lib/"
         var hasSoFile = false
@@ -302,12 +339,12 @@ object PackageHelper {
                 continue
             }
             entryName = entryName.replace("lib/", "")
-            if (entryName.contains("armeabi-v7a")) {
-                entryName = entryName.replace("armeabi-v7a", "arm")
-            }
-            if (entryName.contains("arm64-v8a")) {
-                entryName = entryName.replace("arm64-v8a", "arm64")
-            }
+//            if (entryName.contains("armeabi-v7a")) {
+//                entryName = entryName.replace("armeabi-v7a", "arm")
+//            }
+//            if (entryName.contains("arm64-v8a")) {
+//                entryName = entryName.replace("arm64-v8a", "arm64")
+//            }
             val soFile = File(targetLibRootDir, entryName)
             if (!soFile.exists()) {
                 if (soFile.parentFile?.exists() == false) {
@@ -332,11 +369,7 @@ object PackageHelper {
                 }
             }
         }
-        if (!hasSoFile){
-            // 不存在so文件的应用，创建一个目录文件
-            File(targetLibRootDir, SystemHelper.sCurrentSimpleCpuAbi).checkAndMkdirs()
-        }
-
+        return hasSoFile
     }
 
     @JvmStatic
@@ -480,7 +513,8 @@ object PackageHelper {
         if (flags and PackageManager.GET_META_DATA != 0) {
             ai.metaData = p.mAppMetaData
         }
-        fixInstallApplicationInfo(ai)
+        // TODO SystemHelper.ABI_ARM
+        fixInstallApplicationInfo(ai, SystemHelper.ABI_ARM)
         fixRunApplicationInfo(ai, userId)
         return ai
     }

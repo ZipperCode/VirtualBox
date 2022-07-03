@@ -1,6 +1,7 @@
 package com.virtual.box.core.manager
 
 import android.app.ActivityThread
+import android.app.IServiceConnection
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
@@ -8,6 +9,7 @@ import android.os.RemoteException
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.app.IAppApplicationThread
 import com.virtual.box.core.entity.VmAppConfig
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.server.am.IVmActivityManagrService
@@ -147,6 +149,41 @@ object VmAppActivityManager {
         }catch (e: RemoteException){
             L.printStackTrace(e)
             null
+        }
+    }
+
+    fun stopService(intent: Intent?, resolvedType: String?, userId: Int): Int{
+        return try {
+            requireService().stopService(intent, resolvedType, userId)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
+            -1
+        }
+    }
+
+    fun bindService(intent: Intent?, token: IBinder?, resolvedType: String?,connection: IServiceConnection?, userId: Int): Int{
+        return try {
+            requireService().bindService(AppActivityThread.getApplicationThread(), intent, token, connection, resolvedType, userId)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
+            -1
+        }
+    }
+
+    fun peekService(intent: Intent?, resolvedType: String?, userId: Int): IBinder?{
+        return try {
+            requireService().peekService(intent, resolvedType, userId)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
+            null
+        }
+    }
+
+    fun publishService(token: IBinder, intent: Intent?, binder: IBinder?){
+        try {
+            requireService().publishService(token, intent, binder)
+        }catch (e: RemoteException){
+            L.printStackTrace(e)
         }
     }
 

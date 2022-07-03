@@ -19,6 +19,7 @@ import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmActivityStackManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.proxy.ProxyManifest
+import com.virtual.box.core.server.am.entity.VmServiceRecord
 import com.virtual.box.core.server.pm.VmPackageManagerService
 
 internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
@@ -188,34 +189,62 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
     }
 
     override fun startService(intent: Intent?, resolvedType: String?, requireForeground: Boolean, userId: Int): ComponentName? {
-        return vmActiveServices.startServiceLock(intent, resolvedType, requireForeground, userId)
+        synchronized(this){
+            return vmActiveServices.startService(intent, resolvedType, requireForeground, userId)
+        }
     }
 
     override fun stopService(intent: Intent?, resolvedType: String?, userId: Int): Int {
-        TODO("Not yet implemented")
+        synchronized(this){
+            return vmActiveServices.stopService(intent, resolvedType, userId)
+        }
     }
 
-    override fun stopServiceToken(componentName: ComponentName?, token: IBinder?, userId: Int): Boolean {
-        TODO("Not yet implemented")
+    override fun stopServiceToken(componentName: ComponentName?, token: IBinder?, startId: Int, userId: Int): Boolean {
+        synchronized(this){
+            if (componentName == null){
+                return false
+            }
+            if (token == null){
+                return false
+            }
+            return vmActiveServices.stopServiceTokenLocked(componentName, token, startId, userId)
+        }
     }
 
-    override fun prepareBindService(
+    override fun bindService(
+        caller: IAppApplicationThread?,
         intent: Intent?,
         token: IBinder?,
-        resulvedType: String?,
-        connection: IServiceConnection?,
-        flags: Int,
+        conn: IServiceConnection?,
+        resolvedType: String?,
         userId: Int
     ): Int {
-        TODO("Not yet implemented")
+        synchronized(this){
+            return vmActiveServices.bindService(caller, intent, token, conn, resolvedType, userId)
+        }
     }
 
-    override fun unbindService(connection: IServiceConnection?, userId: Int): Int {
-        TODO("Not yet implemented")
+
+    override fun unbindService(connection: IServiceConnection?, userId: Int): Boolean {
+        synchronized(this){
+            return vmActiveServices.unbindService(connection)
+        }
     }
 
-    override fun peekService(intent: Intent?, resolvedType: String?, userId: Int): IBinder {
-        TODO("Not yet implemented")
+    override fun peekService(intent: Intent?, resolvedType: String?, userId: Int): IBinder? {
+        synchronized(this){
+            return vmActiveServices.peekServiceLocked(intent, resolvedType, userId)
+        }
+    }
+
+    override fun publishService(token: IBinder?, intent: Intent?, binder: IBinder?) {
+        synchronized(this){
+            if (token is VmServiceRecord){
+                return
+            }
+            vmActiveServices.publishService(token!!, intent, binder)
+        }
     }
 
     override fun sendBroadcast(intent: Intent?, resolvedType: String?, userId: Int): Intent {
@@ -231,6 +260,10 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
     }
 
     override fun getCallingPackage(token: IBinder?, userId: Int): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun forceStopPackage(packageName: String?, userId: Int) {
         TODO("Not yet implemented")
     }
 }

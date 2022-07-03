@@ -37,6 +37,7 @@ class VmPackageConfigInfo: Parcelable {
      */
     var installPackageInfoVersionCodeName: String
 
+    var appId: Int = -1
 
     constructor(vmPackageInfo: PackageInfo, vmPackageInstallOption: VmPackageInstallOption){
         this.packageName = vmPackageInfo.packageName
@@ -81,5 +82,9 @@ class VmPackageConfigInfo: Parcelable {
         override fun newArray(size: Int): Array<VmPackageConfigInfo?> {
             return arrayOfNulls(size)
         }
+    }
+
+    private fun registerAppIdLPw(){
+
     }
 }
