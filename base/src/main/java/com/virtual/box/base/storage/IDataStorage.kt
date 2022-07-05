@@ -18,6 +18,8 @@ interface IDataStorage {
 
     fun save(key: String, data: Parcelable)
 
+    fun save(key: String, data: Set<String>, encode: Boolean = false)
+
     fun save(key: String, data: Any?)
 
     fun load(key: String, defaultValue: Int): Int
@@ -37,6 +39,8 @@ interface IDataStorage {
     fun <T : Parcelable> load(key: String, clazz: Class<T>): T?
 
     fun <T> load(key: String, clazz: Class<T>): T?
+
+    fun load(key: String, defaultValue: Set<String>, encode: Boolean = false): Set<String>
 
     fun containKey(key: String): Boolean
 

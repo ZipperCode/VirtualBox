@@ -1,6 +1,7 @@
 package com.virtual.box.base.storage
 
 import android.os.Parcel
+import android.os.Parcelable
 
 object ParcelDataHelper {
 
@@ -38,6 +39,24 @@ object ParcelDataHelper {
             parcel.recycle()
         }
         return map
+    }
+
+    inline fun <reified T: Parcelable> loadList(dataSource: IDataStorage, key: String, clazz: Class<T>): List<T>{
+        val parcel = Parcel.obtain()
+        val result = ArrayList<T>()
+        try {
+            val bytes = dataSource.load(key, ByteArray(0))
+            if (bytes.isEmpty()){
+                return emptyList()
+            }
+            parcel.setDataPosition(0)
+            parcel.unmarshall(bytes, 0, bytes.size)
+            parcel.setDataPosition(0)
+            parcel.writeTypedList(result)
+        } finally {
+            parcel.recycle()
+        }
+        return result
     }
 
     fun getDataStorageLock(storageName: String): IDataStorage{

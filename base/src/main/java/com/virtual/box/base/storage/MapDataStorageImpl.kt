@@ -42,6 +42,14 @@ class MapDataStorageImpl(
         mmkv.encode(key, data)
     }
 
+    override fun save(key: String, data: Set<String>, encode: Boolean) {
+        if (encode){
+            mmkv.encode(key, data)
+        }else{
+            mmkv.putStringSet(key,data)
+        }
+    }
+
     override fun save(key: String, data: Any?) {
         data ?: return
         val objectJson = gson.toJson(data)
@@ -81,11 +89,19 @@ class MapDataStorageImpl(
     }
 
     override fun <T> load(key: String, clazz: Class<T>): T? {
-        try {
+        return try {
             val objectJson = mmkv.decodeString(key)
-            return gson.fromJson<T>(objectJson, clazz)
+            gson.fromJson<T>(objectJson, clazz)
         }catch (e: Exception){
-            return null
+            null
+        }
+    }
+
+    override fun load(key: String, defaultValue: Set<String>, encode: Boolean): Set<String> {
+        return if (encode){
+            mmkv.decodeStringSet(key, defaultValue)!!
+        }else{
+            mmkv.getStringSet(key, defaultValue)!!
         }
     }
 

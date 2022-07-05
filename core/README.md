@@ -8,3 +8,36 @@ uid的取值：`Process.FIRST_APPLICATION_UID = 10000` < uid < `Process.LAST_APP
 虚拟化中，实现双开应用时，应用被分配在不用的用户下（虚拟用户）
 
 + appId (应用相关但与系统用户无关——包名相同即为同一个appId)
+
+
+install_[userId] > MMKV 存储安装包的key
+
+app_data_[userId] > MMKV 存储的用户数据key
+
+
+install_[userId]_[pkg] > 安装包数据
+
+app_data_index_0 > [app_data_0_{pkg}_{UUID} > 系统的用户数据索引
+
+app_data_[userId]_[pkg] > 包的用户数据_
+
++ 包管理
+    + 用户安装列表
+        + 系统用户
+            + 包1
+            + 包2
+            + 包3
+        + 用户1
+            + 包1
+            + 包2
+            + 包3
+
+    + 用户数据列表
+        + 系统用户
+            + data1
+            + data2
+            + data3
+        + 用户1
+            + data1
+            + data2
+            + data3

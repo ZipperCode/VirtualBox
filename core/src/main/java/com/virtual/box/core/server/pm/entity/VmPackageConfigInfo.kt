@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import com.virtual.box.core.manager.VmFileSystem
+import com.virtual.box.core.server.pm.ndata.VmInstallPackageConfigDataSource
 import java.io.File
 
 /**
