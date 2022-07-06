@@ -41,6 +41,18 @@ object ParcelDataHelper {
         return map
     }
 
+    inline fun <reified T: Parcelable> saveList(dataSource: IDataStorage, key: String, dataList: List<T>){
+        val parcel = Parcel.obtain()
+        try {
+            parcel.setDataPosition(0)
+            parcel.writeArray(dataList.toTypedArray())
+            val bytes = parcel.marshall()
+            dataSource.save(key, bytes)
+        } finally {
+            parcel.recycle()
+        }
+    }
+
     inline fun <reified T: Parcelable> loadList(dataSource: IDataStorage, key: String, clazz: Class<T>): List<T>{
         val parcel = Parcel.obtain()
         val result = ArrayList<T>()
@@ -52,7 +64,10 @@ object ParcelDataHelper {
             parcel.setDataPosition(0)
             parcel.unmarshall(bytes, 0, bytes.size)
             parcel.setDataPosition(0)
-            parcel.writeTypedList(result)
+            val readArray = parcel.readArray(T::class.java.classLoader) ?: return result
+            for (any in readArray) {
+                result.add(any as T)
+            }
         } finally {
             parcel.recycle()
         }

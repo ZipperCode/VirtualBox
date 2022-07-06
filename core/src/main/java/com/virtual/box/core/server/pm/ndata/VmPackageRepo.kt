@@ -23,15 +23,34 @@ import java.io.File
 class VmPackageRepo(
 
 ) {
+
     private val vmPkConfSource = VmInstallPackageConfigDataSource()
     private val vmPkResolverSource = VmUserPackageResolverDataSource()
     private val vmPiSource = VmInstallPackageInfoDataSource()
+    private val vmAppDataSource = VmAppDataConfigDataSource()
 
     private val logger = Logger.getLogger(L.VM_TAG, "VmPackageRepo")
-    
+
     @WorkerThread
     fun initData(){
+        // TODO 获取所有用户
         vmPkResolverSource.initData(listOf(0))
+    }
+
+    fun onInstallPackage(userId: Int, aPackage: PackageParser.Package, vmPackageConfigInfo: VmPackageConfigInfo, vmPackageInfo: PackageInfo){
+        val packageName = aPackage.packageName
+        try {
+            vmPkConfSource.saveInstallPackageConfig(userId, vmPackageConfigInfo)
+            vmPkResolverSource.saveVmPackageResolver(userId, VmPackage(aPackage))
+            vmPiSource.savePackageInfo(userId, vmPackageInfo)
+            vmAppDataSource.saveAppDataConf(userId, )
+        }catch (e: Exception){
+            // rollback
+            vmPkConfSource.removePackageConfig(userId, packageName)
+            vmPkResolverSource.removeVmPackageResolver(userId, packageName)
+            vmPiSource.removePackageInfo(userId, packageName)
+            throw e
+        }
     }
 
     @Synchronized

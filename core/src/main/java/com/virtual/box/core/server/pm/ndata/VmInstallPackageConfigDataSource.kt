@@ -9,9 +9,14 @@ class VmInstallPackageConfigDataSource {
 
     private val iDataStorage: IDataStorage = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_INSTALL_PKG_CONFIG_INFO)
 
-    fun addInstallPackageConfig(userId: Int, vmPackageConfigInfo: VmPackageConfigInfo){
+    fun saveInstallPackageConfig(userId: Int, vmPackageConfigInfo: VmPackageConfigInfo){
         val key = String.format(INSTALL_VALUE_KEY_FORMAT, userId, vmPackageConfigInfo.packageName)
         iDataStorage.save(key, vmPackageConfigInfo)
+    }
+
+    fun removePackageConfig(userId: Int, packageName: String){
+        val key = getKey(userId, packageName)
+        iDataStorage.remove(key)
     }
 
     fun getInstallPackageConfig(userId: Int, packageName: String): VmPackageConfigInfo?{
@@ -21,6 +26,10 @@ class VmInstallPackageConfigDataSource {
 
     fun getInstallPackageConfig(key: String): VmPackageConfigInfo?{
         return iDataStorage.load(key, VmPackageConfigInfo::class.java)
+    }
+
+    private fun getKey(userId: Int, packageName: String): String{
+        return  String.format(INSTALL_VALUE_KEY_FORMAT, userId, packageName)
     }
 
     companion object{
