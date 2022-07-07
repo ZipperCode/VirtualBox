@@ -18,6 +18,11 @@ class VmInstallPackageInfoDataSource {
         iDataStorage.remove(key)
     }
 
+    fun loadInstallVmPackageInfo(packageName: String, userId: Int): PackageInfo?{
+        val key = getKey(userId, packageName)
+        return iDataStorage.load(key, PackageInfo::class.java)
+    }
+
     private fun getKey(userId: Int, packageName: String): String{
         return String.format(PACKAGE_INFO_KEY_FORMAT, userId, packageName)
     }

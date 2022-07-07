@@ -200,7 +200,7 @@ public class VmComponentResolver {
     /**
      * Returns the given activity
      */
-    VmPackage.Activity getActivity(ComponentName component) {
+    public VmPackage.Activity getActivity(ComponentName component) {
         synchronized (mLock) {
             return mActivities.mActivities.get(component);
         }
@@ -209,7 +209,7 @@ public class VmComponentResolver {
     /**
      * Returns the given provider
      */
-    VmPackage.Provider getProvider(ComponentName component) {
+    public VmPackage.Provider getProvider(ComponentName component) {
         synchronized (mLock) {
             return mProviders.mProviders.get(component);
         }
@@ -218,7 +218,7 @@ public class VmComponentResolver {
     /**
      * Returns the given receiver
      */
-    VmPackage.Activity getReceiver(ComponentName component) {
+    public VmPackage.Activity getReceiver(ComponentName component) {
         synchronized (mLock) {
             return mReceivers.mActivities.get(component);
         }
@@ -227,19 +227,19 @@ public class VmComponentResolver {
     /**
      * Returns the given service
      */
-    VmPackage.Service getService(ComponentName component) {
+    public VmPackage.Service getService(ComponentName component) {
         synchronized (mLock) {
             return mServices.mServices.get(component);
         }
     }
 
-    List<ResolveInfo> queryActivities(Intent intent, String resolvedType, int flags, int userId) {
+    public List<ResolveInfo> queryActivities(Intent intent, String resolvedType, int flags, int userId) {
         synchronized (mLock) {
             return mActivities.queryIntent(intent, resolvedType, flags, userId);
         }
     }
 
-    List<ResolveInfo> queryActivities(Intent intent, String resolvedType, int flags,
+    public List<ResolveInfo> queryActivities(Intent intent, String resolvedType, int flags,
                                       List<VmPackage.Activity> activities, int userId) {
         synchronized (mLock) {
             return mActivities.queryIntentForPackage(
@@ -247,20 +247,20 @@ public class VmComponentResolver {
         }
     }
 
-    List<ResolveInfo> queryProviders(Intent intent, String resolvedType, int flags, int userId) {
+    public List<ResolveInfo> queryProviders(Intent intent, String resolvedType, int flags, int userId) {
         synchronized (mLock) {
             return mProviders.queryIntent(intent, resolvedType, flags, userId);
         }
     }
 
-    List<ResolveInfo> queryProviders(Intent intent, String resolvedType, int flags,
+    public List<ResolveInfo> queryProviders(Intent intent, String resolvedType, int flags,
                                      List<VmPackage.Provider> providers, int userId) {
         synchronized (mLock) {
             return mProviders.queryIntentForPackage(intent, resolvedType, flags, providers, userId);
         }
     }
 
-    List<ProviderInfo> queryProviders(String processName, String metaDataKey, int flags,
+    public List<ProviderInfo> queryProviders(String processName, String metaDataKey, int flags,
                                       int userId) {
         List<ProviderInfo> providerList = new ArrayList<>();
         synchronized (mLock) {
@@ -290,7 +290,7 @@ public class VmComponentResolver {
         return providerList;
     }
 
-    ProviderInfo queryProvider(String authority, int flags, int userId) {
+    public ProviderInfo queryProvider(String authority, int flags, int userId) {
         synchronized (mLock) {
             final VmPackage.Provider p = mProvidersByAuthority.get(authority);
             if (p == null) {
@@ -300,26 +300,26 @@ public class VmComponentResolver {
         }
     }
 
-    List<ResolveInfo> queryReceivers(Intent intent, String resolvedType, int flags, int userId) {
+    public List<ResolveInfo> queryReceivers(Intent intent, String resolvedType, int flags, int userId) {
         synchronized (mLock) {
             return mReceivers.queryIntent(intent, resolvedType, flags, userId);
         }
     }
 
-    List<ResolveInfo> queryReceivers(Intent intent, String resolvedType, int flags,
+    public List<ResolveInfo> queryReceivers(Intent intent, String resolvedType, int flags,
                                      List<VmPackage.Activity> receivers, int userId) {
         synchronized (mLock) {
             return mReceivers.queryIntentForPackage(intent, resolvedType, flags, receivers, userId);
         }
     }
 
-    List<ResolveInfo> queryServices(Intent intent, String resolvedType, int flags, int userId) {
+    public List<ResolveInfo> queryServices(Intent intent, String resolvedType, int flags, int userId) {
         synchronized (mLock) {
             return mServices.queryIntent(intent, resolvedType, flags, userId);
         }
     }
 
-    List<ResolveInfo> queryServices(Intent intent, String resolvedType, int flags,
+    public List<ResolveInfo> queryServices(Intent intent, String resolvedType, int flags,
                                     List<VmPackage.Service> services, int userId) {
         synchronized (mLock) {
             return mServices.queryIntentForPackage(intent, resolvedType, flags, services, userId);

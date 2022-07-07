@@ -9,17 +9,18 @@ import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.compat.ComponentFixCompat
 import com.virtual.box.core.helper.PackageHelper
+import com.virtual.box.core.server.pm.ndata.VmPackageRepo
 import com.virtual.box.core.server.user.BUserHandle
 import java.io.File
+import java.lang.Exception
 
 internal object VmPackageInstallManager {
     private val logger = Logger.getLogger(L.SERVER_TAG, "VmPackageInstallManager")
 
-    fun installBaseVmPackage(vmPackageInfo: PackageInfo, filePath: String,userId: Int){
+    fun installBaseVmPackage(vmPackageInfo: PackageInfo, filePath: String, userId: Int){
         val packageName = vmPackageInfo.packageName
         logger.i("安装包到指定目录，user = %s, packageName = %s, filePath = %s", userId, packageName, filePath)
         VmFileSystem.handleInstallDir(packageName, userId)
-
         val originFile = File(filePath)
         // 拷贝apk文件
         originFile.copyTo(VmFileSystem.getInstallBaseApkFile(packageName))
@@ -28,11 +29,9 @@ internal object VmPackageInstallManager {
         val packageAbi: String = PackageHelper.getPackageCpuAbi(packageName, userId)
         // 修复application
         PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo, packageAbi)
-        // 用户数据目录
-        VmFileSystem.mkdirAppDataDir(packageName, userId)
         // 保存安装包配置文件
         val packageInfoFile = VmFileSystem.getInstallAppPackageInfoFile(packageName, userId)
-        PackageHelper.saveInstallPackageInfo(vmPackageInfo, packageInfoFile)
+        PackageHelper.saveInstallPackageInfoAsync(vmPackageInfo, packageInfoFile)
     }
 
     fun unInstallBasePackage(packageName: String){

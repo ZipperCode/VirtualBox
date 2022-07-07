@@ -2,10 +2,12 @@ package com.virtual.box.core.manager
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Debug
+import androidx.annotation.MainThread
+import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.ext.deleteDir
-import com.virtual.box.base.helper.SystemHelper
+import com.virtual.box.base.ext.deleteFile
+import com.virtual.box.base.util.AppExecutors
 import java.io.File
 import java.util.*
 @SuppressLint("StaticFieldLeak")
@@ -17,6 +19,8 @@ internal object VmFileSystem {
     const val PACKAGE_INFO_CONFIG_NAME = "package"
 
     const val INSTALL_PACKAGE_INFO_FILE_NAME = "packageInfo.conf"
+
+    const val INSTALL_APK_FILE_NAME = "base.apk"
 
     private lateinit var mContext: Context
 
@@ -67,7 +71,7 @@ internal object VmFileSystem {
      * 应用安装目录，区分不同用户的安装位置
      * {host}/data/app/{userId}/{package}
      */
-    fun getAppInstallDir(packageName: String, userId: Int): File{
+    fun getInstallAppRootDir(packageName: String, userId: Int): File{
         return File(mAppsInstallDir, String.format(Locale.CHINA,"%s/%s", userId, packageName))
     }
 
@@ -79,13 +83,13 @@ internal object VmFileSystem {
     }
 
     fun mkdirAppInstallDir(packageName: String, userId: Int){
-        val installAppDir = getAppInstallDir(packageName, userId)
+        val installAppDir = getInstallAppRootDir(packageName, userId)
         File(installAppDir,"lib").checkAndMkdirs()
         File(installAppDir, "oat").checkAndMkdirs()
     }
 
     fun handleInstallDir(packageName: String, userId: Int){
-        val installAppDir = getAppInstallDir(packageName, userId)
+        val installAppDir = getInstallAppRootDir(packageName, userId)
         if (installAppDir.exists()){
             installAppDir.deleteDir()
         }
@@ -93,15 +97,22 @@ internal object VmFileSystem {
         File(installAppDir, "oat").checkAndMkdirs()
     }
 
+    fun handleUnInstallDir(packageName: String, userId: Int){
+        val installAppDir = getInstallAppRootDir(packageName, userId)
+        if (installAppDir.exists()){
+            installAppDir.deleteDir()
+        }
+    }
+
     /**
      * {host}/data/app/{userId}/{package}/base.apk
      */
     fun getAppInstallBaseApkFile(packageName: String, userId: Int): File{
-        return File(getAppInstallDir(packageName, userId),"base.apk")
+        return File(getInstallAppRootDir(packageName, userId),"base.apk")
     }
 
     fun getInstallAppPackageInfoFile(packageName: String, userId: Int):File{
-        return File(getAppInstallDir(packageName, userId),INSTALL_PACKAGE_INFO_FILE_NAME)
+        return File(getInstallAppRootDir(packageName, userId),INSTALL_PACKAGE_INFO_FILE_NAME)
     }
 
     /**
@@ -111,15 +122,49 @@ internal object VmFileSystem {
         return File(mUserAppsDataDir,String.format(Locale.CHINA,"%s/%s", userId, packageName))
     }
 
-    fun mkdirAppDataDir(packageName: String, userId: Int){
-        val appDataDir = getAppDataDir(packageName, userId)
-        File(appDataDir, "files").checkAndMkdirs()
-        File(appDataDir, "cache").checkAndMkdirs()
-        File(appDataDir, "code_cache").checkAndMkdirs()
-        File(appDataDir, "lib").checkAndMkdirs()
-        File(appDataDir, "databases").checkAndMkdirs()
-        File(appDataDir, "shared_prefs").checkAndMkdirs()
-        File(appDataDir, "oat").checkAndMkdirs()
+    fun getAppDataDir(packageName: String, userId: Int, suffix: String): File{
+        return File(mUserAppsDataDir,String.format(Locale.CHINA,"%s/%s-%s", userId, packageName, suffix))
+    }
+
+    @MainThread
+    fun mkdirAppDataDirAsync(packageName: String, userId: Int, suffix: String){
+        AppExecutors.get().execute {
+            val appDataDir = getAppDataDir(packageName, userId, suffix)
+            File(appDataDir, "files").checkAndMkdirs()
+            File(appDataDir, "cache").checkAndMkdirs()
+            File(appDataDir, "code_cache").checkAndMkdirs()
+            File(appDataDir, "lib").checkAndMkdirs()
+            File(appDataDir, "databases").checkAndMkdirs()
+            File(appDataDir, "shared_prefs").checkAndMkdirs()
+            File(appDataDir, "oat").checkAndMkdirs()
+        }
+    }
+
+    @MainThread
+    fun mkdirAppDataDirAsync(rootDir: File){
+        AppExecutors.get().execute {
+            File(rootDir, "files").checkAndMkdirs()
+            File(rootDir, "cache").checkAndMkdirs()
+            File(rootDir, "code_cache").checkAndMkdirs()
+            File(rootDir, "lib").checkAndMkdirs()
+            File(rootDir, "databases").checkAndMkdirs()
+            File(rootDir, "shared_prefs").checkAndMkdirs()
+            File(rootDir, "oat").checkAndMkdirs()
+        }
+    }
+
+    @MainThread
+    fun removeAppDataDirAsync(packageName: String, userId: Int, suffix: String){
+        AppExecutors.get().execute {
+            val appDataDir = getAppDataDir(packageName, userId, suffix)
+            File(appDataDir, "files").deleteDir()
+            File(appDataDir, "cache").deleteDir()
+            File(appDataDir, "code_cache").deleteDir()
+            File(appDataDir, "lib").deleteDir()
+            File(appDataDir, "databases").deleteDir()
+            File(appDataDir, "shared_prefs").deleteDir()
+            File(appDataDir, "oat").deleteDir()
+        }
     }
 
     /**

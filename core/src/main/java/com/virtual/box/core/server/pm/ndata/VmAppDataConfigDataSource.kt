@@ -1,6 +1,7 @@
 package com.virtual.box.core.server.pm.ndata
 
 import android.util.SparseArray
+import androidx.core.util.containsKey
 import androidx.core.util.forEach
 import com.virtual.box.base.storage.IDataStorage
 import com.virtual.box.base.storage.ParcelDataHelper
@@ -11,8 +12,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 class VmAppDataConfigDataSource {
-
-    private val keyDataStorage: IDataStorage = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_USER_PKG_CONFIG_INFO)
 
     private val iDataStorage: IDataStorage = ParcelDataHelper.getDataStorageLock(StorageConstant.VM_APP_DATA_CONFIG_INFO)
 
@@ -26,19 +25,42 @@ class VmAppDataConfigDataSource {
         }
     }
 
-    fun saveAppDataConf(userId: Int, vmAppDataConfigInfo: VmAppDataConfigInfo): String{
+    fun saveAppDataConf(userId: Int, vmAppDataConfigInfo: VmAppDataConfigInfo){
         synchronized(userAppDataMap){
             try {
                 var userAppDataList = userAppDataMap.get(userId)
                 if (userAppDataList == null){
                     userAppDataList = mutableListOf()
                 }
-                if (vmAppDataConfigInfo.appDataId.isNullOrEmpty()){
-                    vmAppDataConfigInfo.appDataId = UUID.randomUUID().toString().replace("-","")
-                }
                 userAppDataList.add(vmAppDataConfigInfo)
-                return vmAppDataConfigInfo.appDataId!!
-            }finally {
+            }catch (e: Exception){
+                throw e
+            } finally {
+                syncDataWithLock(userId)
+            }
+        }
+    }
+
+    fun removeAppDataConf(userId: Int, appDataId: String){
+        synchronized(userAppDataMap){
+            if (!userAppDataMap.containsKey(userId)){
+                return
+            }
+            if (appDataId.isEmpty()){
+                return
+            }
+            try {
+                val iterator = userAppDataMap.get(userId).iterator()
+                while (iterator.hasNext()){
+                    val data = iterator.next()
+                    if (data.appDataId == appDataId){
+                        iterator.remove()
+                        break
+                    }
+                }
+            }catch (e: Exception){
+                throw e
+            } finally {
                 syncDataWithLock(userId)
             }
         }

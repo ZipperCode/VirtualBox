@@ -10,6 +10,7 @@ import androidx.annotation.WorkerThread
 import com.virtual.box.base.ext.checkAndCreate
 import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.helper.SystemHelper
+import com.virtual.box.base.util.AppExecutors
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.VirtualBox
@@ -99,18 +100,21 @@ object PackageHelper {
         return SystemHelper.ABI_ARM
     }
 
-    @Synchronized
-    fun saveInstallPackageInfo(vmPackageInfo: PackageInfo, file: File) {
-        file.checkAndCreate()
-        FileOutputStream(file).use { output ->
-            val parcal = Parcel.obtain()
-            try {
-                parcal.setDataPosition(0)
-                vmPackageInfo.writeToParcel(parcal, 0)
-                val byte = parcal.marshall()
-                output.write(byte)
-            } finally {
-                parcal.recycle()
+    fun saveInstallPackageInfoAsync(vmPackageInfo: PackageInfo, file: File) {
+        AppExecutors.get().doBackground{
+            synchronized(this){
+                file.checkAndCreate()
+                FileOutputStream(file).use { output ->
+                    val parcal = Parcel.obtain()
+                    try {
+                        parcal.setDataPosition(0)
+                        vmPackageInfo.writeToParcel(parcal, 0)
+                        val byte = parcal.marshall()
+                        output.write(byte)
+                    } finally {
+                        parcal.recycle()
+                    }
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import android.os.Parcelable
 import com.virtual.box.core.manager.VmFileSystem
 import com.virtual.box.core.server.pm.ndata.VmInstallPackageConfigDataSource
 import java.io.File
+import java.util.*
 
 /**
  * 安装包信息类
@@ -16,59 +17,85 @@ import java.io.File
  * @author zhangzhipeng
  * @date   2022/4/26
  **/
-class VmPackageConfigInfo: Parcelable {
+data class VmPackageConfigInfo(
+    /**
+     * 安装包的唯一id，主要用来与appData.installPackageId对应
+     * 应用安装时确定
+     */
+    val packageId: String,
+    /**
+     * 包所属的用户Id
+     */
+    val userId: Int,
     /**
      * 包名
      */
-    val packageName: String
-
-    var installOption: VmPackageInstallOption? = null
-
-    var installPackageApkFilePath: String
-
-    var installPackageInfoFilePath: String
-
+    val packageName: String,
     /**
      * 安装包版本号
      */
-    var installPackageInfoVersionCode: Long
-
+    var installPackageInfoVersionCode: Long,
     /**
      * 安装包版本名
      */
-    var installPackageInfoVersionCodeName: String
+    var installPackageInfoVersionCodeName: String,
+    /**
+     * 应用根目录（base.apk的父目录）
+     */
+    val installPackageRootPath:String,
+    /**
+     * 安装时的参数
+     */
+    var installOption: VmPackageInstallOption?,
+    /**
+     * 应用id，与用户无关，多用户下，如果存在相同的appId，即同一个应用，与PackageName同理
+     */
+    var appId: Int = -1,
 
-    var appId: Int = -1
+    /**
+     * 最后更新时间
+     */
+    var lastUpdateTime: Long = 0
+): Parcelable {
 
-    constructor(vmPackageInfo: PackageInfo, vmPackageInstallOption: VmPackageInstallOption){
-        this.packageName = vmPackageInfo.packageName
-        this.installOption = vmPackageInstallOption
-        this.installPackageApkFilePath = vmPackageInfo.applicationInfo.sourceDir!!
-        this.installPackageInfoFilePath = File(vmPackageInfo.applicationInfo.publicSourceDir).parent!! + File.separator + VmFileSystem.INSTALL_PACKAGE_INFO_FILE_NAME
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            this.installPackageInfoVersionCode = vmPackageInfo.longVersionCode
-        }else{
-            this.installPackageInfoVersionCode = vmPackageInfo.versionCode.toLong()
-        }
-        this.installPackageInfoVersionCodeName = vmPackageInfo.versionName
+    constructor(vmPackageInfo: PackageInfo, vmPackageInstallOption: VmPackageInstallOption, userId: Int, appId: Int): this(
+        packageId = UUID.randomUUID().toString(),
+        userId = userId,
+        packageName = vmPackageInfo.packageName,
+        installPackageInfoVersionCode = getVersionCode(vmPackageInfo),
+        installPackageInfoVersionCodeName = vmPackageInfo.versionName,
+        installPackageRootPath = File(vmPackageInfo.applicationInfo.publicSourceDir).parent!!,
+        installOption = vmPackageInstallOption,
+    ){
     }
 
-    constructor(parcel: Parcel){
-        this.packageName = parcel.readString() ?: ""
-        this.installOption = parcel.readParcelable(VmPackageInstallOption::class.java.classLoader)
-        this.installPackageApkFilePath = parcel.readString()?: VmFileSystem.getInstallBaseApkFile(packageName).absolutePath
-        this.installPackageInfoFilePath = parcel.readString()?: VmFileSystem.getInstallAppPackageInfoFile(packageName).absolutePath
-        this.installPackageInfoVersionCode = parcel.readLong()
-        this.installPackageInfoVersionCodeName = parcel.readString() ?: ""
+    constructor(parcel: Parcel): this(
+        packageId = parcel.readString()!!,
+        userId = parcel.readInt(),
+        packageName = parcel.readString()!!,
+        installPackageInfoVersionCode = parcel.readLong(),
+        installPackageInfoVersionCodeName = parcel.readString()!!,
+        installPackageRootPath = parcel.readString()!!,
+        installOption = parcel.readParcelable(VmPackageInstallOption::class.java.classLoader),
+        appId = parcel.readInt(),
+        lastUpdateTime = parcel.readLong()
+    ){
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(packageId)
+        parcel.writeInt(userId)
         parcel.writeString(packageName)
-        parcel.writeParcelable(installOption, flags)
-        parcel.writeString(installPackageApkFilePath)
-        parcel.writeString(installPackageInfoFilePath)
         parcel.writeLong(installPackageInfoVersionCode)
         parcel.writeString(installPackageInfoVersionCodeName)
+        parcel.writeString(installPackageRootPath)
+        parcel.writeParcelable(installOption, flags)
+        parcel.writeInt(appId)
+        parcel.writeLong(lastUpdateTime)
+    }
+
+    val installPackageInfoFilePath: String get(){
+        return File(installPackageRootPath, VmFileSystem.INSTALL_APK_FILE_NAME).absolutePath
     }
 
     override fun describeContents(): Int {
@@ -83,9 +110,9 @@ class VmPackageConfigInfo: Parcelable {
         override fun newArray(size: Int): Array<VmPackageConfigInfo?> {
             return arrayOfNulls(size)
         }
-    }
 
-    private fun registerAppIdLPw(){
-
+        private fun getVersionCode(vmPackageInfo: PackageInfo): Long{
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { vmPackageInfo.longVersionCode }else{ vmPackageInfo.versionCode.toLong() }
+        }
     }
 }

@@ -85,6 +85,10 @@ class AppExecutors private constructor() {
         backgroundExecutor.execute(runnable)
     }
 
+    fun doBackground(runnable: () -> Unit){
+        backgroundExecutor.execute(runnable)
+    }
+
     fun executeMain(runnable: Runnable){
         mainHandler.post(runnable)
     }

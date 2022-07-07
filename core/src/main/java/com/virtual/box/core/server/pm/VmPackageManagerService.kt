@@ -37,7 +37,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
      */
     private val mInstallLock = Any()
 
-    private val vmPackageRepo: VmPackageRepo = VmPackageRepo()
+    private val vmPackageRepo = com.virtual.box.core.server.pm.ndata.VmPackageRepo()
 
     init {
         AppExecutors.get().execute {
@@ -118,22 +118,22 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             // 获取宿主的包内容
             val hostPackageInfo = VirtualBox.get().hostPm.getPackageInfo(VirtualBox.get().hostPkg, 0)
             val vmPackageInfo = PackageHelper.convertPackageInfo(hostPackageInfo, aPackage)
-            // 检查是否安装或更新
-            if (vmPackageRepo.checkNeedInstalledOrUpdated(packageName, versionCode.toLong())) {
-                VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath, userId)
-            } else {
-                isUpdatePackage = true
-                val packageAbi = PackageHelper.getPackageCpuAbi(packageName, userId)
-                PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo, packageAbi)
-            }
-            // 创建用户
+            // 安装前创建用户
             VmUserManagerService.checkOrCreateUser(userId)
             // 停止同包名下的应用进程
             VmProcessManager.killProcess(vmPackageInfo.packageName, userId)
+            // 调用安装
+            VmPackageInstallManager.installBaseVmPackage(vmPackageInfo, filePath, userId)
+            // 修复包ApplicationInfo
+            val packageAbi = PackageHelper.getPackageCpuAbi(packageName, userId)
+            PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo, packageAbi)
+            // TODO appId
+            val appId = 0
             // 安装包配置
-            val vmPackageSetting = VmPackageConfigInfo(vmPackageInfo, option)
+            val vmPackageSetting = VmPackageConfigInfo(vmPackageInfo, option, userId, appId)
             // 保存安装信息
-            vmPackageRepo.addInstallPackageInfoWithLock(aPackage, vmPackageSetting, vmPackageInfo)
+            vmPackageRepo.onInstallPackage(aPackage, vmPackageSetting, vmPackageInfo, userId)
+            vmPackageRepo.createAppData(userId, vmPackageSetting)
             logger.i("应用包安装成功 end = ${System.currentTimeMillis() - start}")
             return VmPackageResult.installSuccess(packageName)
         } catch (e: java.lang.Exception) {

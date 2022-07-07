@@ -64,7 +64,7 @@ class VmPackageDataSource {
             // 更新信息
             packageConf.apply {
                 installOption = vmPackageConfigInfo.installOption
-                installPackageApkFilePath = vmPackageConfigInfo.installPackageApkFilePath
+                // installPackageApkFilePath = vmPackageConfigInfo.installPackageApkFilePath
                 installPackageInfoFilePath = vmPackageConfigInfo.installPackageInfoFilePath
                 installPackageInfoVersionCode = vmPackageConfigInfo.installPackageInfoVersionCode
                 installPackageInfoVersionCodeName = vmPackageConfigInfo.installPackageInfoVersionCodeName

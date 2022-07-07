@@ -28,11 +28,31 @@ class VmInstallPackageConfigDataSource {
         return iDataStorage.load(key, VmPackageConfigInfo::class.java)
     }
 
+    fun checkPackageConfExists(userId: Int, packageName: String):Boolean{
+        val key = getKey(userId, packageName)
+        return iDataStorage.containKey(key)
+    }
+
+    fun getUserAllPackageUserConfList(userId: Int): List<VmPackageConfigInfo>{
+        val filterKey = iDataStorage.keys().filter {
+            it.startsWith(String.format(INSTALL_VALUE_PREF_FORMAT, userId))
+        }.toList()
+        val result = ArrayList<VmPackageConfigInfo>(filterKey.size)
+        for (key in filterKey) {
+            val data = iDataStorage.load(key, VmPackageConfigInfo::class.java)
+            if (data != null){
+                result.add(data)
+            }
+        }
+        return result
+    }
+
     private fun getKey(userId: Int, packageName: String): String{
         return  String.format(INSTALL_VALUE_KEY_FORMAT, userId, packageName)
     }
 
     companion object{
+        const val INSTALL_VALUE_PREF_FORMAT = "install_pkg_%s_"
         const val INSTALL_VALUE_KEY_FORMAT = "install_pkg_%s_%s"
     }
 

@@ -9,11 +9,14 @@ import com.virtual.box.base.ext.isNotNullOrEmpty
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.helper.PackageHelper
-import com.virtual.box.core.server.pm.VmComponentResolver
+import com.virtual.box.core.manager.VmFileSystem
+import com.virtual.box.core.server.pm.entity.VmAppDataConfigInfo
 import com.virtual.box.core.server.pm.entity.VmPackageConfigInfo
 import com.virtual.box.core.server.pm.resolve.VmPackage
 import com.virtual.box.core.server.user.BUserHandle
 import java.io.File
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  *
@@ -31,41 +34,61 @@ class VmPackageRepo(
 
     private val logger = Logger.getLogger(L.VM_TAG, "VmPackageRepo")
 
+    private val dataLock = Any()
+
     @WorkerThread
     fun initData(){
         // TODO 获取所有用户
-        vmPkResolverSource.initData(listOf(0))
+        val userIdList = listOf(0)
+        vmPkResolverSource.initData(userIdList)
+        vmAppDataSource.initData(userIdList)
     }
 
-    fun onInstallPackage(userId: Int, aPackage: PackageParser.Package, vmPackageConfigInfo: VmPackageConfigInfo, vmPackageInfo: PackageInfo){
+    fun onInstallPackage(aPackage: PackageParser.Package, vmPackageConfigInfo: VmPackageConfigInfo, vmPackageInfo: PackageInfo,userId: Int){
         val packageName = aPackage.packageName
-        try {
-            vmPkConfSource.saveInstallPackageConfig(userId, vmPackageConfigInfo)
-            vmPkResolverSource.saveVmPackageResolver(userId, VmPackage(aPackage))
-            vmPiSource.savePackageInfo(userId, vmPackageInfo)
-            vmAppDataSource.saveAppDataConf(userId, )
-        }catch (e: Exception){
-            // rollback
-            vmPkConfSource.removePackageConfig(userId, packageName)
-            vmPkResolverSource.removeVmPackageResolver(userId, packageName)
-            vmPiSource.removePackageInfo(userId, packageName)
-            throw e
+        synchronized(dataLock){
+            try {
+                vmPkConfSource.saveInstallPackageConfig(userId, vmPackageConfigInfo)
+                vmPkResolverSource.saveVmPackageResolver(userId, VmPackage(aPackage))
+                vmPiSource.savePackageInfo(userId, vmPackageInfo)
+            }catch (e: Exception){
+                // rollback
+                vmPkConfSource.removePackageConfig(userId, packageName)
+                vmPkResolverSource.removeVmPackageResolver(userId, packageName)
+                vmPiSource.removePackageInfo(userId, packageName)
+                throw e
+            }
         }
     }
 
-    @Synchronized
-    fun addInstallPackageInfoWithLock(aPackage: PackageParser.Package, vmPackageConfigInfo: VmPackageConfigInfo, vmPackageInfo: PackageInfo){
-        try {
-            vmPkConfSource.addInstallPackageInfoWithLock(vmPackageConfigInfo)
-            vmPkResolverSource.addVmPackageResolverLock(VmPackage(aPackage))
-            vmPiSource.saveInstallVmPackageLock(vmPackageInfo)
-        }catch (e: Exception){
-            logger.e(e)
-            vmPkConfSource.removeInstallPackageInfoWithLock(aPackage.packageName)
-            vmPkResolverSource.removeVmPackageResolverLock(aPackage.packageName)
-            vmPiSource.removeInstallVmPackageInfoLock(aPackage.packageName)
+    fun createAppData(userId: Int, vmPackageConfigInfo: VmPackageConfigInfo){
+        synchronized(dataLock){
+            val uuidStr = UUID.randomUUID().toString()
+            val dataPathSuffix = uuidStr.substring(0, uuidStr.indexOf("-") - 1)
+            val appDataId: String = uuidStr
+            val packageName = vmPackageConfigInfo.packageName
+            try {
+                val installPackageRootPath = VmFileSystem
+                    .getInstallAppRootDir(packageName, userId).absolutePath
+                val installVmPackageInfoFilePath = vmPackageConfigInfo.installPackageInfoFilePath
+                val appDataDir = VmFileSystem.getAppDataDir(packageName, userId, dataPathSuffix)
+                VmFileSystem.mkdirAppDataDirAsync(appDataDir)
+
+                val appDataConfigInfo = VmAppDataConfigInfo(
+                    appDataId, userId, packageName,
+                    installPackageRootPath,
+                    appDataDir.absolutePath,
+                    installVmPackageInfoFilePath
+                )
+                vmAppDataSource.saveAppDataConf(userId, appDataConfigInfo)
+            }catch (e: Exception){
+                VmFileSystem.removeAppDataDirAsync(packageName, userId, dataPathSuffix)
+                vmAppDataSource.removeAppDataConf(userId, uuidStr)
+                throw e
+            }
         }
     }
+
 
     fun queryIntentActivities(intent: Intent, resolvedType: String?, flags: Int, userId: Int): List<ResolveInfo> {
         var comp = intent.component
@@ -95,16 +118,7 @@ class VmPackageRepo(
         val packageName = resolverIntent.getPackage()
 
         if (packageName != null){
-            if (!vmPkResolverSource.checkPackageResolverExists(packageName)){
-                return emptyList()
-            }
-            // 存在包名，则从解析包中查找
-            val loadVmPackageResolverLock = vmPkResolverSource.loadVmPackageResolverLock(packageName)
-            if (loadVmPackageResolverLock?.activities != null){
-                // 指定包进行解析，比较快
-                return vmPackageResolver.queryActivities(resolverIntent, resolvedType, flags, loadVmPackageResolverLock.activities,userId)
-            }
-            return vmPackageResolver.queryActivities(resolverIntent, resolvedType, flags, userId)
+            return vmPkResolverSource.queryActivities(resolverIntent, packageName, resolvedType, flags, userId)
         }
 
         return emptyList()
@@ -168,16 +182,7 @@ class VmPackageRepo(
         val packageName = resolverIntent?.getPackage()
 
         if (packageName != null){
-            if (!vmPkResolverSource.checkPackageResolverExists(packageName)){
-                return emptyList()
-            }
-            // 存在包名，则从解析包中查找
-            val loadVmPackageResolverLock = vmPkResolverSource.loadVmPackageResolverLock(packageName)
-            if (loadVmPackageResolverLock?.services != null){
-                // 指定包进行解析，比较快
-                return vmPackageResolver.queryServices(resolverIntent, resolvedType, flags, loadVmPackageResolverLock.services,userId)
-            }
-            return vmPackageResolver.queryServices(resolverIntent, resolvedType, flags, userId)
+            vmPkResolverSource.queryServices(resolverIntent, packageName, resolvedType, flags, userId)
         }
 
         return emptyList()
@@ -206,16 +211,7 @@ class VmPackageRepo(
         val packageName = resolverIntent?.getPackage()
 
         if (packageName != null){
-            if (!vmPkResolverSource.checkPackageResolverExists(packageName)){
-                return emptyList()
-            }
-            // 存在包名，则从解析包中查找
-            val loadVmPackageResolverLock = vmPkResolverSource.loadVmPackageResolverLock(packageName)
-            if (loadVmPackageResolverLock?.providers != null){
-                // 指定包进行解析，比较快
-                return vmPackageResolver.queryProviders(resolverIntent, resolvedType, flags, loadVmPackageResolverLock.providers,userId)
-            }
-            return vmPackageResolver.queryProviders(resolverIntent, resolvedType, flags, userId)
+           return vmPkResolverSource.queryProviders(resolverIntent, packageName, resolvedType, flags, userId)
         }
 
         return emptyList()
@@ -226,19 +222,16 @@ class VmPackageRepo(
 //        if (VmUserManagerService.exists(userId)){
 //            return emptyList()
 //        }
-
-        val list = vmPackageResolver.queryProviders(processName, metaDataKey, flags, userId)
-        list.sortBy { it.initOrder }
-        return list
+        return vmPkResolverSource.queryProviders(processName, metaDataKey, flags, userId)
     }
 
     fun resolveContentProvider(authority: String?, flags: Int, userId: Int): ProviderInfo? {
-        return vmPackageResolver.queryProvider(authority, flags, userId)
+        return vmPkResolverSource.queryProvider(authority, flags, userId)
     }
 
-    fun getInstrumentationInfo(className: ComponentName, flags: Int): InstrumentationInfo? {
+    fun getInstrumentationInfo(className: ComponentName, flags: Int, userId: Int): InstrumentationInfo? {
         val packageName = className.packageName
-        val loadInstallVmPackageInfoLock = vmPiSource.loadInstallVmPackageInfoLock(packageName)
+        val loadInstallVmPackageInfoLock = vmPiSource.loadInstallVmPackageInfo(packageName, userId)
         // TODO system PMS fix
         //    info.primaryCpuAbi = AndroidPackageUtils.getPrimaryCpuAbi(pkg, pkgSetting);
         //    info.secondaryCpuAbi = AndroidPackageUtils.getSecondaryCpuAbi(pkg, pkgSetting);
@@ -250,76 +243,43 @@ class VmPackageRepo(
         return null
     }
 
-    fun queryInstrumentation(targetPackage: String, flags: Int): List<Parcelable> {
+    fun queryInstrumentation(targetPackage: String, flags: Int, userId: Int): List<Parcelable> {
         val result = mutableListOf<Parcelable>()
-        val loadInstallVmPackageInfoLock = vmPiSource.loadInstallVmPackageInfoLock(targetPackage)
+        val loadInstallVmPackageInfoLock = vmPiSource.loadInstallVmPackageInfo(targetPackage, userId)
         if (loadInstallVmPackageInfoLock?.instrumentation != null){
             result.addAll(loadInstallVmPackageInfoLock.instrumentation)
         }
         return result
     }
 
-    fun checkNeedInstalledOrUpdated(packageName: String, versionCode: Long): Boolean {
-        return !checkPackageInstalled(packageName) || (checkPackageInstalled(packageName) && checkPackageVersion(packageName, versionCode))
+    fun checkNeedInstalledOrUpdated(packageName: String, versionCode: Long, userId: Int): Boolean {
+        return !checkPackageInstalled(packageName, userId)
+                || (checkPackageInstalled(packageName, userId) && checkPackageVersion(packageName, versionCode, userId))
     }
 
     /**
      * 检查包是否安装
      */
-    fun checkPackageInstalled(packageName: String): Boolean {
-        return vmPkConfSource.vmPackageConfig.packageSetting.containsKey(packageName)
+    fun checkPackageInstalled(packageName: String, userId: Int): Boolean {
+        return vmPkConfSource.checkPackageConfExists(userId, packageName)
     }
 
     /**
      * 应用版本检查
      */
-    fun checkPackageVersion(packageName: String, versionCode: Long): Boolean {
-        if (!checkPackageInstalled(packageName)) {
+    fun checkPackageVersion(packageName: String, versionCode: Long, userId: Int): Boolean {
+        if (!checkPackageInstalled(packageName, userId)) {
             return false
         }
-        return vmPkConfSource.vmPackageConfig.packageSetting[packageName]!!.installPackageInfoVersionCode < versionCode
-    }
 
-    /**
-     * 添加安装包配置信息
-     * 调用前需要保证安装包已经安装到指定的位置中
-     */
-    @Synchronized
-    fun addInstallPackageInfoWithLock(vmPackageConfigInfo: VmPackageConfigInfo): Boolean {
-        return vmPkConfSource.addInstallPackageInfoWithLock(vmPackageConfigInfo)
-    }
-
-
-    @Synchronized
-    fun updateInstallPackageInfoWithLock(vmPackageConfigInfo: VmPackageConfigInfo): Boolean {
-        val packageName = vmPackageConfigInfo.packageName
-        if (!checkPackageInstalled(packageName)) {
-            return false
-        }
-        return vmPkConfSource.updateInstallPackageInfoWithLock(vmPackageConfigInfo)
-    }
-
-    /**
-     * 删除安装包数据
-     */
-    @Synchronized
-    fun removeInstallPackageInfoWithLock(packageName: String) {
-        vmPkConfSource.removeInstallPackageInfoWithLock(packageName)
-    }
-
-    /**
-     * 移除安装用户的数据
-     */
-    @Synchronized
-    fun remoteInstallPackageUserDataWithLock(packageName: String, userId: Int) {
-        vmPkConfSource.remoteInstallPackageUserDataWithLock(packageName, userId)
+        return vmPkConfSource.getInstallPackageConfig(userId, packageName)!!.installPackageInfoVersionCode < versionCode
     }
 
     @Synchronized
-    fun getPackageInfoList(flag: Int): List<PackageInfo> {
-        val result = ArrayList<PackageInfo>(vmPkConfSource.packageSettings.size)
-        for (vmInstallPackageEntry in vmPkConfSource.packageSettings) {
-            val vmPackageConf = vmInstallPackageEntry.value
+    fun getPackageInfoList(flag: Int, userId: Int): List<PackageInfo> {
+        val result = ArrayList<PackageInfo>()
+        val userAllPackageUserConfList = vmPkConfSource.getUserAllPackageUserConfList(userId)
+        for (vmPackageConf in userAllPackageUserConfList) {
             val confFile = File(vmPackageConf.installPackageInfoFilePath)
             if (confFile.exists()) {
                 val packageInfo = PackageHelper.loadInstallPackageInfoNoLock(confFile)
@@ -335,7 +295,7 @@ class VmPackageRepo(
         return result
     }
 
-    fun getVmPackageInfo(packageName: String, flags: Int): PackageInfo? {
+    fun getVmPackageInfo(packageName: String, flags: Int, userId: Int): PackageInfo? {
 //        val vmPackageConf = vmPackageDataSource.packageSettings[packageName] ?: return null
 //        val file = File(vmPackageConf.installPackageApkFilePath)
 //        val confFile = File(vmPackageConf.installPackageInfoFilePath)
@@ -350,30 +310,24 @@ class VmPackageRepo(
 //        if (flags.and(PackageManager.GET_ACTIVITIES) == 0){
 //            packageInfo.activities = emptyArray()
 //        }
-        val packageInfo = vmPiSource.loadInstallVmPackageInfoLock(packageName)
+        val packageInfo = vmPiSource.loadInstallVmPackageInfo(packageName, userId)
         return packageInfo
     }
 
-    fun getApplicationInfo(packageName: String, flags: Int): ApplicationInfo? {
-        val vmPackageInfo = getVmPackageInfo(packageName, flags) ?: return null
+    fun getApplicationInfo(packageName: String, flags: Int, userId: Int): ApplicationInfo? {
+        val vmPackageInfo = getVmPackageInfo(packageName, flags, userId) ?: return null
         return vmPackageInfo.applicationInfo
     }
 
-    fun getActivityInfo(componentName: ComponentName, flags: Int): ActivityInfo? {
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
-        val findActivityInfo = vmPackageInfo.activities.find { it.name == componentName.className } ?: return null
-        return ActivityInfo(findActivityInfo)
-    }
-
     fun getActivityInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo? {
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
+        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags, userId) ?: return null
         val findActivityInfo = vmPackageInfo.activities.find { it.name == componentName.className } ?: return null
         PackageHelper.fixRunApplicationInfo(findActivityInfo.applicationInfo, userId)
         return findActivityInfo
     }
 
     fun getReceiverInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo? {
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
+        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags, userId) ?: return null
         val findReceiverInfo = vmPackageInfo.receivers.find { it.name == componentName.packageName } ?: return null
         if (findReceiverInfo.applicationInfo == null){
             findReceiverInfo.applicationInfo = vmPackageInfo.applicationInfo
@@ -383,7 +337,7 @@ class VmPackageRepo(
     }
 
     fun getServiceInfo(componentName: ComponentName, flags: Int, userId: Int): ServiceInfo? {
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
+        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags, userId) ?: return null
         val findServiceInfo = vmPackageInfo.services.find { it.name == componentName.packageName } ?: return null
         if (findServiceInfo.applicationInfo == null){
             findServiceInfo.applicationInfo = vmPackageInfo.applicationInfo
@@ -393,7 +347,7 @@ class VmPackageRepo(
     }
 
     fun getProviderInfo(componentName: ComponentName, flags: Int, userId: Int): ProviderInfo? {
-        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags) ?: return null
+        val vmPackageInfo = getVmPackageInfo(componentName.packageName, flags, userId) ?: return null
         val findProviderInfo = vmPackageInfo.providers.find { it.name == componentName.packageName } ?: return null
         if (findProviderInfo.applicationInfo == null){
             findProviderInfo.applicationInfo = vmPackageInfo.applicationInfo
@@ -406,7 +360,4 @@ class VmPackageRepo(
         return emptyList()
     }
 
-    companion object {
-
-    }
 }
