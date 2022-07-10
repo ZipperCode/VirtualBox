@@ -1,41 +1,37 @@
-package com.virtual.box.core.hook.service;
+package com.virtual.box.core.hook.service
 
-import android.os.Process;
-import android.os.storage.StorageVolume;
+import android.os.Process
+import com.virtual.box.base.util.log.Logger.Companion.getLogger
+import com.virtual.box.base.util.log.L
+import com.virtual.box.reflect.android.os.storage.HIStorageManager
+import android.os.storage.StorageVolume
+import com.virtual.box.core.hook.core.MethodHandle
 
-import androidx.annotation.Nullable;
-
-import com.virtual.box.base.util.log.L;
-import com.virtual.box.base.util.log.Logger;
-import com.virtual.box.core.hook.core.MethodHandle;
-import com.virtual.box.reflect.android.os.storage.HIStorageManager;
-
-public class IStorageManagerHookHandle extends BaseBinderHookHandle {
-    private final Logger logger = Logger.getLogger(L.HOOK_TAG,"IStorageManagerHookHandle");
-
-    public IStorageManagerHookHandle() {
-        super("mount");
+class IStorageManagerHookHandle : BaseBinderHookHandle("mount") {
+    private val logger = getLogger(L.HOOK_TAG, "IStorageManagerHookHandle")
+    override fun getOriginObject(): Any? {
+        return HIStorageManager.Stub.asInterface.call(originBinder)
     }
 
-    @Nullable
-    @Override
-    protected Object getOriginObject() {
-        return HIStorageManager.Stub.asInterface.call(getOriginBinder());
-    }
-
-    void mkdirs(MethodHandle methodHandle, String callingPkg, String path){
-        logger.i("mkdirs#callingPkg = %s, path = %s", callingPkg, path);
-        methodHandle.invokeOriginMethod();
+    fun mkdirs(methodHandle: MethodHandle, callingPkg: String?, path: String?) {
+        logger.i("mkdirs#callingPkg = %s, path = %s", callingPkg, path)
+        methodHandle.invokeOriginMethod(
+            arrayOf<Any?>(
+                hostPkg, path
+            )
+        )
     }
 
     /**
      * TODO Specified package com.sinyee.babybus.world under uid 10740 but it is really 10741
      * TODO 需要做uid处理
      */
-    StorageVolume[] getVolumeList(MethodHandle methodHandle, int uid, String packageName, int flags){
-        logger.i("getVolumeList#uid = %s, sysUid = %s, package = %s", uid, Process.myUid(), packageName);
-        return (StorageVolume[]) methodHandle.invokeOriginMethod(new Object[]{
+    fun getVolumeList(methodHandle: MethodHandle, uid: Int, packageName: String?, flags: Int): Array<*>? {
+        logger.i("getVolumeList#uid = %s, sysUid = %s, package = %s", uid, Process.myUid(), packageName)
+        return methodHandle.invokeOriginMethod(
+            arrayOf<Any?>(
                 Process.myUid(), hostPkg, flags
-        });
+            )
+        ) as Array<*>?
     }
 }

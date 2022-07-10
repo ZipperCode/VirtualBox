@@ -2,6 +2,7 @@ package com.virtual.box.reflect.android.app;
 
 
 import android.app.Activity;
+import android.app.ActivityThread;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.app.Service;
@@ -24,6 +25,12 @@ import com.virtual.box.reflect.MirrorReflection;
 
 public class HActivityThread {
     public static final MirrorReflection REF = MirrorReflection.on("android.app.ActivityThread");
+
+    public static MirrorReflection.FieldWrapper<Boolean> DEBUG_MESSAGES = REF.field("DEBUG_MESSAGES");
+    public static MirrorReflection.FieldWrapper<Boolean> DEBUG_RESULTS = REF.field("DEBUG_RESULTS");
+    public static MirrorReflection.FieldWrapper<Boolean> DEBUG_SERVICE = REF.field("DEBUG_SERVICE");
+    public static MirrorReflection.FieldWrapper<Boolean> DEBUG_PROVIDER = REF.field("DEBUG_PROVIDER");
+    public static MirrorReflection.FieldWrapper<Boolean> DEBUG_BROADCAST = REF.field("DEBUG_BROADCAST");
 
     public static MirrorReflection.StaticMethodWrapper<Object> currentActivityThread = REF.staticMethod("currentActivityThread");
     public static MirrorReflection.StaticMethodWrapper<Object> currentProcessName = REF.staticMethod("currentProcessName");
@@ -107,7 +114,15 @@ public class HActivityThread {
         public static final MirrorReflection.FieldWrapper<IInterface> mProvider = REF.field("mProvider");
     }
 
-
-
+    public static void setSystemDebug(boolean isDebug){
+        if (isDebug){
+            ActivityThread at = ActivityThread.currentActivityThread();
+            DEBUG_MESSAGES.set(at, true);
+            DEBUG_RESULTS.set(at, true);
+            DEBUG_SERVICE.set(at, true);
+            DEBUG_PROVIDER.set(at, true);
+            DEBUG_BROADCAST.set(at, true);
+        }
+    }
 
 }

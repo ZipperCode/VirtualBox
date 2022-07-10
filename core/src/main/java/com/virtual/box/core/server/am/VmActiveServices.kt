@@ -276,6 +276,7 @@ class VmActiveServices {
             val targetApplicationThread = handleServiceAttachApplication(sRecord)
             if (!sRecord.isStarted.get()) {
                 targetApplicationThread.scheduleCreateService(sRecord, sRecord.serviceInfo, sRecord.intent)
+                sRecord.isStarted.set(true)
             }
 //            val flag = if (sRecord.hasDeath.get()){
 //                Service.START_FLAG_REDELIVERY

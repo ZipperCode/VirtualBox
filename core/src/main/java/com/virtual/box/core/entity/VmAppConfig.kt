@@ -26,6 +26,8 @@ class VmAppConfig() : Parcelable {
     @JvmField
     var userId: Int = 0
 
+    val vmAppId: Int = 0
+
     var isMainProcess: Boolean = false
 
     /**

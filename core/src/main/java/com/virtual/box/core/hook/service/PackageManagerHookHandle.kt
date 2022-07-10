@@ -13,6 +13,7 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.hook.core.MethodHandle
 import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
+import com.virtual.box.core.server.user.BUserHandle
 import com.virtual.box.reflect.MirrorReflection
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.app.HContextImpl
@@ -60,7 +61,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getPackageInfo(methodHandle: MethodHandle, packageName: String, flags: Int, userId: Int): PackageInfo? {
-        val packageInfo = VmAppPackageManager.getPackageInfo(packageName, flags, userId)
+        val packageInfo = VmAppPackageManager.getPackageInfo(packageName, flags, AppActivityThread.currentProcessVmUserId)
         if (packageInfo != null) {
             return packageInfo
         }
@@ -73,7 +74,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         versionedPackage: VersionedPackage?,
         flags: Int, userId: Int
     ): PackageInfo? {
-        val packageInfo = VmAppPackageManager.getPackageInfo(versionedPackage!!.packageName, flags, userId)
+        val packageInfo = VmAppPackageManager.getPackageInfo(versionedPackage!!.packageName, flags, AppActivityThread.currentProcessVmUserId)
         if (packageInfo != null) {
             return packageInfo
         }
@@ -89,11 +90,13 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getApplicationInfo(methodHandle: MethodHandle, packageName: String, flags: Int, userId: Int): ApplicationInfo? {
-        logger.i("getApplication#packageName = %s", packageName)
-        val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, flags, userId)
-        logger.i("getApplication#applicationInfo = %s", applicationInfo)
-        if (applicationInfo != null) {
-            return applicationInfo
+        if (packageName != hostPkg){
+            logger.i("getApplication#packageName = %s", packageName)
+            val applicationInfo = VmAppPackageManager.getApplicationInfo(packageName, flags, AppActivityThread.currentProcessVmUserId)
+            logger.i("getApplication#applicationInfo = %s", applicationInfo)
+            if (applicationInfo != null) {
+                return applicationInfo
+            }
         }
         return methodHandle.invokeOriginMethod() as? ApplicationInfo
     }
@@ -110,7 +113,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getActivityInfo(methodHandle: MethodHandle, className: ComponentName, flags: Int, userId: Int): ActivityInfo? {
-        val activityInfo = VmAppPackageManager.getActivityInfo(className, flags, userId)
+        val activityInfo = VmAppPackageManager.getActivityInfo(className, flags,AppActivityThread.currentProcessVmUserId)
         if (activityInfo != null) {
             return activityInfo
         }
@@ -126,7 +129,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getReceiverInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ActivityInfo? {
-        val receiverInfo = VmAppPackageManager.getReceiverInfo(className, flags, userId)
+        val receiverInfo = VmAppPackageManager.getReceiverInfo(className, flags, AppActivityThread.currentProcessVmUserId)
         if (receiverInfo != null) {
             return receiverInfo
         }
@@ -134,7 +137,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getServiceInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ServiceInfo? {
-        val serviceInfo = VmAppPackageManager.getServiceInfo(className, flags, userId)
+        val serviceInfo = VmAppPackageManager.getServiceInfo(className, flags, AppActivityThread.currentProcessVmUserId)
         if (serviceInfo != null) {
             return serviceInfo
         }
@@ -142,7 +145,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun getProviderInfo(methodHandle: MethodHandle, className: ComponentName?, flags: Int, userId: Int): ProviderInfo? {
-        val providerInfo = VmAppPackageManager.getProviderInfo(className, flags, userId)
+        val providerInfo = VmAppPackageManager.getProviderInfo(className, flags, AppActivityThread.currentProcessVmUserId)
         if (providerInfo != null) {
             return providerInfo
         }
@@ -161,7 +164,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun resolveIntent(methodHandle: MethodHandle, intent: Intent?, resolvedType: String?, flags: Int, userId: Int): ResolveInfo? {
-        val resolveIntent = VmAppPackageManager.resolveIntent(intent, resolvedType, flags, userId)
+        val resolveIntent = VmAppPackageManager.resolveIntent(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (resolveIntent != null) {
             return resolveIntent
         }
@@ -177,7 +180,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentActivities = VmAppPackageManager.queryIntentActivities(intent, resolvedType, flags, userId)
+        val queryIntentActivities = VmAppPackageManager.queryIntentActivities(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (queryIntentActivities.list.isNotEmpty()) {
             return queryIntentActivities
         }
@@ -191,7 +194,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
         val queryIntentActivityOptions =
-            VmAppPackageManager.queryIntentActivityOptions(caller, specifics, specificTypes, intent, resolvedType, flags, userId)
+            VmAppPackageManager.queryIntentActivityOptions(caller, specifics, specificTypes, intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (queryIntentActivityOptions.list.isNotEmpty()) {
             return queryIntentActivityOptions
         }
@@ -203,7 +206,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentReceivers = VmAppPackageManager.queryIntentReceivers(intent, resolvedType, flags, userId)
+        val queryIntentReceivers = VmAppPackageManager.queryIntentReceivers(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (queryIntentReceivers.list.isNotEmpty()) {
             return queryIntentReceivers
         }
@@ -215,7 +218,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ResolveInfo? {
-        val resolveService = VmAppPackageManager.resolveService(intent, resolvedType, flags, userId)
+        val resolveService = VmAppPackageManager.resolveService(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (resolveService != null) {
             return resolveService
         }
@@ -227,7 +230,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentServices = VmAppPackageManager.queryIntentServices(intent, resolvedType, flags, userId)
+        val queryIntentServices = VmAppPackageManager.queryIntentServices(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (queryIntentServices.list.isNotEmpty()) {
             return queryIntentServices
         }
@@ -239,7 +242,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         intent: Intent?,
         resolvedType: String?, flags: Int, userId: Int
     ): ParceledListSlice<Parcelable>? {
-        val queryIntentContentProviders = VmAppPackageManager.queryIntentContentProviders(intent, resolvedType, flags, userId)
+        val queryIntentContentProviders = VmAppPackageManager.queryIntentContentProviders(intent, resolvedType, flags, AppActivityThread.currentProcessVmUserId)
         if (queryIntentContentProviders.list.isNotEmpty()) {
             return queryIntentContentProviders
         }
@@ -297,7 +300,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
     }
 
     fun resolveContentProvider(methodHandle: MethodHandle, name: String?, flags: Int, userId: Int): ProviderInfo? {
-        val resolveContentProvider = VmAppPackageManager.resolveContentProvider(name, flags, userId)
+        val resolveContentProvider = VmAppPackageManager.resolveContentProvider(name, flags, AppActivityThread.currentProcessVmUserId)
         if (resolveContentProvider != null) {
             return resolveContentProvider
         }
@@ -339,7 +342,8 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         if (className?.packageName == hostPkg) {
             return methodHandle.invokeOriginMethod() as InstrumentationInfo?
         }
-        val instrumentationInfo = VmAppPackageManager.getInstrumentationInfo(className, flags)
+        BUserHandle.getUserId(AppActivityThread.currentProcessVmPid)
+        val instrumentationInfo = VmAppPackageManager.getInstrumentationInfo(className, flags, AppActivityThread.currentProcessVmUserId)
         if (instrumentationInfo != null) {
             return instrumentationInfo
         }
@@ -353,7 +357,7 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         if (targetPackage == hostPkg) {
             return methodHandle.invokeOriginMethod() as ParceledListSlice<*>?
         }
-        val queryInstrumentation = VmAppPackageManager.queryInstrumentation(targetPackage, flags)
+        val queryInstrumentation = VmAppPackageManager.queryInstrumentation(targetPackage, flags, AppActivityThread.currentProcessVmUserId)
         if (queryInstrumentation != null) {
             return queryInstrumentation;
         }
@@ -626,7 +630,9 @@ class PackageManagerHookHandle : BaseBinderHookHandle("package") {
         methodHandle: MethodHandle, loadingPackageName: String?,
         classLoaderContextMap: Map<String?, String?>?, loaderIsa: String?
     ) {
-        methodHandle.invokeOriginMethod()
+        methodHandle.invokeOriginMethod(arrayOf(
+            hostPkg, classLoaderContextMap, loaderIsa
+        ))
     }
 
     /**

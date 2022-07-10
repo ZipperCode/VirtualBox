@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <paths>
+        <files-path
+            name="vm-files-path"
+            path="." />
+
+        <external-path
+            name="vm-external_file"
+            path="." />
+
+        <external-cache-path
+            name="vm-external_cache_path"
+            path="." />
+
+        <external-files-path
+            name="vm-external-files-path"
+            path="." />
+
+        <external-media-path
+            name="vm-external-media-path"
+            path="." />
+
+        <cache-path
+            name="vm-cache-path"
+            path="." />
+
+        <root-path
+            name="vm-root-path"
+            path="." />
+    </paths>
+
+</resources>

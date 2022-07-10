@@ -46,7 +46,7 @@ abstract class BaseBinderHookHandle : BaseHookHandle, IBinder {
     }
 
     override fun queryLocalInterface(descriptor: String): IInterface? {
-        return originBinder?.queryLocalInterface(descriptor)
+        return originBinder?.queryLocalInterface(descriptor) ?: proxyInvocation as IInterface?
     }
 
     override fun dump(fd: FileDescriptor, args: Array<out String>?) {

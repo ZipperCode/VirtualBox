@@ -3,11 +3,11 @@
  *  public native boolean access(String path, int mode) throws ErrnoException;
  */
 HOOK_JNI(jboolean, access, JNIEnv *env, jobject obj, jstring path, jint mode) {
-//    if (DEBUG_LOG) {
-//        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
-//        ALOGE(">> Linux#access path = %s, mode = %d", pathStr, mode)
-//        env->ReleaseStringUTFChars(path, pathStr);
-//    }
+    if (DEBUG_LOG) {
+        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
+        ALOGE(">> Linux#access path = %s, mode = %d", pathStr, mode)
+        env->ReleaseStringUTFChars(path, pathStr);
+    }
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     return orig_access(env, obj, redirect, mode);
 }
@@ -15,11 +15,11 @@ HOOK_JNI(jboolean, access, JNIEnv *env, jobject obj, jstring path, jint mode) {
  *  public native void chmod(String path, int mode) throws ErrnoException;
  */
 HOOK_JNI(void, chmod, JNIEnv *env, jobject obj, jstring path, jint mode) {
-//    if (DEBUG_LOG) {
-//        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
-//        ALOGE(">> Linux#chmod path = %s, mode = %d", pathStr, mode)
-//        env->ReleaseStringUTFChars(path, pathStr);
-//    }
+    if (DEBUG_LOG) {
+        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
+        ALOGE(">> Linux#chmod path = %s, mode = %d", pathStr, mode)
+        env->ReleaseStringUTFChars(path, pathStr);
+    }
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     orig_chmod(env, obj, redirect, mode);
 }
@@ -136,11 +136,11 @@ HOOK_JNI(jobject, lstat, JNIEnv *env, jobject obj, jstring path) {
  *  public native void mkdir(String path, int mode) throws ErrnoException;
  */
 HOOK_JNI(void, mkdir, JNIEnv *env, jobject obj, jstring path, jint mode) {
-//    if (DEBUG_LOG) {
-//        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
-//        ALOGE(">> Linux#mkdir path = %s, mode = %d", pathStr, mode)
-//        env->ReleaseStringUTFChars(path, pathStr);
-//    }
+    if (DEBUG_LOG) {
+        const char *pathStr = env->GetStringUTFChars(path, JNI_FALSE);
+        ALOGE(">> Linux#mkdir path = %s, mode = %d", pathStr, mode)
+        env->ReleaseStringUTFChars(path, pathStr);
+    }
     jstring redirect = IoRedirect::handleRedirectPath(env, path);
     orig_mkdir(env, obj, redirect, mode);
 }

@@ -2,6 +2,7 @@ package com.virtual.box.core.server.user
 
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
+import com.virtual.box.core.server.user.entity.VmUserInfo
 
 /**
  *
@@ -13,10 +14,6 @@ object VmUserManagerService : IVmUserManagerService.Stub() {
 
     private val userInfoRepo: VmUserInfoRepo = VmUserInfoRepo()
 
-    fun exists(userId: Int): Boolean{
-        return userInfoRepo.exists(userId)
-    }
-
     override fun checkOrCreateUser(userId: Int) {
         if (userInfoRepo.exists(userId)){
             return
@@ -24,7 +21,24 @@ object VmUserManagerService : IVmUserManagerService.Stub() {
         userInfoRepo.createUser(userId)
     }
 
-    fun deleteUserIfExists(userId: Int){
+    override fun checkUserExists(userId: Int): Boolean {
+        return userInfoRepo.exists(userId)
+    }
+
+    override fun getVmUserInfo(userId: Int): VmUserInfo? {
+        return userInfoRepo.loadUserInfo(userId)
+    }
+
+    override fun loadAllAsUserId(): IntArray {
+        val loadUserKeys = userInfoRepo.loadUserKeys()
+        return loadUserKeys.toIntArray()
+    }
+
+    override fun loadAllUserInfo(): MutableList<VmUserInfo> {
+        return userInfoRepo.loadAllUserWithLock().toMutableList()
+    }
+
+    override fun deleteUserIfExists(userId: Int){
       if (userInfoRepo.exists(userId)){
           userInfoRepo.deleteUser(userId)
       }

@@ -73,7 +73,7 @@ object VmProcessManager {
 
     fun findProcess(caller: IAppApplicationThread): VmProcessRecord?{
         for (vmProcessRecord in allProcessList) {
-            if (vmProcessRecord.applicationThread == caller){
+            if (vmProcessRecord.applicationThread?.asBinder() == caller.asBinder()){
                 return vmProcessRecord
             }
         }

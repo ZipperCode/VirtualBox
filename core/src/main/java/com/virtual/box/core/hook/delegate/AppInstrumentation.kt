@@ -13,7 +13,7 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
 import com.virtual.box.core.helper.IntentHelper
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.AppActivityManager
 import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.reflect.android.app.HActivityThread
@@ -128,7 +128,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, activity, intent, requestCode)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode)
         }
@@ -166,7 +166,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode)
         }
@@ -207,7 +207,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, str, intent, requestCode,options)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, str, shadowIntent, requestCode,options)
         }
@@ -248,7 +248,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, activity, intent, requestCode, options)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, AppActivityThread.currentProcessVmUserId)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, AppActivityThread.currentProcessVmUserId)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, activity, shadowIntent, requestCode, options)
         }
@@ -289,7 +289,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, contextThread, token, fragment, intent, requestCode, bundle)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, contextThread, token, fragment, shadowIntent, requestCode, bundle)
         }
@@ -333,7 +333,7 @@ class AppInstrumentation : BaseInstrumentationDelegate(), IInjectHook {
             return super.execStartActivity(context, iBinder, iBinder2, activity, intent, requestCode, bundle, userHandle)
         }
 
-        val shadowIntent = VmAppActivityManager.prepareStartActivity(intent, 0)
+        val shadowIntent = AppActivityManager.prepareStartActivity(intent, 0)
         if (shadowIntent != null){
             return super.execStartActivity(context, iBinder, iBinder2, activity, shadowIntent, requestCode, bundle, userHandle)
         }

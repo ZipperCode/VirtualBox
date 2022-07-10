@@ -96,6 +96,15 @@ jstring IoRedirect::handleRedirectPath(JNIEnv *env, jstring filePath) {
         return filePath;
     }
     const char *path = env->GetStringUTFChars(filePath, JNI_FALSE);
+    const char *test = "Android/data/com.sinyee.babybus.world/cache";
+//    if (strstr(path, test)){
+//        ALOGE("IoRedirect >> Jni打印堆栈")
+//        jclass  throwable_class = env->FindClass("java/lang/Throwable");
+//        jmethodID  throwable_init = env->GetMethodID(throwable_class, "<init>", "(Ljava/lang/String;)V");
+//        jobject throwable_obj = env->NewObject(throwable_class, throwable_init, env->NewStringUTF("hecheng"));
+//        jmethodID throwable_mid = env->GetMethodID(throwable_class, "printStackTrace", "()V");
+//        env->CallVoidMethod(throwable_obj, throwable_mid);
+//    }
     const char *target = handleRedirectPath(path);
     if (target == nullptr) {
         ALOGE("IoRedirect >> handleRedirectPath#fail redirect target == null return originParam")

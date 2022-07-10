@@ -4,6 +4,7 @@ import android.content.pm.PackageInfo
 import android.os.Debug
 import com.virtual.box.base.ext.checkAndMkdirs
 import com.virtual.box.base.ext.deleteDir
+import com.virtual.box.base.ext.deleteFile
 import com.virtual.box.base.helper.SystemHelper
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
@@ -23,10 +24,12 @@ internal object VmPackageInstallManager {
         VmFileSystem.handleInstallDir(packageName, userId)
         val originFile = File(filePath)
         // 拷贝apk文件
-        originFile.copyTo(VmFileSystem.getInstallBaseApkFile(packageName))
+        val installBaseApkFile = VmFileSystem.getInstallBaseApkFile(packageName)
+        installBaseApkFile.deleteFile()
+        originFile.copyTo(installBaseApkFile)
         // 拷贝so库
         PackageHelper.copyLibrary(originFile, VmFileSystem.getInstallAppLibDir(packageName))
-        val packageAbi: String = PackageHelper.getPackageCpuAbi(packageName, userId)
+        val packageAbi = PackageHelper.getPackageCpuAbi(packageName, userId)
         // 修复application
         PackageHelper.fixInstallApplicationInfo(vmPackageInfo.applicationInfo, packageAbi)
         // 保存安装包配置文件

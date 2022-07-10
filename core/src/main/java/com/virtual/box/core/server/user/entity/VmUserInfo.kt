@@ -8,20 +8,18 @@ import android.os.Parcelable
  * @author zhangzhipeng
  * @date   2022/4/26
  **/
-class VmUserInfo() : Parcelable {
+data class VmUserInfo(
     /**
      * 用户Id userId
      */
-    var userId: Int = 0
+    val userId: Int,
     /**
      * 创建时间
      */
     var createTime: Long = 0
+) : Parcelable {
 
-    constructor(parcel: Parcel) : this() {
-        userId = parcel.readInt()
-        createTime = parcel.readLong()
-    }
+    constructor(parcel: Parcel) : this(parcel.readInt(),parcel.readLong() )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeInt(userId)

@@ -44,6 +44,7 @@ object IoHelper {
             // /data/data
             rule["/data/data/$packageName"] = packageInfo.dataDir
             rule["/data/user/0/$packageName"] = packageInfo.dataDir
+
             // /storage/emulated/0/Android/data/com.sinyee.babybus.world/cache
             // /storage/emulated/0/Android/data
             // /storage/0DE7-2F1C/Android/data/com.sinyee.babybus.world/cache
@@ -65,6 +66,19 @@ object IoHelper {
                 rule["/sdcard/android/data/$packageName"] = File(external, "/sdcard/android/data/$packageName").absolutePath
                 rule["/storage/emulated/0/android/data/$packageName"] = File(external, "/storage/emulated/0/android/data/$packageName").absolutePath
                 rule["/storage/emulated/0/Android/data/$packageName"] = File(external, "/storage/emulated/0/Android/data/$packageName").absolutePath
+                rule["/storage/emulated/0/Android/media/$packageName"] = File(external, "/storage/emulated/0/Android/data/$packageName").absolutePath
+                //Debug.waitForDebugger()
+                try {
+                    val hostPackage = VirtualBox.get().hostPkg
+                    val listFiles = File("/storage").listFiles()
+                    listFiles?.filter { !it.name.contains("/storage/emulated/") }?.forEach {
+                        val key = "${it.absolutePath}/Android/data/$packageName"
+                        val value = "${it.absolutePath}/Android/data/${hostPackage}/$packageName"
+                        rule[key] = value
+                    }
+                }catch (e: Throwable){
+                    L.printStackTrace(e)
+                }
             }
         }catch (e: Exception){
             L.printStackTrace(e)

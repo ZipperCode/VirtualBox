@@ -11,7 +11,7 @@ import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.constant.ProcessType
 import com.virtual.box.core.manager.AppHookManager
 import com.virtual.box.core.manager.AppServiceManager
-import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.AppActivityManager
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.server.pm.entity.VmInstalledPackageInfo
 import com.virtual.box.core.server.pm.entity.VmPackageInstallOption
@@ -68,7 +68,7 @@ class VirtualBox {
     }
 
     fun launchApp(intent: Intent){
-        VmAppActivityManager.launchActivity(intent, 0)
+        AppActivityManager.launchActivity(intent, 0)
     }
 
     fun uninstallPackage(packageName: String){
@@ -76,7 +76,7 @@ class VirtualBox {
     }
 
     fun getInstalledPackageInfo(): List<VmInstalledPackageInfo>{
-        return VmAppPackageManager.getInstalledPackageInfoList(0)
+        return VmAppPackageManager.getInstalledPackageInfoList(0, 0)
     }
 
     /**

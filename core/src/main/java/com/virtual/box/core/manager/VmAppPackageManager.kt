@@ -40,9 +40,9 @@ object VmAppPackageManager {
         requireService().registerPackageObserver(packageObserver)
     }
 
-    fun installPackage(installOption: VmPackageInstallOption): VmPackageResult {
+    fun installPackage(installOption: VmPackageInstallOption, userId: Int = 0): VmPackageResult {
         return try {
-            requireService().installPackageAsUser(installOption, 0)
+            requireService().installPackageAsUser(installOption, userId)
         } catch (e: RemoteException) {
             logger.e(e)
             VmPackageResult.installFail("调用服务进程安装失败：${e.message}")
@@ -67,18 +67,18 @@ object VmAppPackageManager {
         }
     }
 
-    fun getInstalledPackageInfoList(flag: Int): List<VmInstalledPackageInfo> {
+    fun getInstalledPackageInfoList(flag: Int, userId: Int): List<VmInstalledPackageInfo> {
         return try {
-            requireService().getVmInstalledPackageInfos(flag)
+            requireService().getVmInstalledPackageInfos(flag, userId)
         } catch (e: RemoteException) {
             logger.e(e)
             emptyList<VmInstalledPackageInfo>()
         }
     }
 
-    fun getInstalledVmPackageInfo(packageName: String, flags: Int): VmInstalledPackageInfo? {
+    fun getInstalledVmPackageInfo(packageName: String, flags: Int, userId: Int): VmInstalledPackageInfo? {
         return try {
-            requireService().getVmInstalledPackageInfo(packageName, flags)
+            requireService().getVmInstalledPackageInfo(packageName, flags, userId)
         } catch (e: RemoteException) {
             logger.e(e)
             return null
@@ -222,18 +222,18 @@ object VmAppPackageManager {
         }
     }
 
-    fun getInstrumentationInfo(className: ComponentName?, flags: Int): InstrumentationInfo?{
+    fun getInstrumentationInfo(className: ComponentName?, flags: Int, userId: Int): InstrumentationInfo?{
         return try {
-            requireService().getInstrumentationInfo(className, flags)
+            requireService().getInstrumentationInfo(className, flags, userId)
         }catch (e: RemoteException){
             logger.e(e)
             null
         }
     }
 
-    fun queryInstrumentation(targetPackage: String?, flags: Int): ParceledListSlice<Parcelable>?{
+    fun queryInstrumentation(targetPackage: String?, flags: Int, userId: Int): ParceledListSlice<Parcelable>?{
         return try {
-            requireService().queryInstrumentation(targetPackage, flags)
+            requireService().queryInstrumentation(targetPackage, flags, userId)
         }catch (e: RemoteException){
             logger.e(e)
             ParceledListSlice.emptyList()

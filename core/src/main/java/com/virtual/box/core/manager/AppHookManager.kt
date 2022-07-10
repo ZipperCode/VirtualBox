@@ -46,6 +46,7 @@ internal object AppHookManager {
         hookServiceList.add(ITelephonyHookHandle())
         hookServiceList.add(ITelephonyRegistryHookHandle())
         hookServiceList.add(IUserManagerHookHandle())
+        hookServiceList.add(ClipboardServiceHookHandle())
         // hookServiceList.add(IActivityClientControllerHookHandle())
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {

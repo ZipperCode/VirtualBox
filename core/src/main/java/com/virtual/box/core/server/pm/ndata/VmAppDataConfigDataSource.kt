@@ -41,6 +41,38 @@ class VmAppDataConfigDataSource {
         }
     }
 
+    fun removeAppDataWithPackage(userId: Int, packageName: String){
+        synchronized(userAppDataMap){
+            if (!userAppDataMap.containsKey(userId)){
+                return
+            }
+            val userAppDataList = userAppDataMap.get(userId)
+            val iterator = userAppDataList.iterator()
+            while (iterator.hasNext()){
+                val data = iterator.next()
+                if (data.packageName == packageName){
+                    iterator.remove()
+                }
+            }
+            syncDataWithLock(userId)
+        }
+    }
+
+    fun checkPackageAppDataExists(userId: Int, packageName: String): Boolean{
+        synchronized(userAppDataMap){
+            if (!userAppDataMap.containsKey(userId)){
+                return false
+            }
+            val userAppDataList = userAppDataMap.get(userId)
+            for (vmAppDataConfigInfo in userAppDataList) {
+                if (vmAppDataConfigInfo.packageName == packageName){
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
     fun removeAppDataConf(userId: Int, appDataId: String){
         synchronized(userAppDataMap){
             if (!userAppDataMap.containsKey(userId)){

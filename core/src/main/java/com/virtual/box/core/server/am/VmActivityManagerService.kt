@@ -70,11 +70,35 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
         }
     }
 
+    override fun startActivity(intent: Intent?, userId: Int): Int {
+        if (intent == null) {
+            logger.e("StartActivity 失败，Intent == null")
+            return -1
+        }
+        val componentName = intent.component
+        val packageName = intent.getPackage() ?: componentName?.packageName
+        if (packageName.isNullOrEmpty()) {
+            logger.e("StartActivity 失败，Intent 中不存在包名")
+            return -1
+        }
+
+        val installedPackageInfo = VmPackageManagerService.getPackageInfo(packageName, 0, userId)
+        if (installedPackageInfo == null) {
+            logger.e("StartActivity 失败，获取的的PackageInfo == null")
+            // 查询系统的
+            return -1
+        }
+        val shadowIntent = prepareStartActivity(intent, userId)
+        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        VirtualBox.get().hostContext.startActivity(shadowIntent)
+        return 1
+    }
+
     /**
      * 启动一个Activity的准备
      * 解析需要替换的intent，讲intent进行占位替换
      */
-    override fun prepareStartActivity(intent: Intent, userId: Int): Intent? {
+    override fun prepareStartActivity(intent: Intent, userId: Int): Intent {
         // 解析intent
         val resolveActivityInfo =
             VmPackageManagerService.resolveActivityInfo(intent, PackageManager.GET_ACTIVITIES, "", userId) ?: return intent
@@ -140,30 +164,6 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
 //        shadowIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         shadowIntent.addFlags(realLaunchMode)
         return shadowIntent
-    }
-
-    override fun startActivity(intent: Intent?, userId: Int): Int {
-        if (intent == null) {
-            logger.e("StartActivity 失败，Intent == null")
-            return -1
-        }
-        val componentName = intent.component
-        val packageName = intent.`package` ?: componentName?.packageName
-        if (packageName.isNullOrEmpty()) {
-            logger.e("StartActivity 失败，Intent 中不存在包名")
-            return -1
-        }
-
-        val installedPackageInfo = VmPackageManagerService.getPackageInfo(packageName, 0, userId)
-        if (installedPackageInfo == null) {
-            logger.e("StartActivity 失败，获取的的PackageInfo == null")
-            // 查询系统的
-            return -1
-        }
-        val shadowIntent = prepareStartActivity(intent, userId)
-        shadowIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        VirtualBox.get().hostContext.startActivity(shadowIntent)
-        return 1
     }
 
     override fun initNewProcess(packageName: String, processName: String, userId: Int): VmAppConfig {
@@ -264,6 +264,18 @@ internal object VmActivityManagerService : IVmActivityManagrService.Stub() {
     }
 
     override fun forceStopPackage(packageName: String?, userId: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun killApplication(packageName: String?, appId: Int, userId: Int, reason: String?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun killApplicationProcess(processName: String?, uid: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun killBackgroundProcesses(packageName: String?, userId: Int) {
         TODO("Not yet implemented")
     }
 }

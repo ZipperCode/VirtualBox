@@ -16,6 +16,7 @@ import com.virtual.box.core.helper.PackageHelper
 import com.virtual.box.core.manager.VmPackageInstallManager
 import com.virtual.box.core.manager.VmProcessManager
 import com.virtual.box.core.server.pm.entity.*
+import com.virtual.box.core.server.user.BUserHandle
 import com.virtual.box.core.server.user.VmUserManagerService
 import java.io.File
 
@@ -88,7 +89,6 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         if (!option.checkOriginFlag()) {
             return VmPackageResult.installFail("安装失败，安装flag错误，flag = ${option.originFlags}")
         }
-        var isUpdatePackage = false
         try {
             val start = System.currentTimeMillis()
             val filePath = if (option.isOriginFlag(VmPackageInstallOption.FLAG_STORAGE)) {
@@ -114,7 +114,6 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             // 解析apk文件包
             val aPackage = PackageHelper.parserApk(filePath) ?: return VmPackageResult.installFail("解析apk文件：${filePath}失败")
             val packageName = aPackage.packageName
-            val versionCode = aPackage.mVersionCode
             // 获取宿主的包内容
             val hostPackageInfo = VirtualBox.get().hostPm.getPackageInfo(VirtualBox.get().hostPkg, 0)
             val vmPackageInfo = PackageHelper.convertPackageInfo(hostPackageInfo, aPackage)
@@ -138,10 +137,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             return VmPackageResult.installSuccess(packageName)
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
-            if (!isUpdatePackage){
-                VmUserManagerService.deleteUserIfExists(userId)
-
-            }
+            // TODO 卸载
             return VmPackageResult.installFail("安装失败，出现异常，原因:${e.message}")
         }
     }
@@ -155,9 +151,13 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             logger.i("【IPC】正在卸载用户安装包 packageName = %s", packageName)
             // 关闭应用进程
             VmProcessManager.killProcess(packageName!!, userId)
-            vmPackageRepo.remoteInstallPackageUserDataWithLock(packageName, userId)
+            vmPackageRepo.packageUninstall(packageName, userId)
         }
         return VmPackageResult.installSuccess(packageName!!)
+    }
+
+    override fun uninstallPackageAsAppData(packageName: String?, appDataId: String?, userId: Int): VmPackageResult {
+        TODO("Not yet implemented")
     }
 
     override fun isInstalled(packageName: String?, userId: Int): Boolean {
@@ -166,12 +166,12 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
             return false
         }
 
-        if (!VmUserManagerService.exists(userId)) {
+        if (!VmUserManagerService.checkUserExists(userId)) {
             logger.e("【IPC】检查是否安装，用户不存在 userId = %s", userId)
             return false
         }
 
-        if (!vmPackageRepo.checkPackageInstalled(packageName)) {
+        if (!vmPackageRepo.checkPackageInstalled(packageName, userId)) {
             logger.e("【IPC】检查是否安装，未找到安装包配置")
             return false
         }
@@ -184,20 +184,20 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         return true
     }
 
-    override fun getVmInstalledPackageInfos(flag: Int): MutableList<VmInstalledPackageInfo> {
+    override fun getVmInstalledPackageInfos(flag: Int, userId: Int): MutableList<VmInstalledPackageInfo> {
         logger.i("【IPC】查找安装的应用")
-        val installPackageInfoList = vmPackageRepo.getPackageInfoList(flag)
+        val installPackageInfoList = vmPackageRepo.getPackageInfoList(flag, userId)
         return installPackageInfoList.map { VmInstalledPackageInfo(0, it.packageName, it) }.toMutableList()
     }
 
-    override fun getVmInstalledPackageInfo(packageName: String, flags: Int): VmInstalledPackageInfo? {
+    override fun getVmInstalledPackageInfo(packageName: String, flags: Int, userId: Int): VmInstalledPackageInfo? {
         logger.i("【IPC】查找指定包名的安装应用（非系统）")
         //return vmPackageRepo.getVmPackageInfo(packageName, flags)
         return null
     }
 
     override fun getPackageInfo(packageName: String, flags: Int, userId: Int): PackageInfo? {
-        val vmPackageInfo = vmPackageRepo.getVmPackageInfo(packageName, flags)
+        val vmPackageInfo = vmPackageRepo.getVmPackageInfo(packageName, flags, userId)
         vmPackageInfo?.apply {
             ComponentFixCompat.fixApplicationInfo(applicationInfo, userId)
         }
@@ -205,11 +205,11 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
     }
 
     override fun getApplicationInfo(packageName: String, flags: Int, userId: Int): ApplicationInfo? {
-        return vmPackageRepo.getApplicationInfo(packageName, flags)
+        return vmPackageRepo.getApplicationInfo(packageName, flags, userId)
     }
 
     override fun getActivityInfo(componentName: ComponentName, flags: Int, userId: Int): ActivityInfo? {
-        val activityInfo = vmPackageRepo.getActivityInfo(componentName, flags) ?: return null
+        val activityInfo = vmPackageRepo.getActivityInfo(componentName, flags, userId) ?: return null
         val applicationInfo = activityInfo.applicationInfo
         ComponentFixCompat.fixApplicationAbi(applicationInfo)
         ComponentFixCompat.fixApplicationInfo(applicationInfo, userId)
@@ -244,6 +244,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
     }
 
     override fun queryContentProviders(processName: String?, uid: Int, flags: Int, metaDataKey: String?): ParceledListSlice<*> {
+        // TODO uid
         val list = vmPackageRepo.queryContentProviders(processName, uid, flags, metaDataKey)
         if (list.isEmpty()){
             return ParceledListSlice.emptyList<ProviderInfo>()
@@ -314,14 +315,14 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         return vmPackageRepo.resolveContentProvider(name, flags, userId)
     }
 
-    override fun getInstrumentationInfo(className: ComponentName?, flags: Int): InstrumentationInfo? {
+    override fun getInstrumentationInfo(className: ComponentName?, flags: Int, userId: Int): InstrumentationInfo? {
         className ?: return null
-        return vmPackageRepo.getInstrumentationInfo(className, flags)
+        return vmPackageRepo.getInstrumentationInfo(className, flags, userId)
     }
 
-    override fun queryInstrumentation(targetPackage: String?, flags: Int): ParceledListSlice<*> {
+    override fun queryInstrumentation(targetPackage: String?, flags: Int, userId: Int): ParceledListSlice<*> {
         targetPackage ?: return ParceledListSlice.emptyList<Parcelable>()
-        return ParceledListSlice(vmPackageRepo.queryInstrumentation(targetPackage, flags))
+        return ParceledListSlice(vmPackageRepo.queryInstrumentation(targetPackage, flags, userId))
     }
 
     private fun dispatcherPackageInstall(installResult: VmPackageResult) {
@@ -343,12 +344,12 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
 
     fun resolveApplicationInfo(intent: Intent, flags: Int, userId: Int): ApplicationInfo? {
         logger.i("解析ApplicationInfo intent = %s, userId = %s", intent, userId)
-        if (!VmUserManagerService.exists(userId)) {
+        if (!VmUserManagerService.checkUserExists(userId)) {
             logger.e("解析ApplicationInfo 失败，用户 %s 不存在", userId)
             return null
         }
         val packageName = intent.getPackage() ?: intent.component?.packageName ?: return null
-        return vmPackageRepo.getApplicationInfo(packageName, flags)
+        return vmPackageRepo.getApplicationInfo(packageName, flags, userId)
     }
 
     fun resolveActivityInfo(intent: Intent?, flags: Int, resolvedType: String, userId: Int): ActivityInfo? {
@@ -366,7 +367,7 @@ internal object VmPackageManagerService : IVmPackageManagerService.Stub() {
         }
 
         if (componentName != null) {
-            return vmPackageRepo.getActivityInfo(componentName, flags)
+            return vmPackageRepo.getActivityInfo(componentName, flags, userId)
         }
         val queryIntentActivities = vmPackageRepo.queryIntentActivities(intent, resolvedType, flags, userId)
         val chooseBestActivity = PackageHelper.chooseBestActivity(intent, resolvedType, flags, queryIntentActivities)

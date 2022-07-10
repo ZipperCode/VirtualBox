@@ -11,21 +11,20 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.os.Debug
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import com.virtual.box.base.util.compat.BuildCompat
 import com.virtual.box.base.util.log.L
 import com.virtual.box.base.util.log.Logger
 import com.virtual.box.core.VirtualBox
-import com.virtual.box.core.compat.ActivityManagerCompat
 import com.virtual.box.core.helper.ProviderHelper
 import com.virtual.box.core.hook.BaseHookHandle
 import com.virtual.box.core.hook.core.MethodHandle
-import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.AppActivityManager
 import com.virtual.box.core.manager.AppActivityThread
 import com.virtual.box.core.manager.VmAppPackageManager
 import com.virtual.box.core.proxy.ProxyManifest
-import com.virtual.box.core.server.user.BUserHandle
 import com.virtual.box.reflect.android.app.HActivityManager
 import com.virtual.box.reflect.android.app.HActivityManagerNative
 import com.virtual.box.reflect.android.util.HSingleton
@@ -68,15 +67,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun registerUidObserver(methodHandle: MethodHandle, observer: Any?, watch: Int, cutPoint: Int, callingPackage: String) {
-        methodHandle.invokeOriginMethod(arrayOf(
-            observer, watch, cutPoint, hostPkg
-        ))
+        methodHandle.invokeOriginMethod(
+            arrayOf(
+                observer, watch, cutPoint, hostPkg
+            )
+        )
     }
 
     fun isUidActive(methodHandle: MethodHandle, uid: Int, callingPackage: String): Boolean {
-        return methodHandle.invokeOriginMethod(arrayOf(
-            uid, hostPkg
-        )) as Boolean
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                uid, hostPkg
+            )
+        ) as Boolean
     }
 
     fun getUidProcessState(methodHandle: MethodHandle, uid: Int, callingPackage: String): Int {
@@ -91,10 +94,12 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         requestCode: Int, flags: Int, profilerInfo: Any?, options: Bundle?
     ): Int {
         logger.e("startActivity#Deprecated > maxTargetSdk = 29")
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, intent, resolvedType, resultTo, resultWho,
-            requestCode, flags, profilerInfo, options
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, intent, resolvedType, resultTo, resultWho,
+                requestCode, flags, profilerInfo, options
+            )
+        ) as Int
     }
 
     fun startActivityWithFeature(
@@ -131,9 +136,11 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
         logger.i("registerReceiver#callerPackage = %s", callerPackage)
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, receiver, filter, requiredPermission, userId, flags
-        )) as Intent?
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, receiver, filter, requiredPermission, userId, flags
+            )
+        ) as Intent?
     }
 
     /**
@@ -146,10 +153,12 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
         logger.i("registerReceiverWithFeature#callerPackage = %s", callerPackage)
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, callingFeatureId, receiverId, receiver, filter,
-            requiredPermission, userId, flags
-        )) as Intent?
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, callingFeatureId, receiverId, receiver, filter,
+                requiredPermission, userId, flags
+            )
+        ) as Intent?
     }
 
     fun registerReceiverWithFeature(
@@ -159,10 +168,12 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         filter: IntentFilter?, requiredPermission: String?, userId: Int, flags: Int
     ): Intent? {
         logger.i("registerReceiverWithFeature#callerPackage = %s", callerPackage)
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, callingFeatureId, receiver, filter,
-            requiredPermission, userId, flags
-        )) as Intent?
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, callingFeatureId, receiver, filter,
+                requiredPermission, userId, flags
+            )
+        ) as Intent?
     }
 
     /**
@@ -196,11 +207,13 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         appOp: Int, options: Bundle?, serialized: Boolean, sticky: Boolean, userId: Int
     ): Int {
         // TODO
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, callingFeatureId, intent, resolvedType, resultTo, resultCode,
-            resultData, map, requiredPermissions, excludePermissions,
-            appOp, options, serialized, sticky, userId
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, callingFeatureId, intent, resolvedType, resultTo, resultCode,
+                resultData, map, requiredPermissions, excludePermissions,
+                appOp, options, serialized, sticky, userId
+            )
+        ) as Int
     }
 
     fun unbroadcastIntent(
@@ -215,9 +228,11 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?, task: Int,
         flags: Int, options: Bundle?
     ) {
-        methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, task, flags, options
-        ))
+        methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, task, flags, options
+            )
+        )
     }
 
     /**
@@ -227,30 +242,34 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, caller: Any?, callingPackage: String?,
         name: String?, userId: Int, stable: Boolean
     ): Any? {
-        if (callingPackage == VirtualBox.get().hostPkg){
+        if (callingPackage == VirtualBox.get().hostPkg) {
             logger.i("getContentProvider#host获取ContentProvider")
             return methodHandle.invokeOriginMethod()
         }
-        if (ProxyManifest.isProxy(name)){
+        if (ProxyManifest.isProxy(name)) {
             logger.i("getContentProvider#是代理Provider，调用源方法")
             return methodHandle.invokeOriginMethod()
         }
         if (name == "settings" || name == "media" || name == "telephony") {
-            logger.i("getContentProvider#获取的是系统Provider，替换为 %s 并调用源方法, args = %s", hostPkg, arrayOf(
-                caller, callingPackage, name, userId, stable
-            ).contentToString())
-            val result = methodHandle.invokeOriginMethod(arrayOf(
-                caller, hostPkg, name, userId, stable
-            ))
+            logger.i(
+                "getContentProvider#获取的是系统Provider，替换为 %s 并调用源方法, args = %s", hostPkg, arrayOf(
+                    caller, callingPackage, name, userId, stable
+                ).contentToString()
+            )
+            val result = methodHandle.invokeOriginMethod(
+                arrayOf(
+                    caller, hostPkg, name, userId, stable
+                )
+            )
             ProviderHelper.replaceNewProvider(result)
             return result
-        }else{
+        } else {
             logger.i("getContentProvider#获取非系统Provider pks = %s, auth = %s", callingPackage, name)
             val providerInfo = VmAppPackageManager.resolveContentProvider(
                 name, PackageManager.GET_PROVIDERS,
                 AppActivityThread.currentProcessVmUserId
             )
-            if (providerInfo == null){
+            if (providerInfo == null) {
                 logger.e("getContentProvider#VmPMS获取ProviderInfo == null")
                 return null
             }
@@ -258,27 +277,31 @@ class ActivityManagerHookHandle : BaseHookHandle() {
             logger.i("getContentProvider#解析到Provider = %s", providerInfo)
             val packageName = providerInfo.packageName
             val processName = providerInfo.processName
-            val initNewProcess = VmAppActivityManager.initNewProcess(packageName, processName, AppActivityThread.currentProcessVmUserId)
+            val initNewProcess = AppActivityManager.initNewProcess(packageName, processName, AppActivityThread.currentProcessVmUserId)
                 ?: return methodHandle.invokeOriginMethod()
             logger.i("getContentProvider#初始化Provider进程成功 appConfig = %s", initNewProcess)
             var stubAuth = name
             var iContentProvider: IBinder? = null
-            if (initNewProcess.mainProcessVmPid != AppActivityThread.currentProcessVmPid){
+            if (initNewProcess.mainProcessVmPid != AppActivityThread.currentProcessVmPid) {
                 logger.i("getContentProvider#插件号进程不一致，是获取的非当前进程的Provider")
             }
             iContentProvider = AppActivityThread.acquireContentProviderClient(providerInfo)
             stubAuth = ProxyManifest.getProxyAuthorities(initNewProcess.vmProcessRecord!!.vmPid)
 
-            if (iContentProvider == null){
+            if (iContentProvider == null) {
                 logger.e("getContentProvider#获取Provider为空")
-                return methodHandle.invokeOriginMethod(arrayOf(
-                    caller, hostPkg, name, userId, stable
-                ))
+                return methodHandle.invokeOriginMethod(
+                    arrayOf(
+                        caller, hostPkg, name, userId, stable
+                    )
+                )
             }
             logger.e("getContentProvider#调用ams获取 ProviderHolder")
-            val result = methodHandle.invokeOriginMethod(arrayOf(
-                caller, hostPkg, stubAuth, userId, stable
-            )) ?: return null
+            val result = methodHandle.invokeOriginMethod(
+                arrayOf(
+                    caller, hostPkg, stubAuth, userId, stable
+                )
+            ) ?: return null
 
             ProviderHelper.replaceProviderAndInfo(result, providerInfo, AppActivityThread.mVmPackageName)
 
@@ -296,13 +319,14 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
         callingFeatureId: String?, userId: Int
     ): ComponentName? {
-        if (hostPkg != callingPackage){
+        Debug.waitForDebugger()
+        if (hostPkg != callingPackage) {
             // TODO BUserHandle.myUserId()
-            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
-            if (resolveService?.serviceInfo != null){
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, AppActivityThread.currentProcessVmUserId)
+            if (resolveService?.serviceInfo != null) {
                 logger.i("startService#解析到虚拟程序的服务信息，使用自定义ams处理")
-                val componentName = VmAppActivityManager.startService(service, resolvedType, requireForeground, userId)
-                if (componentName != null){
+                val componentName = AppActivityManager.startService(service, resolvedType, requireForeground, userId)
+                if (componentName != null) {
                     return componentName
                 }
             }
@@ -312,18 +336,26 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         return methodHandle.invokeOriginMethod() as? ComponentName
     }
 
+    fun startService(
+        methodHandle: MethodHandle, caller: Any, service: Intent?,
+        resolvedType: String?, requireForeground: Boolean, callingPackage: String?,
+        userId: Int
+    ): ComponentName? {
+        return startService(methodHandle, caller, service, resolvedType, requireForeground, callingPackage, "", userId)
+    }
+
     fun stopService(
         methodHandle: MethodHandle, caller: Any?, service: Intent?,
         resolvedType: String?, userId: Int
     ): Int {
         val calPkg = service?.getPackage() ?: service?.component?.packageName
-        if (hostPkg != calPkg){
+        if (hostPkg != calPkg) {
             // TODO BUserHandle.myUserId()
-            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
-            if (resolveService?.serviceInfo != null){
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, AppActivityThread.currentProcessVmUserId)
+            if (resolveService?.serviceInfo != null) {
                 logger.i("stopService#解析到虚拟程序的服务信息，使用自定义ams处理")
-                val res = VmAppActivityManager.stopService(service, resolvedType, userId)
-                if (res >= 0){
+                val res = AppActivityManager.stopService(service, resolvedType, userId)
+                if (res >= 0) {
                     return res
                 }
             }
@@ -337,21 +369,23 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         callingPackage: String?, userId: Int
     ): Int {
-        if (hostPkg != callingPackage){
-            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
-            if (resolveService?.serviceInfo != null){
+        if (hostPkg != callingPackage) {
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, AppActivityThread.currentProcessVmUserId)
+            if (resolveService?.serviceInfo != null) {
                 logger.i("bindService#解析到虚拟程序的服务信息，使用自定义ams处理")
-                val res = VmAppActivityManager.bindService(service, token, resolvedType, connection, userId)
-                if (res >= 0){
+                val res = AppActivityManager.bindService(service, token, resolvedType, connection, userId)
+                if (res >= 0) {
                     return res
                 }
             }
         }
 
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, token, service, resolvedType, connection, flags,
-            hostPkg, userId
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, token, service, resolvedType, connection, flags,
+                hostPkg, userId
+            )
+        ) as Int
     }
 
     fun bindIsolatedService(
@@ -359,21 +393,23 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         resolvedType: String?, connection: IServiceConnection?, flags: Int,
         instanceName: String?, callingPackage: String?, userId: Int
     ): Int {
-        if (hostPkg != callingPackage){
-            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, userId)
-            if (resolveService?.serviceInfo != null){
+        if (hostPkg != callingPackage) {
+            val resolveService = VmAppPackageManager.resolveService(service, resolvedType, 0, AppActivityThread.currentProcessVmUserId)
+            if (resolveService?.serviceInfo != null) {
                 logger.i("bindService#解析到虚拟程序的服务信息，使用自定义ams处理")
-                val res = VmAppActivityManager.bindService(service, token, resolvedType, connection, userId)
-                if (res >= 0){
+                val res = AppActivityManager.bindService(service, token, resolvedType, connection, userId)
+                if (res >= 0) {
                     return res
                 }
             }
         }
         logger.i("bindIsolatedService#callingPackage = %s, service = %s", callingPackage, service)
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, token, service, resolvedType, connection, flags,
-            instanceName, hostPkg, userId
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, token, service, resolvedType, connection, flags,
+                instanceName, hostPkg, userId
+            )
+        ) as Int
     }
 
 //    @Deprecated("maxTargetSdk 30")
@@ -441,9 +477,11 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         methodHandle: MethodHandle, sender: Any?, workSource: Any?, sourceUid: Int,
         sourcePkg: String?, tag: String?
     ) {
-        methodHandle.invokeOriginMethod(arrayOf(
-            sender, workSource, sourceUid, hostPkg, tag
-        ))
+        methodHandle.invokeOriginMethod(
+            arrayOf(
+                sender, workSource, sourceUid, hostPkg, tag
+            )
+        )
     }
 
     fun setServiceForeground(
@@ -478,14 +516,18 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         return methodHandle.invokeOriginMethod() as Boolean
     }
 
-    fun peekService(methodHandle: MethodHandle, service: Intent?, resolvedType: String?,
-                    callingPackage: String?): IBinder? {
-        if (hostPkg != callingPackage){
-            return VmAppActivityManager.peekService(service, resolvedType, AppActivityThread.currentProcessVmUserId)
+    fun peekService(
+        methodHandle: MethodHandle, service: Intent?, resolvedType: String?,
+        callingPackage: String?
+    ): IBinder? {
+        if (hostPkg != callingPackage) {
+            return AppActivityManager.peekService(service, resolvedType, AppActivityThread.currentProcessVmUserId)
         }
-        return methodHandle.invokeOriginMethod(arrayOf(
-            service, resolvedType, hostPkg
-        )) as? IBinder
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                service, resolvedType, hostPkg
+            )
+        ) as? IBinder
     }
 
     @Deprecated("maxTargetSdk = 30")
@@ -549,10 +591,12 @@ class ActivityManagerHookHandle : BaseHookHandle() {
         requestCode: Int, flags: Int, profilerInfo: Any?,
         options: Bundle?, userId: Int
     ): Int {
-        return methodHandle.invokeOriginMethod(arrayOf(
-            caller, hostPkg, intent, resolvedType, resultTo, resultWho,
-            requestCode, flags, profilerInfo, options, userId
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                caller, hostPkg, intent, resolvedType, resultTo, resultWho,
+                requestCode, flags, profilerInfo, options, userId
+            )
+        ) as Int
     }
 
     fun startActivityAsUserWithFeature(
@@ -565,15 +609,19 @@ class ActivityManagerHookHandle : BaseHookHandle() {
     }
 
     fun getPackageProcessState(methodHandle: MethodHandle, packageName: String?, callingPackage: String?): Int {
-        return methodHandle.invokeOriginMethod(arrayOf(
-            hostPkg, hostPkg
-        )) as Int
+        return methodHandle.invokeOriginMethod(
+            arrayOf(
+                hostPkg, hostPkg
+            )
+        ) as Int
     }
 
     fun updateDeviceOwner(methodHandle: MethodHandle, packageName: String?) {
-        methodHandle.invokeOriginMethod(arrayOf(
-            hostPkg
-        ))
+        methodHandle.invokeOriginMethod(
+            arrayOf(
+                hostPkg
+            )
+        )
     }
 
     fun killPackageDependents(methodHandle: MethodHandle, packageName: String?, userId: Int) {

@@ -5,7 +5,7 @@ import android.os.Handler
 import android.os.Message
 import com.virtual.box.base.util.log.L
 import com.virtual.box.core.hook.IInjectHook
-import com.virtual.box.core.manager.VmAppActivityManager
+import com.virtual.box.core.manager.AppActivityManager
 import com.virtual.box.reflect.android.app.HActivityThread
 import com.virtual.box.reflect.android.os.HHandler
 import java.util.concurrent.atomic.AtomicBoolean
@@ -25,7 +25,7 @@ class VmHandlerCallback : Handler.Callback, IInjectHook {
                     LAUNCH_ACTIVITY,
                     // >= 9.0
                     EXECUTE_TRANSACTION -> {
-                        if (VmAppActivityManager.restoreOriginAdnHandleActivity(msg.obj)) {
+                        if (AppActivityManager.restoreOriginAdnHandleActivity(msg.obj)) {
                             originHandler?.sendMessageAtFrontOfQueue(Message.obtain(msg))
                             return true
                         }

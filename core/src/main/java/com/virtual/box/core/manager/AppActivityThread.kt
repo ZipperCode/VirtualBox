@@ -86,6 +86,8 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
 
     private lateinit var systemServiceMapRef: MutableMap<IBinder, Service>
 
+    var systemDebug = true
+
     fun initProcessAppConfig(vmAppConfig: VmAppConfig) {
         logger.d("initProcessAppConfig#vmAppConfig = %s", vmAppConfig)
         synchronized(initProcessLock) {
@@ -131,7 +133,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
      * 处理插件的Application启动
      */
     override fun handleApplication() {
-        if (!isInit) {
+        if (isInit) {
             return
         }
         if (Looper.myLooper() != Looper.getMainLooper()) {
@@ -212,7 +214,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
             try{
                 if (!rebind){
                     val binder = s.onBind(intent)
-                    VmAppActivityManager.publishService(token, intent, binder)
+                    AppActivityManager.publishService(token, intent, binder)
                 }else{
                     s.onRebind(intent)
                     // TODO serviceDoneExecuting
@@ -241,6 +243,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
 
     @MainThread
     internal fun handleBindApplication(packageName: String, processName: String, userId: Int) {
+        HActivityThread.setSystemDebug(systemDebug);
         logger.i("handleBindApplication > packageName = %s, processName = %s", packageName, processName)
         logger.i("handleBindApplication > vmAppConfig = %s", vmAppConfig)
         currentProcessVmUserId = vmAppConfig?.userId ?: 0
@@ -317,7 +320,7 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
         this.vmApplication = application
         AppHookManager.onBindApplicationHook()
-        Debug.waitForDebugger()
+        // Debug.waitForDebugger()
         // application生成后，需要处理插件应用中的ContentProvider，并且调用Application的onCreate方法
         if (this.vmApplication != null) {
             logger.d("插件Application初始化完成，获取插件ContentProvider进行安装")
@@ -488,6 +491,10 @@ internal object AppActivityThread : IVmActivityThread.Stub() {
         }
 
         override fun acquireContentProviderClient(providerInfo: ProviderInfo?): IBinder {
+            TODO("Not yet implemented")
+        }
+
+        override fun finishActivity(token: IBinder?) {
             TODO("Not yet implemented")
         }
 

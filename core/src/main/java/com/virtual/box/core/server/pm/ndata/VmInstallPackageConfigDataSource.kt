@@ -54,6 +54,7 @@ class VmInstallPackageConfigDataSource {
     companion object{
         const val INSTALL_VALUE_PREF_FORMAT = "install_pkg_%s_"
         const val INSTALL_VALUE_KEY_FORMAT = "install_pkg_%s_%s"
+        const val UID_KEY_FORMAT = "uids"
     }
 
 }

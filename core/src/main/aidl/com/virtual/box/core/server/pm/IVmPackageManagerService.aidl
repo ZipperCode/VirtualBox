@@ -26,17 +26,19 @@ interface IVmPackageManagerService {
 
     int installPackageAsUserAsync(in VmPackageInstallOption installOptions, int userId);
 
-    VmPackageResult uninstallPackageAsUser(String packageName, int userId);
+    VmPackageResult uninstallPackageAsUser(in String packageName, int userId);
 
-    boolean isInstalled(String packageName, int userId);
+    VmPackageResult uninstallPackageAsAppData(in String packageName, in String appDataId, int userId);
 
-    List<VmInstalledPackageInfo> getVmInstalledPackageInfos(int flag);
+    boolean isInstalled(in String packageName, int userId);
 
-    VmInstalledPackageInfo getVmInstalledPackageInfo(String packageName, int flags);
+    List<VmInstalledPackageInfo> getVmInstalledPackageInfos(int flag, int userId);
 
-    PackageInfo getPackageInfo(String packageName, int flags, int userId);
+    VmInstalledPackageInfo getVmInstalledPackageInfo(in String packageName, int flags, int userId);
 
-    ApplicationInfo getApplicationInfo(String packageName, int flags, int userId);
+    PackageInfo getPackageInfo(in String packageName, int flags, int userId);
+
+    ApplicationInfo getApplicationInfo(in String packageName, int flags, int userId);
 
     ActivityInfo getActivityInfo(in ComponentName componentName, int flags, int userId);
 
@@ -65,9 +67,9 @@ interface IVmPackageManagerService {
 
     ProviderInfo resolveContentProvider(in String name, int flags, int userId);
 
-    InstrumentationInfo getInstrumentationInfo(in ComponentName className, int flags);
+    InstrumentationInfo getInstrumentationInfo(in ComponentName className, int flags, int userId);
 
-    ParceledListSlice queryInstrumentation(String targetPackage, int flags);
+    ParceledListSlice queryInstrumentation(String targetPackage, int flags, int userId);
 
     ResolveInfo resolveActivity(in Intent intent, int flags, String resolvedType, int userId);
 

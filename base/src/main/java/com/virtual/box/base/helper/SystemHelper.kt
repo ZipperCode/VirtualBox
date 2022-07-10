@@ -29,8 +29,6 @@ object SystemHelper {
     var sCurrentCpuAbi: String
         private set
 
-
-
     init {
         try {
             Runtime.getRuntime().exec("getprop ro.product.cpu.abi").inputStream.use {

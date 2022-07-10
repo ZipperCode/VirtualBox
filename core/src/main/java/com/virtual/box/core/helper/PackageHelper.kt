@@ -97,7 +97,7 @@ object PackageHelper {
             }
         }
 
-        return SystemHelper.ABI_ARM
+        return systemAbi
     }
 
     fun saveInstallPackageInfoAsync(vmPackageInfo: PackageInfo, file: File) {

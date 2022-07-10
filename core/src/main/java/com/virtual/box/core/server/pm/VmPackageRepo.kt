@@ -28,6 +28,7 @@ import java.io.File
  * @author zhangzhipeng
  * @date   2022/4/27
  **/
+@Deprecated("")
 class VmPackageRepo(
 
 ) {

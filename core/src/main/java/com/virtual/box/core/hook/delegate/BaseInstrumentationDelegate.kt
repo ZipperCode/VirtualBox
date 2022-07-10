@@ -42,6 +42,7 @@ abstract class BaseInstrumentationDelegate : Instrumentation() {
 
     override fun onException(obj: Any?, e: Throwable?): Boolean {
         logger.e("onException#obj = %s, e = %s", obj, e)
+        e?.printStackTrace()
         return mBaseInstrumentation!!.onException(obj, e)
     }
 
